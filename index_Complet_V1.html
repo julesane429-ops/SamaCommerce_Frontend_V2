@@ -1,0 +1,3522 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <script>
+
+    // ==================== PATCH ANTI-DUPLICATION HISTORIQUE DES VENTES ====================
+    let _lastSalesKey = "";
+    let _isRenderingSalesHistory = false;
+
+    // Supprime toute table "fantôme" créée ailleurs que #salesHistory
+    function purgeSalesHistoryClones() {
+      const reports = document.getElementById('rapportsSection');
+      const keep = document.getElementById('salesHistory');
+      if (!reports || !keep) return;
+
+      reports.querySelectorAll('h1,h2,h3,h4').forEach(h => {
+        if (/Historique des ventes/i.test(h.textContent) && !keep.contains(h)) {
+          const box = h.closest('div');
+          if (box && box !== keep) box.remove();
+        }
+      });
+
+      reports.querySelectorAll('table').forEach(t => {
+        if (keep.contains(t)) return;
+        const headers = Array.from(t.querySelectorAll('th')).map(th => th.textContent.trim().toLowerCase());
+        const expected = ['date', 'produit', 'qté', 'montant', 'paiement', 'actions'];
+        if (expected.every(h => headers.includes(h))) {
+          const box = t.closest('div');
+          if (box && box !== keep) box.remove();
+          else t.remove();
+        }
+      });
+    }
+
+    // Remplit le tbody unique sans jamais créer de nouvelle table
+    function renderSalesHistory(ventes) {
+      purgeSalesHistoryClones();
+
+      const tbody = document.getElementById('salesHistoryBody');
+      if (!tbody) return;
+
+      const periode = document.getElementById('periodeRapports')?.value || 'tout';
+      const key = `${periode}|${ventes?.length || 0}|${appData.produits?.length || 0}`;
+      if (key === _lastSalesKey) return;
+      _lastSalesKey = key;
+
+      tbody.innerHTML = '';
+
+      if (!Array.isArray(ventes) || ventes.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-500 p-4">Aucune vente</td></tr>`;
+        return;
+      }
+
+      for (const v of ventes) {
+        const prod = (appData.produits || []).find(p => Number(p.id) === Number(v.product_id));
+        const unit = Number(v.price ?? 0);
+        const qty = Number(v.quantity ?? 0);
+        const montant = Number.isFinite(Number(v.total)) ? Number(v.total) : (unit * qty);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+      <td class="p-2 border">${new Date(v.date || v.created_at).toLocaleString()}</td>
+      <td class="p-2 border">${prod ? prod.name : 'Inconnu'}</td>
+      <td class="p-2 border">${v.quantity ?? 0}</td>
+      <td class="p-2 border">${(Number.isFinite(montant) ? montant : 0).toLocaleString()} F</td>
+      <td class="p-2 border">${v.payment_method || ''}</td>
+      <td class="p-2 border text-center">
+        <button class="bg-yellow-500 text-white px-2 py-1 rounded text-xs" onclick="modifierVente(${v.id})">✏️</button>
+        <button class="bg-red-500 text-white px-2 py-1 rounded text-xs" onclick="annulerVente(${v.id})">🗑️</button>
+      </td>
+    `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function tryRenderSalesHistory(ventesFiltrees) {
+      if (_isRenderingSalesHistory) return;
+      _isRenderingSalesHistory = true;
+      try {
+        if (!appData?.ventes?.length || !appData?.produits?.length) {
+          const tbody = document.getElementById('salesHistoryBody');
+          if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-500 p-4">Chargement…</td></tr>`;
+        } else {
+          renderSalesHistory(ventesFiltrees);
+        }
+      } finally {
+        _isRenderingSalesHistory = false;
+      }
+    }
+    // ==================== FIN PATCH ====================
+
+
+    (function () {
+      try {
+        const token = localStorage.getItem('authToken');
+        const role = localStorage.getItem('userRole')?.toLowerCase();
+        console.log("Au chargement - token :", token);
+        console.log("Au chargement - rôle :", role);
+
+        if (!token) {
+          console.log("Pas de token, redirection vers login.html");
+          window.location.replace('login.html?expired=1');
+        } else if (role === "admin") {
+          console.log("Utilisateur admin détecté, redirection vers admin.html");
+          window.location.replace('admin.html');
+        } else {
+          console.log("Utilisateur normal détecté, reste sur index.html");
+        }
+      } catch (e) {
+        console.error("Erreur lors du check initial :", e);
+        window.location.replace('login.html?expired=1');
+      }
+    })();
+
+  </script>
+
+
+
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ma Boutique - Gestion Complète</title>
+  <meta name="api-base" content="https://ma-boutique-backend-3.onrender.com">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- PWA meta -->
+  <link rel="manifest" href="./pwa/manifest.json">
+  <meta name="theme-color" content="#6D28D9">
+  <!-- iOS support -->
+  <link rel="apple-touch-icon" href="/pwa/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="mobile-web-app-capable" content="yes">
+
+
+  <style>
+    .app-container {
+      max-width: 100%;
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+      border-radius: 25px;
+      overflow: hidden;
+      background: white;
+      min-height: 100vh;
+    }
+
+    .big-button {
+      transition: all 0.25s ease;
+      transform: scale(1);
+    }
+
+    .big-button:hover {
+      transform: scale(1.03);
+    }
+
+    .slide-in {
+      animation: slideIn 0.35s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.7;
+      }
+    }
+
+    .category-habits {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .category-cosmetiques {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .category-chaussures {
+      background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+
+    .category-accessoires {
+      background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 600px) {
+      .big-button {
+        font-size: 1.05rem;
+        padding: 1rem;
+      }
+
+      .app-container {
+        border-radius: 8px;
+        min-height: 100vh;
+      }
+
+      header,
+      .bg-gradient-to-r {
+        border-radius: 0;
+      }
+
+      .text-2xl {
+        font-size: 1.25rem;
+      }
+
+      .text-6xl {
+        font-size: 2.2rem;
+      }
+    }
+
+    @media (min-width: 601px) {
+      .app-container {
+        border-radius: 15px;
+      }
+    }
+
+    /* Simple table responsive */
+    .table-sm td,
+    .table-sm th {
+      padding: 0.5rem;
+    }
+
+    .chart-container {
+      height: 250px;
+    }
+
+    /* Grille responsive */
+    .emoji-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+      gap: 0.75rem;
+    }
+
+    /* Boutons emoji */
+    .emoji-btn {
+      font-size: 2rem;
+      padding: 0.8rem;
+      border-radius: 1rem;
+      background: #f9fafb;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .emoji-btn:hover {
+      transform: scale(1.15);
+      background: #ede9fe;
+      border-color: #a78bfa;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    .emoji-btn:active {
+      transform: scale(0.95);
+      background: #ddd6fe;
+    }
+
+    .emoji-btn.selected {
+      background: #c4b5fd;
+      border-color: #7c3aed;
+      color: white;
+      transform: scale(1.2);
+      box-shadow: 0 6px 12px rgba(124, 58, 237, 0.3);
+    }
+
+    /* Ajustement sur mobile */
+    @media (max-width: 640px) {
+      .emoji-grid {
+        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+        gap: 0.5rem;
+      }
+
+      .emoji-btn {
+        font-size: 1.8rem;
+        padding: 0.6rem;
+        border-radius: 0.75rem;
+      }
+    }
+
+    /* ✅ Zone contenant les toasts */
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ✅ Style d’un toast */
+    .toast {
+      min-width: 220px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      animation: slideIn 0.4s ease, fadeOut 0.5s ease 3.5s forwards;
+    }
+
+    /* ✅ Variantes par type */
+    .toast.success {
+      background: #16a34a;
+    }
+
+    /* vert */
+    .toast.error {
+      background: #dc2626;
+    }
+
+    /* rouge */
+    .toast.warning {
+      background: #f59e0b;
+    }
+
+    /* jaune */
+    .toast.info {
+      background: #2563eb;
+    }
+
+    /* bleu */
+
+    /* ✅ Animations */
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(100%);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        transform: translateX(100%);
+      }
+    }
+
+    /* ✅ Style pour la boîte de confirmation */
+    #custom-confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+
+    .custom-confirm-box {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 350px;
+      width: 90%;
+      text-align: center;
+      font-family: sans-serif;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      animation: popIn 0.3s ease;
+    }
+
+    .custom-confirm-box p {
+      margin-bottom: 20px;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .custom-confirm-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .custom-confirm-btn {
+      padding: 10px 18px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+
+    .custom-confirm-yes {
+      background: #16a34a;
+      color: #fff;
+    }
+
+    .custom-confirm-yes:hover {
+      background: #15803d;
+    }
+
+    .custom-confirm-no {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    .custom-confirm-no:hover {
+      background: #b91c1c;
+    }
+
+    /* ✅ Animation d’apparition */
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-purple-50 to-pink-50">
+  <div id="syncBanner" style="display:none;" class="bg-blue-500 text-white text-center py-2 text-sm">
+    🔄 Synchronisation en cours...
+  </div>
+
+  <div class="app-container">
+    <!-- En-tête -->
+    <div class="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6">
+      <div class="flex items-center justify-between">
+        <button class="text-3xl" id="backBtn" onclick="showSection('menu')" style="display: none;">←</button>
+        <div class="text-center flex-1">
+          <h1 id="appHeader" class="text-2xl font-bold">🏪 Ma Boutique</h1>
+          <div class="text-sm opacity-90">Ventes aujourd'hui: <span class="pulse" id="ventesToday">0</span></div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="text-3xl pulse">💰</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menu Principal -->
+    <div class="p-6 space-y-6" id="menuSection">
+      <button onclick="logout()" class="bg-red-600 px-3 py-1 rounded text-white text-sm">🔓 Déconnexion</button>
+      <button id="installBtn" class="hidden bg-green-600 px-3 py-1 rounded text-white text-sm"> 📲 Installer</button>
+
+      <div id="userGuide"
+        class="bg-violet-100 border border-violet-300 text-violet-800 p-4 rounded-lg mb-4 flex justify-between items-start">
+        <div>
+          <h2 class="font-bold text-lg mb-1">👋 Bienvenue !</h2>
+          <p class="text-sm">
+          <ol class="text-left list-decimal list-inside space-y-1">
+            <li>➕ Commencez par aller dans la section Catégories pour organiser vos produits. Cliquer sur le bouton "+
+              Ajouter" pour créer une catégorie</li>
+            <li>Ensuite, aller à la section Stock pour gérer vos produits</li>
+            <li>Vous pouvez commencer à vendre en allant dans la section Vendre</li>
+            <li>Pour voir vos chiffres, allez dans la section Chiffres</li>
+            <li>Consultez la section Inventaire pour suivre vos bénéfices</li>
+            <li>Utilisez la section Crédits pour gérer les ventes à crédit</li>
+            <li>N’oubliez pas de vérifier les alertes de stock faible sur la page d’accueil</li>
+            <li>L'application est gratuite et vous pouvez ajouter jusqu'à 5 produits, pour plus, envisagez la version
+              Pro.</li>
+          </ol>
+          </p>
+        </div>
+        <button onclick="closeGuide()" class="ml-4 text-violet-700 hover:text-violet-900 font-bold">✕</button>
+      </div>
+
+      <!-- Résumé du jour -->
+      <div class="bg-white rounded-3xl p-6 shadow-lg">
+        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+          <span class="text-2xl mr-2">📊</span> Aujourd'hui
+        </h3>
+        <div class="grid grid-cols-3 gap-4">
+          <div class="text-center bg-green-50 rounded-2xl p-4">
+            <div class="text-2xl font-bold text-green-600" id="chiffreAffaires">0 F</div>
+            <div class="text-xs text-green-700">Argent reçu</div>
+          </div>
+          <div class="text-center bg-blue-50 rounded-2xl p-4">
+            <div class="text-2xl font-bold text-blue-600" id="articlesVendus">0</div>
+            <div class="text-xs text-blue-700">Articles vendus</div>
+          </div>
+          <div class="text-center bg-orange-50 rounded-2xl p-4">
+            <div class="text-2xl font-bold text-orange-600" id="stockTotal">0</div>
+            <div class="text-xs text-orange-700">En stock</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions principales (ajouté Inventaire à côté de Rapports) -->
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <button
+          class="big-button bg-gradient-to-br from-green-400 to-green-600 text-white p-8 rounded-3xl text-center shadow-lg"
+          onclick="showSection('vente')">
+          <div class="text-6xl mb-3">💳</div>
+          <div class="font-bold text-xl">VENDRE</div>
+          <div class="text-sm opacity-90">Vendre un article</div>
+        </button>
+
+        <button
+          class="big-button bg-gradient-to-br from-blue-400 to-blue-600 text-white p-8 rounded-3xl text-center shadow-lg"
+          onclick="showSection('stock')">
+          <div class="text-6xl mb-3">📦</div>
+          <div class="font-bold text-xl">STOCK</div>
+          <div class="text-sm opacity-90">Gérer produits</div>
+        </button>
+
+        <button
+          class="big-button bg-gradient-to-br from-purple-400 to-purple-600 text-white p-8 rounded-3xl text-center shadow-lg"
+          onclick="showSection('categories')">
+          <div class="text-6xl mb-3">🏷️</div>
+          <div class="font-bold text-xl">CATÉGORIES</div>
+          <div class="text-sm opacity-90">Organiser</div>
+        </button>
+
+        <button
+          class="big-button bg-gradient-to-br from-orange-400 to-orange-600 text-white p-8 rounded-3xl text-center shadow-lg"
+          onclick="showSection('rapports')">
+          <div class="text-6xl mb-3">📈</div>
+          <div class="font-bold text-xl">CHIFFRES</div>
+          <div class="text-sm opacity-90">Voir gains</div>
+        </button>
+
+        <button
+          class="big-button bg-gradient-to-br from-teal-400 to-teal-600 text-white p-8 rounded-3xl text-center shadow-lg"
+          onclick="showSection('inventaire')">
+          <div class="text-6xl mb-3">📋</div>
+          <div class="font-bold text-xl">INVENTAIRE</div>
+          <div class="text-sm opacity-90">Voir bénéfices</div>
+        </button>
+
+        <button
+          class="big-button bg-gradient-to-br from-purple-400 to-purple-600 text-white p-8 rounded-3xl text-center shadow-lg"
+          onclick="showSection('credits')">
+          <div class="text-6xl mb-3">📝</div>
+          <div class="font-bold text-xl">CRÉDITS</div>
+          <div class="text-sm opacity-90">Gérer dettes clients</div>
+        </button>
+
+      </div>
+
+      <!-- Alertes stock faible -->
+      <div class="bg-gradient-to-r from-red-100 to-orange-100 rounded-3xl p-6 shadow-lg" id="alertesStock"
+        style="display: none;">
+        <h3 class="text-lg font-bold mb-4 flex items-center text-red-700"><span class="text-2xl mr-2">⚠️</span> Presque
+          fini</h3>
+        <div class="space-y-2" id="produitsStockFaible"></div>
+      </div>
+    </div>
+
+    <!-- Section Vente -->
+    <div class="hidden slide-in p-6" id="venteSection">
+      <h2 class="text-2xl font-bold mb-6 text-center">💳 Vendre</h2>
+
+      <!-- Panier -->
+      <div class="bg-white rounded-3xl p-6 shadow-lg mb-6">
+        <h3 class="text-lg font-bold mb-4 flex items-center"><span class="text-2xl mr-2">🛒</span> Panier</h3>
+        <div class="space-y-3 mb-4 min-h-[100px]" id="panierItems">
+          <div class="text-gray-500 text-center py-8">
+            <div class="text-4xl mb-2">🛒</div>
+            <div>Panier vide</div>
+          </div>
+        </div>
+        <div class="border-t pt-4">
+          <div class="flex justify-between items-center text-2xl font-bold mb-4"><span>TOTAL:</span><span
+              class="text-green-600" id="totalPanier">0 F</span></div>
+          <button
+            class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg"
+            onclick="showModal('paiement')">💰 ENCAISSER</button>
+        </div>
+      </div>
+
+      <!-- Sélection par catégorie -->
+      <div class="space-y-4">
+        <h3 class="text-lg font-bold">Choisir produits</h3>
+        <div class="grid grid-cols-2 gap-3" id="categoriesVente"></div>
+      </div>
+    </div>
+
+    <!-- Section Stock -->
+    <div class="hidden slide-in p-6" id="stockSection">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">📦 Mon Stock</h2>
+        <button class="bg-blue-600 text-white px-4 py-2 rounded-2xl text-sm font-bold"
+          onclick="handleAddProductClick()">+ AJOUTER</button>
+
+      </div>
+
+      <div class="flex gap-2 mb-6 overflow-x-auto pb-2" id="filtreCategories"><button
+          class="filtre-btn bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap"
+          onclick="filtrerProduits('tous')">Tous</button></div>
+      <div class="space-y-4" id="listeProduits"></div>
+    </div>
+
+    <!-- Section Catégories -->
+    <div class="hidden slide-in p-6" id="categoriesSection">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">🏷️ Catégories</h2><button
+          class="bg-purple-600 text-white px-4 py-2 rounded-2xl text-sm font-bold"
+          onclick="showModal('ajoutCategorie')">+ AJOUTER</button>
+      </div>
+      <input type="text" id="searchCategorie" placeholder="🔍 Rechercher une catégorie..."
+        class="w-full p-2 border rounded mb-4">
+      <div class="space-y-4" id="listeCategories"></div>
+    </div>
+
+    <!-- Section Rapports (CHIFFRES) -->
+    <div class="hidden slide-in p-6" id="rapportsSection">
+      <h2 class="text-2xl font-bold mb-6 text-center">📈 Chiffres</h2>
+      <div class="mb-4 text-center">
+        <label for="periodeRapports" class="mr-2 font-bold">Période :</label>
+        <select id="periodeRapports" class="p-2 border rounded">
+          <option value="jour">Aujourd'hui</option>
+          <option value="semaine">Cette semaine</option>
+          <option value="mois">Ce mois</option>
+          <option value="tout">Tout</option>
+        </select>
+      </div>
+
+      <div class="space-y-6">
+        <div class="bg-white rounded-3xl p-6 shadow-lg">
+          <h3 class="text-lg font-bold mb-4">💰 Résumé</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <!-- Aujourd'hui -->
+            <div class="bg-green-50 rounded-2xl p-4 text-center">
+              <div class="text-3xl font-bold text-green-600" id="recettesJour">0 F</div>
+              <div class="text-sm text-green-700">Aujourd'hui</div>
+            </div>
+
+            <!-- Cette semaine -->
+            <div class="bg-blue-50 rounded-2xl p-4 text-center">
+              <div class="text-3xl font-bold text-blue-600" id="recettesSemaine">0 F</div>
+              <div class="text-sm text-blue-700">Cette semaine</div>
+            </div>
+
+            <!-- Ce mois -->
+            <div class="bg-yellow-50 rounded-2xl p-4 text-center">
+              <div class="text-3xl font-bold text-yellow-600" id="recettesMois">0 F</div>
+              <div class="text-sm text-yellow-700">Ce mois</div>
+            </div>
+
+            <!-- Tout -->
+            <div class="bg-purple-50 rounded-2xl p-4 text-center">
+              <div class="text-3xl font-bold text-purple-600" id="recettesTout">0 F</div>
+              <div class="text-sm text-purple-700">Tout</div>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="bg-white rounded-3xl p-6 shadow-lg">
+          <h3 class="text-lg font-bold mb-4">💳 Paiements</h3>
+          <div class="space-y-3" id="rapportsPaiements"></div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 shadow-lg">
+          <h3 class="text-lg font-bold mb-4">🔥 Produits Populaires</h3>
+          <div class="space-y-3" id="produitsPopulaires"></div>
+        </div>
+
+        <!-- Graphiques -->
+        <div class="bg-white rounded-3xl p-6 shadow-lg">
+          <h3 class="text-lg font-bold mb-4">📊 Graphiques</h3>
+
+          <div class="chart-container"><canvas id="chartVentesByDay"></canvas></div>
+          <div class="chart-container"><canvas id="chartTopProduits"></canvas></div>
+          <div class="chart-container"><canvas id="chartPaiements"></canvas></div>
+          <div class="chart-container"><canvas id="chartStocksFaibles"></canvas></div>
+          <canvas id="chartVentesJour" height="100"></canvas>
+
+          <div id="salesHistory" class="bg-white rounded-3xl p-6 shadow-lg mt-6 overflow-x-auto">
+            <h3 class="text-lg font-bold mb-4">📜 Historique des ventes</h3>
+            <table class="w-full table-sm" class="overflow-x-auto">
+              <thead class="bg-gray-100">
+                <tr>
+                  <th class="p-2 border">Date</th>
+                  <th class="p-2 border">Produit</th>
+                  <th class="p-2 border">Qté</th>
+                  <th class="p-2 border">Montant</th>
+                  <th class="p-2 border">Paiement</th>
+                  <th class="p-2 border">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="salesHistoryBody">
+                <!-- Les lignes seront ajoutées en JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Bloc suivi des crédits -->
+          <div id="creditsStats" class="bg-white rounded-3xl p-4 shadow-lg mt-6">
+            <canvas id="chartCredits" class="mt-4" height="150"></canvas>
+          </div>
+
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Section Ventes à Crédit -->
+    <div class="hidden slide-in p-6" id="creditsSection">
+      <h2 class="text-2xl font-bold mb-6 text-center">💳 Ventes à Crédit</h2>
+
+      <!-- Formulaire enregistrement crédit -->
+      <div class="bg-white rounded-3xl p-8 shadow-xl mb-8 border border-gray-100">
+        <h3 class="text-xl font-bold mb-6 flex items-center gap-2 text-purple-700">
+          <span class="text-2xl">➕</span> Nouvelle vente à crédit
+        </h3>
+
+        <form id="creditForm" class="space-y-5">
+          <!-- Client -->
+          <div>
+            <label class="block text-sm font-semibold mb-1 text-gray-700">👤 Client</label>
+            <input type="text" id="creditClient" placeholder="Nom du client"
+              class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-500 transition">
+          </div>
+
+          <!-- Téléphone -->
+          <div>
+            <label class="block text-sm font-semibold mb-1 text-gray-700">📞 Téléphone</label>
+            <input type="tel" id="creditPhone" placeholder="Téléphone du client"
+              class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-500 transition">
+          </div>
+
+          <!-- Produit -->
+          <div>
+            <label class="block text-sm font-semibold mb-1 text-gray-700">📦 Produit</label>
+            <select id="creditProduct"
+              class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-500 transition bg-white">
+            </select>
+          </div>
+
+          <!-- Quantité -->
+          <div>
+            <label class="block text-sm font-semibold mb-1 text-gray-700">🔢 Quantité</label>
+            <input type="number" id="creditQuantity" min="1" value="1"
+              class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-500 transition">
+          </div>
+
+          <!-- Échéance -->
+          <div>
+            <label class="block text-sm font-semibold mb-1 text-gray-700">📅 Échéance</label>
+            <input type="date" id="creditDueDate"
+              class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-500 transition">
+          </div>
+
+          <!-- Bouton -->
+          <button type="submit"
+            class="w-full bg-gradient-to-r from-purple-600 to-purple-800 text-white py-3 rounded-xl font-semibold text-lg shadow-md hover:scale-[1.02] hover:shadow-lg transition">
+            💾 Enregistrer à crédit
+          </button>
+        </form>
+      </div>
+
+
+
+      <!-- Résumé crédits -->
+      <div id="creditsResume"
+        class="mb-4 bg-purple-50 rounded-xl p-4 flex flex-col md:flex-row justify-around gap-3 text-center">
+        <div>
+          <div class="text-lg font-bold text-purple-700" id="creditsTotalEncours">0 F</div>
+          <div class="text-sm text-gray-600">Total en cours</div>
+        </div>
+        <div>
+          <div class="text-lg font-bold text-green-700" id="creditsTotalRembourses">0 F</div>
+          <div class="text-sm text-gray-600">Total remboursé</div>
+        </div>
+        <div>
+          <div class="text-lg font-bold text-red-700" id="creditsTotalImpaye">0 F</div>
+          <div class="text-sm text-gray-600">Impayés restants</div>
+        </div>
+      </div>
+
+      <!-- Graphique crédits -->
+      <div class="bg-white rounded-3xl p-4 shadow-lg mb-6">
+        <canvas id="chartCredits" height="100"></canvas>
+      </div>
+
+      <!-- Montant total dû -->
+      <p id="creditsStatus" class="text-center mb-4 text-sm text-gray-600">Chargement…</p>
+      <p id="creditsMontant" class="text-center mb-4 text-sm font-semibold text-gray-800">Montant total dû : 0 F</p>
+
+
+
+      <!-- Liste crédits -->
+      <div class="bg-white rounded-3xl p-6 shadow-lg">
+        <h3 class="text-lg font-bold mb-2">📜 Historique des crédits</h3>
+        <p id="creditsResume" class="text-sm text-center text-gray-600 mb-4"></p> <!-- ✅ compteur ici -->
+
+        <div class="overflow-x-auto">
+          <table class="w-full table-sm">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="p-2 border">Date</th>
+                <th class="p-2 border">Client</th>
+                <th class="p-2 border">Produit</th>
+                <th class="p-2 border">Qté</th>
+                <th class="p-2 border">Montant</th>
+                <th class="p-2 border">Échéance</th>
+                <th class="p-2 border">Statut</th>
+                <th class="p-2 border">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="creditsHistoryBody">
+              <!-- Rempli par JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- Section Inventaire -->
+    <div id="inventaireSection" class="hidden slide-in p-6">
+      <h2 class="text-2xl font-bold mb-6 text-center">📋 Inventaire & Bénéfices</h2>
+      <input type="text" id="searchInventaire" placeholder="🔍 Rechercher un produit..."
+        class="w-full p-2 border rounded mb-4">
+
+      <!-- 👉 le wrapper overflow-x-auto autour du tableau -->
+      <div class="bg-white rounded-3xl p-4 shadow-lg overflow-x-auto">
+        <table class="w-full table-sm min-w-[600px]">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="p-2 border">Produit</th>
+              <th class="p-2 border">Achat</th>
+              <th class="p-2 border">Vente</th>
+              <th class="p-2 border">En stock</th>
+              <th class="p-2 border">Vendues</th>
+              <th class="p-2 border">Bénéfice réalisé</th>
+            </tr>
+          </thead>
+          <tbody id="inventaireListe"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="creditsSection" class="hidden slide-in p-6 overflow-x-auto">
+      <h2 class="text-2xl font-bold mb-6 text-center">📝 Ventes à Crédit</h2>
+
+      <div class="bg-white rounded-3xl p-4 shadow-lg overflow-x-auto">
+        <table class="w-full table-sm min-w-[700px]">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="p-2 border">Client</th>
+              <th class="p-2 border">Téléphone</th>
+              <th class="p-2 border">Produit</th>
+              <th class="p-2 border">Montant dû</th>
+              <th class="p-2 border">Échéance</th>
+              <th class="p-2 border">Statut</th>
+              <th class="p-2 border">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="creditsListe">
+            <!-- Lignes ajoutées en JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modales -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4"
+      id="modalOverlay">
+
+      <!-- Modal Ajout Produit -->
+      <div class="bg-white rounded-3xl p-6 w-full max-w-sm hidden fade-in" id="modalAjoutProduit">
+        <h3 class="text-2xl font-bold mb-6 text-center">📦 Nouveau Produit</h3>
+        <div class="space-y-4">
+          <input class="w-full p-4 border-2 rounded-2xl text-lg" id="nomProduit" placeholder="Nom du produit"
+            type="text" />
+          <select class="w-full p-4 border-2 rounded-2xl text-lg" id="categorieProduit">
+            <option value="">Choisir catégorie</option>
+          </select>
+          <input class="w-full p-4 border-2 rounded-2xl text-lg" id="prixAchatProduit" placeholder="Prix achat (F CFA)"
+            type="number" />
+          <input class="w-full p-4 border-2 rounded-2xl text-lg" id="prixProduit" placeholder="Prix vente (F CFA)"
+            type="number" />
+          <input class="w-full p-4 border-2 rounded-2xl text-lg" id="stockProduit" placeholder="Quantité en stock"
+            type="number" />
+          <textarea class="w-full p-4 border-2 rounded-2xl text-lg h-20" id="descriptionProduit"
+            placeholder="Description (optionnel)"></textarea>
+          <div class="flex gap-3">
+            <button class="flex-1 bg-gray-300 text-gray-700 py-4 rounded-2xl font-bold"
+              onclick="hideModal()">Annuler</button>
+            <button class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold"
+              onclick="ajouterProduit()">Ajouter</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Éditer Produit -->
+      <div class="bg-white rounded-3xl p-6 w-full max-w-sm hidden fade-in" id="modalEditProduit">
+        <h3 class="text-2xl font-bold mb-6 text-center">✏️ Modifier Produit</h3>
+        <div class="space-y-4">
+          <input class="w-full p-4 border-2 rounded-2xl text-lg" id="editNomProduit" placeholder="Nom du produit"
+            type="text" />
+          <select class="w-full p-4 border-2 rounded-2xl text-lg" id="editCategorieProduit">
+            <option value="">Choisir catégorie</option>
+          </select>
+          <input class="w-full p-4 border-2 rounded-2xl text-lg" id="editPrixAchatProduit"
+            placeholder="Prix achat (F CFA)" type="number" />
+          <input class="w-full p-4 border-2 rounded-2xl text-lg" id="editPrixProduit" placeholder="Prix vente (F CFA)"
+            type="number" />
+          <input class="w-full p-4 border-2 rounded-2xl text-lg" id="editStockProduit" placeholder="Quantité en stock"
+            type="number" />
+          <textarea class="w-full p-4 border-2 rounded-2xl text-lg h-20" id="editDescriptionProduit"
+            placeholder="Description (optionnel)"></textarea>
+          <div class="flex gap-3">
+            <button class="flex-1 bg-gray-300 text-gray-700 py-4 rounded-2xl font-bold"
+              onclick="hideModal()">Annuler</button>
+            <button class="flex-1 bg-green-600 text-white py-4 rounded-2xl font-bold"
+              onclick="mettreAJourProduit()">Mettre à jour</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Ajout Catégorie -->
+      <div id="modalAjoutCategorie"
+        class="hidden fade-in bg-white/95 backdrop-blur-xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-gray-200">
+
+        <!-- Titre -->
+        <h3 class="text-2xl font-extrabold mb-6 text-center text-purple-700 flex items-center justify-center gap-2">
+          🏷️ Nouvelle Catégorie
+        </h3>
+
+        <!-- Contenu -->
+        <div class="space-y-5">
+
+          <!-- Champ de saisie -->
+          <input id="nomCategorie" type="text" placeholder="Nom de la catégorie"
+            class="w-full p-4 border-2 border-gray-200 rounded-2xl text-lg focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition bg-white/90 shadow-sm" />
+
+          <!-- Palette Emoji -->
+          <div class="emoji-grid max-h-72 overflow-y-auto pr-1">
+
+            <!-- 👕 Mode -->
+            <button class="emoji-btn" onclick="selectEmoji('👕')">👕</button>
+            <button class="emoji-btn" onclick="selectEmoji('👖')">👖</button>
+            <button class="emoji-btn" onclick="selectEmoji('👗')">👗</button>
+            <button class="emoji-btn" onclick="selectEmoji('👔')">👔</button>
+            <button class="emoji-btn" onclick="selectEmoji('👟')">👟</button>
+            <button class="emoji-btn" onclick="selectEmoji('👠')">👠</button>
+            <button class="emoji-btn" onclick="selectEmoji('🎩')">🎩</button>
+            <button class="emoji-btn" onclick="selectEmoji('👜')">👜</button>
+            <button class="emoji-btn" onclick="selectEmoji('💍')">💍</button>
+            <button class="emoji-btn" onclick="selectEmoji('⌚')">⌚</button>
+
+            <!-- 💄 Beauté / Cosmétiques -->
+            <button class="emoji-btn" onclick="selectEmoji('💄')">💄</button>
+            <button class="emoji-btn" onclick="selectEmoji('💅')">💅</button>
+            <button class="emoji-btn" onclick="selectEmoji('🧴')">🧴</button>
+            <button class="emoji-btn" onclick="selectEmoji('💇‍♀️')">💇‍♀️</button>
+            <button class="emoji-btn" onclick="selectEmoji('🪞')">🪞</button>
+
+            <!-- 🍔 Nourriture -->
+            <button class="emoji-btn" onclick="selectEmoji('🍎')">🍎</button>
+            <button class="emoji-btn" onclick="selectEmoji('🍌')">🍌</button>
+            <button class="emoji-btn" onclick="selectEmoji('🍇')">🍇</button>
+            <button class="emoji-btn" onclick="selectEmoji('🥦')">🥦</button>
+            <button class="emoji-btn" onclick="selectEmoji('🍞')">🍞</button>
+            <button class="emoji-btn" onclick="selectEmoji('🥩')">🥩</button>
+            <button class="emoji-btn" onclick="selectEmoji('🍔')">🍔</button>
+            <button class="emoji-btn" onclick="selectEmoji('🍕')">🍕</button>
+            <button class="emoji-btn" onclick="selectEmoji('🍟')">🍟</button>
+            <button class="emoji-btn" onclick="selectEmoji('🍩')">🍩</button>
+            <button class="emoji-btn" onclick="selectEmoji('🥤')">🥤</button>
+            <button class="emoji-btn" onclick="selectEmoji('🍷')">🍷</button>
+
+            <!-- 📱 Électronique -->
+            <button class="emoji-btn" onclick="selectEmoji('📱')">📱</button>
+            <button class="emoji-btn" onclick="selectEmoji('💻')">💻</button>
+            <button class="emoji-btn" onclick="selectEmoji('🖥️')">🖥️</button>
+            <button class="emoji-btn" onclick="selectEmoji('🎧')">🎧</button>
+            <button class="emoji-btn" onclick="selectEmoji('🎮')">🎮</button>
+            <button class="emoji-btn" onclick="selectEmoji('📷')">📷</button>
+            <button class="emoji-btn" onclick="selectEmoji('📺')">📺</button>
+            <button class="emoji-btn" onclick="selectEmoji('⌨️')">⌨️</button>
+            <button class="emoji-btn" onclick="selectEmoji('🖱️')">🖱️</button>
+            <button class="emoji-btn" onclick="selectEmoji('🔋')">🔋</button>
+
+            <!-- 🛋️ Maison -->
+            <button class="emoji-btn" onclick="selectEmoji('🛋️')">🛋️</button>
+            <button class="emoji-btn" onclick="selectEmoji('🛏️')">🛏️</button>
+            <button class="emoji-btn" onclick="selectEmoji('🚪')">🚪</button>
+            <button class="emoji-btn" onclick="selectEmoji('🪑')">🪑</button>
+            <button class="emoji-btn" onclick="selectEmoji('🪟')">🪟</button>
+            <button class="emoji-btn" onclick="selectEmoji('🪞')">🪞</button>
+
+            <!-- ⚽ Sport -->
+            <button class="emoji-btn" onclick="selectEmoji('⚽')">⚽</button>
+            <button class="emoji-btn" onclick="selectEmoji('🏀')">🏀</button>
+            <button class="emoji-btn" onclick="selectEmoji('🏈')">🏈</button>
+            <button class="emoji-btn" onclick="selectEmoji('🎾')">🎾</button>
+            <button class="emoji-btn" onclick="selectEmoji('🏓')">🏓</button>
+            <button class="emoji-btn" onclick="selectEmoji('🥊')">🥊</button>
+            <button class="emoji-btn" onclick="selectEmoji('⛸️')">⛸️</button>
+            <button class="emoji-btn" onclick="selectEmoji('🚴‍♂️')">🚴‍♂️</button>
+
+            <!-- 🧸 Jouets -->
+            <button class="emoji-btn" onclick="selectEmoji('🧸')">🧸</button>
+            <button class="emoji-btn" onclick="selectEmoji('🚂')">🚂</button>
+            <button class="emoji-btn" onclick="selectEmoji('🪀')">🪀</button>
+            <button class="emoji-btn" onclick="selectEmoji('🎲')">🎲</button>
+            <button class="emoji-btn" onclick="selectEmoji('🎯')">🎯</button>
+            <button class="emoji-btn" onclick="selectEmoji('🪁')">🪁</button>
+
+            <!-- 🔧 Outils -->
+            <button class="emoji-btn" onclick="selectEmoji('🔧')">🔧</button>
+            <button class="emoji-btn" onclick="selectEmoji('🪚')">🪚</button>
+            <button class="emoji-btn" onclick="selectEmoji('⚒️')">⚒️</button>
+            <button class="emoji-btn" onclick="selectEmoji('🔨')">🔨</button>
+            <button class="emoji-btn" onclick="selectEmoji('🪛')">🪛</button>
+            <button class="emoji-btn" onclick="selectEmoji('🧰')">🧰</button>
+
+          </div>
+
+          <!-- Input caché -->
+          <input id="emojiCategorie" type="hidden" value="🏷️" />
+
+          <!-- Boutons -->
+          <div class="flex gap-4">
+            <button onclick="hideModal()"
+              class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-4 rounded-2xl font-semibold shadow-md transition">
+              Annuler
+            </button>
+            <button onclick="ajouterCategorie()"
+              class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-4 rounded-2xl font-semibold shadow-md transition">
+              Ajouter
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Méthodes de Paiement -->
+      <div class="bg-white rounded-3xl p-6 w-full max-w-sm hidden fade-in" id="modalPaiement">
+        <h3 class="text-2xl font-bold mb-6 text-center">💳 Choisir Paiement</h3>
+        <div class="space-y-4">
+          <button
+            class="w-full bg-green-500 text-white p-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3"
+            onclick="finaliserVente('especes')">
+            <span class="text-2xl">💵</span> Espèces
+          </button>
+          <button
+            class="w-full bg-blue-500 text-white p-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3"
+            onclick="finaliserVente('wave')">
+            <span class="text-2xl">📱</span> Wave
+          </button>
+          <button
+            class="w-full bg-orange-500 text-white p-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3"
+            onclick="finaliserVente('orange')">
+            <span class="text-2xl">📞</span> Orange Money
+          </button>
+
+          <!-- ✅ Nouveau bouton Crédit -->
+          <button
+            class="w-full bg-purple-500 text-white p-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3"
+            onclick="showModalCredit()">
+            <span class="text-2xl">📝</span> Crédit
+          </button>
+
+
+          <button class="w-full bg-gray-300 text-gray-700 p-4 rounded-2xl text-lg font-bold"
+            onclick="hideModal()">Annuler</button>
+        </div>
+      </div>
+
+      <!-- ✅ Modal Vente à Crédit -->
+      <div class="bg-white rounded-3xl p-6 w-full max-w-sm hidden fade-in" id="modalCredit">
+        <h3 class="text-2xl font-bold mb-6 text-center">📝 Vente à Crédit</h3>
+
+        <div class="space-y-4">
+          <input type="text" id="creditClientName" placeholder="👤 Nom du client" class="w-full p-3 border rounded-lg">
+          <input type="tel" id="creditClientPhone" placeholder="📞 Téléphone du client"
+            class="w-full p-3 border rounded-lg">
+
+          <!-- ✅ Champ date corrigé -->
+          <input type="date" id="creditDueDate" class="w-full p-3 border rounded-lg">
+        </div>
+
+        <div class="mt-6 space-y-3">
+          <button class="w-full bg-purple-600 text-white p-3 rounded-2xl font-bold" onclick="finaliserVenteCredit()">
+            ✅ Enregistrer à Crédit
+          </button>
+          <button class="w-full bg-gray-300 text-gray-700 p-3 rounded-2xl font-bold" onclick="hideModalCredit()">
+            ❌ Annuler
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Méthodes de modification vente -->
+      <div id="modalModifierVente" class="fixed inset-0 bg-black/50 hidden items-center justify-center">
+        <div class="bg-white rounded-xl p-6 w-96 shadow-lg">
+          <h2 class="text-lg font-bold mb-4">✏️ Modifier la vente</h2>
+
+          <form id="formModifierVente" class="space-y-3">
+            <input type="hidden" id="venteId">
+
+            <div>
+              <label class="block text-sm">Quantité</label>
+              <input type="number" id="venteQuantite" class="w-full border rounded p-2" required>
+            </div>
+
+            <div>
+              <label class="block text-sm">Méthode de paiement</label>
+              <select id="ventePaiement" class="w-full border rounded p-2">
+                <option value="especes">Espèces</option>
+                <option value="wave">Wave</option>
+                <option value="orange">Orange Money</option>
+              </select>
+            </div>
+
+            <div class="flex justify-end gap-2">
+              <button type="button" onclick="fermerModal()" class="px-3 py-2 bg-gray-300 rounded">Annuler</button>
+              <button type="submit" class="px-3 py-2 bg-blue-600 text-white rounded">Enregistrer</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ✅ Modal Remboursement Crédit -->
+    <div id="modalRemboursement"
+      class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
+      <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
+        <h3 class="text-xl font-bold mb-4 text-center">💰 Remboursement Crédit</h3>
+        <input type="hidden" id="remboursementVenteId">
+
+        <div class="space-y-3">
+          <button class="w-full bg-green-500 text-white p-3 rounded-xl font-bold flex items-center justify-center gap-3"
+            onclick="confirmerRemboursement('especes')">💵 Espèces</button>
+
+          <button class="w-full bg-blue-500 text-white p-3 rounded-xl font-bold flex items-center justify-center gap-3"
+            onclick="confirmerRemboursement('wave')">📱 Wave</button>
+
+          <button
+            class="w-full bg-orange-500 text-white p-3 rounded-xl font-bold flex items-center justify-center gap-3"
+            onclick="confirmerRemboursement('orange')">📞 Orange Money</button>
+
+          <button class="w-full bg-gray-400 text-white p-3 rounded-xl font-bold" onclick="hideModalRemboursement()">❌
+            Annuler</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Upsell Premium -->
+    <div id="premiumModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+      <div class="bg-white rounded-2xl shadow-lg p-6 max-w-sm w-full text-center">
+        <h2 class="text-xl font-bold mb-4">🚀 Passez en Premium</h2>
+        <p class="text-gray-600 mb-4">
+          Votre plan <strong>Free</strong> vous permet d’ajouter jusqu’à <strong>5 produits</strong>.<br>
+          Pour débloquer un nombre illimité de produits, contactez un administrateur.
+        </p>
+        <div class="bg-gray-100 p-3 rounded-xl mb-4">
+          <p class="text-sm text-gray-800">
+            📞 Appelez ou envoyez un message à :<br>
+            <strong>+221 78 157 10 09 ou +221 77 348 57 91</strong>
+          </p>
+        </div>
+        <button onclick="hideModalById('premiumModal'); showModalById('contactModal')"
+          class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold">
+          OK
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Modal Upgrade Premium -->
+    <div id="contactModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+      <div class="bg-white rounded-2xl shadow-lg p-6 max-w-sm w-full text-center">
+        <h2 class="text-xl font-bold mb-4">🚀 Passer en Premium</h2>
+        <p class="text-gray-600 mb-4">
+          Remplissez vos informations pour compléter votre demande de passage en <strong>Premium</strong>.
+        </p>
+
+        <form id="upgradeForm" class="space-y-3">
+          <!-- Numéro de téléphone -->
+          <input type="tel" id="phone" placeholder="Numéro de téléphone (WhatsApp de préférence)"
+            class="w-full border rounded-lg px-3 py-2" required>
+
+          <!-- Méthode de paiement -->
+          <select id="payment_method" class="w-full border rounded-lg px-3 py-2" required>
+            <option value="">-- Choisissez un moyen de paiement --</option>
+            <option value="wave">Wave</option>
+            <option value="orange">Orange Money</option>
+            <option value="cash">Espèces</option>
+          </select>
+
+          <!-- Montant fixe -->
+          <input type="number" id="amount" value="5000" readonly
+            class="w-full border rounded-lg px-3 py-2 bg-gray-100 cursor-not-allowed" />
+
+          <!-- Date d’expiration calculée -->
+          <input type="hidden" id="expiration">
+          <input type="text" id="expiration_display" readonly
+            class="w-full border rounded-lg px-3 py-2 bg-gray-100 cursor-not-allowed" />
+
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold w-full">
+            Envoyer
+          </button>
+        </form>
+
+        <!-- Message contact -->
+        <div class="mt-4 text-sm text-gray-700">
+          📞 Pour valider votre abonnement, contactez un administrateur :
+          <br><strong>+221 78 157 10 09</strong> ou <strong>+221 77 348 57 91</strong>
+          <br>(appel, WhatsApp ou SMS)
+        </div>
+
+        <button onclick="hideModalById('contactModal')" class="mt-3 text-gray-500 hover:text-gray-800">
+          Annuler
+        </button>
+      </div>
+    </div>
+
+    <div id="rapportLoading" style="display:none;"> </div>
+
+
+    <script>
+
+      // ---------- CONFIG & DATA ----------
+      // API_BASE can be set to full URL when deployed. To auto-detect hosted API, set a meta tag in the hosting HTML head like:
+      // <meta name="api-base" content="https://mon-backend.example.com">
+      const metaApi = document.querySelector('meta[name="api-base"]');
+      const API_BASE = metaApi ? metaApi.content : ((location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? '' : ''); // '' -> relative
+
+      const defaultData = {
+        categories: [
+          { id: 1, name: "Habits", emoji: "👕", couleur: "category-habits" },
+          { id: 2, name: "Cosmétiques", emoji: "💄", couleur: "category-cosmetiques" },
+          { id: 3, name: "Chaussures", emoji: "👠", couleur: "category-chaussures" },
+          { id: 4, name: "Accessoires", emoji: "💍", couleur: "category-accessoires" }
+        ],
+        produits: [], // start empty to prefer server data after first sync
+        ventes: [],
+        panier: [],
+        stats: { ventesJour: 0, chiffreAffaires: 0, paiements: { especes: 0, wave: 0, orange: 0 } }
+      };
+
+      let appData = null;
+      let chartVentesByDay = null, chartTopProduits = null, chartPaiements = null;
+
+      // ---------- localStorage helpers ----------
+      function loadAppDataLocal() {
+        const raw = localStorage.getItem('boutique_appData');
+        if (raw) {
+          try { appData = JSON.parse(raw); }
+          catch (e) { appData = JSON.parse(JSON.stringify(defaultData)); }
+        } else appData = JSON.parse(JSON.stringify(defaultData));
+        appData.produits.forEach(p => { if (typeof p.priceAchat === 'undefined') p.priceAchat = p.price_achat || 0; });
+        // ensure outbox exists
+        if (!localStorage.getItem('boutique_outbox')) localStorage.setItem('boutique_outbox', JSON.stringify([]));
+      }
+      function saveAppDataLocal() { localStorage.setItem('boutique_appData', JSON.stringify(appData)); }
+
+      // ---------- Outbox / Background retry ----------
+      function enqueueOutbox(item) { // item example: {type:'sale', payload: {...}, tries:0, id: Date.now()}
+        const q = JSON.parse(localStorage.getItem('boutique_outbox') || '[]'); q.push(item); localStorage.setItem('boutique_outbox', JSON.stringify(q));
+      }
+
+      async function processOutboxOne() {
+        const q = JSON.parse(localStorage.getItem('boutique_outbox') || '[]');
+        if (!q.length) return null;
+        const item = q[0];
+        try {
+          let res = null;
+          if (item.type === 'sale') res = await postSaleServer(item.payload);
+          else if (item.type === 'product') res = await postProductServer(item.payload);
+          else if (item.type === 'category') res = await postCategoryServer(item.payload);
+
+          if (res) { // success -> pop
+            q.shift(); localStorage.setItem('boutique_outbox', JSON.stringify(q)); saveAppDataLocal();
+            return { ok: true, item };
+          } else {
+            item.tries = (item.tries || 0) + 1;
+            if (item.tries > 10) { // drop after many tries
+              console.warn('Dropping outbox item after many tries', item);
+              q.shift(); localStorage.setItem('boutique_outbox', JSON.stringify(q));
+              return { ok: false };
+            }
+            q[0] = item; localStorage.setItem('boutique_outbox', JSON.stringify(q));
+            return { ok: false };
+          }
+        } catch (err) { console.warn('Outbox process error', err); return { ok: false }; }
+      }
+
+      async function processOutboxAll() { let did = false; try { while (true) { const r = await processOutboxOne(); if (!r) break; if (r.ok) did = true; else break; } } catch (e) { console.warn(e); } return did; }
+
+      // periodic retry
+      setInterval(() => { if (navigator.onLine) processOutboxAll(); }, 30 * 1000); // try every 30s if online
+      window.addEventListener('online', () => { console.log('Back online -> retry outbox'); processOutboxAll(); });
+
+      // ---------- Sync with server (read only) ----------
+      async function syncFromServer() {
+        const syncBanner = document.getElementById('syncBanner');
+        if (syncBanner) syncBanner.style.display = 'block';
+
+        if (!navigator.onLine) {
+          console.warn('Mode hors ligne : données locales utilisées.');
+          if (syncBanner) syncBanner.style.display = 'none';
+          return;
+        }
+
+        try {
+          // Récupération en parallèle avec authFetch
+          const [resCat, resProd, resStats, resSales] = await Promise.all([
+            authfetch(API_BASE + '/categories'),
+            authfetch(API_BASE + '/products'),
+            authfetch(API_BASE + '/stats/ventes-par-jour'),
+            authfetch(API_BASE + '/sales'),
+          ]);
+
+          // --- Catégories ---
+          if (resCat.ok) {
+            const cats = await resCat.json();
+            const defaultCategoryStyles = [
+              { emoji: '👕', couleur: 'category-habits' },
+              { emoji: '💄', couleur: 'category-cosmetiques' },
+              { emoji: '👠', couleur: 'category-chaussures' },
+              { emoji: '💍', couleur: 'category-accessoires' },
+              { emoji: '🧴', couleur: 'bg-blue-400' },
+              { emoji: '✨', couleur: 'bg-yellow-400' }
+            ];
+            appData.categories = cats.map((c, index) => {
+              const style = defaultCategoryStyles[index % defaultCategoryStyles.length];
+              return {
+                id: parseInt(c.id),
+                name: c.name,
+                emoji: c.emoji || '🏷️',
+                couleur: c.couleur || style.couleur
+              };
+            });
+          }
+
+          // --- Produits ---
+          if (resProd.ok) {
+            const prods = await resProd.json();
+            appData.produits = prods.map(p => ({
+              id: parseInt(p.id),
+              name: p.name,
+              category_id: parseInt(p.category_id),
+              scent: p.scent,
+              price: p.price,
+              stock: p.stock,
+              vendu: 0,
+              priceAchat: p.price_achat || 0,
+              description: p.description || ''
+            }));
+          }
+
+          // --- Ventes ---
+          let ventesAll = [];
+          if (resSales.ok) {
+            ventesAll = await resSales.json();
+
+            // ⚡ Normalisation des ventes/crédits
+            appData.ventes = ventesAll.map(v => ({
+              ...v,
+              created_at: v.created_at ? new Date(v.created_at) : null,
+              due_date: v.due_date ? new Date(v.due_date) : null,
+              paid: v.paid === true || v.paid === "true" // si string "true" => bool
+            }));
+
+            // ✅ filtre les crédits (tolère casse + accents + espaces)
+            appData.credits = appData.ventes.filter(v => {
+              const pm = (v.payment_method || "").toLowerCase().trim();
+              return pm === "credit" || pm === "crédit";
+            });
+
+            // ✅ Debug complet
+            console.log("🛒 Toutes les ventes normalisées :", appData.ventes);
+            console.log("📦 Crédits filtrés :", appData.credits);
+            console.log("💳 Méthodes de paiement distinctes :",
+              [...new Set(appData.ventes.map(v => (v.payment_method || '').trim()))]);
+          }
+
+
+          // --- Stats ventes du jour ---
+          if (resStats.ok) {
+            const statsArray = await resStats.json();
+            const today = new Date().toISOString().split('T')[0];
+            const todayStat = statsArray.find(s => s.date.startsWith(today));
+
+            appData.stats.ventesJour = todayStat ? parseInt(todayStat.total_montant, 10) : 0;
+            appData.stats.chiffreAffaires = appData.stats.ventesJour;
+            appData.stats.historique = statsArray;
+          }
+
+          // --- Recalcul vendu + articles vendus ---
+          const today = new Date().toISOString().split('T')[0];
+          appData.produits.forEach(prod => { prod.vendu = 0; });
+          let totalQteToday = 0;
+
+          ventesAll.forEach(v => {
+            const prodId = parseInt(v.product_id);
+            const qte = v.quantity || 0;
+
+            const prod = appData.produits.find(p => p.id === prodId);
+            if (prod) prod.vendu += qte;
+
+            const venteDate = new Date(v.created_at);
+            if (!isNaN(venteDate) && venteDate.toISOString().split('T')[0] === today) {
+              totalQteToday += qte;
+            }
+          });
+
+          appData.stats.articlesVendus = totalQteToday;
+
+          // --- Sauvegarde ---
+          saveAppDataLocal();
+          console.log('✅ Sync from server done');
+
+        } catch (err) {
+          console.warn('❌ Erreur lors de la synchronisation depuis le serveur', err);
+          console.warn('⚠️ Impossible de contacter le serveur API. Vérifiez la connexion ou la configuration CORS.');
+        }
+
+        if (syncBanner) syncBanner.style.display = 'none';
+
+        afficherCredits();
+
+        await updateHeader();
+
+      }
+
+      async function updateHeader() {
+        try {
+          const res = await authfetch(API_BASE + '/auth/me');
+          if (res.ok) {
+            const user = await res.json();
+            document.getElementById("appHeader").textContent = "🏪 " + (user.company_name || "Ma Boutique");
+          }
+        } catch (err) {
+          console.warn("Impossible de récupérer le nom de l’entreprise :", err);
+        }
+      }
+
+
+      async function postCategoryServer(category) {
+        try {
+          const res = await authfetch(API_BASE + '/categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(category) // category = { name: "..." }
+          });
+
+          if (!res.ok) {
+            const errorMsg = await res.text();
+            console.warn('Add category failed', errorMsg);
+            return null;
+          }
+
+          return await res.json();
+        } catch (e) {
+          console.warn('Network error adding category', e);
+          return null;
+        }
+      }
+
+      async function postProductServer(product) {
+        try {
+          const res = await authfetch(API_BASE + '/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(product)
+          });
+          if (!res.ok) {
+            const errorMsg = await res.text();
+            console.warn('Add product failed', errorMsg);
+            return null;
+          }
+          return await res.json();
+        } catch (e) {
+          console.warn('Network error adding product', e);
+          return null;
+        }
+      }
+
+
+      async function postSaleServer(sale) {
+        try {
+          // sale peut contenir : product_id, quantity, payment_method
+          // et éventuellement client_name, client_phone, due_date, paid
+          const res = await authfetch(API_BASE + '/sales', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(sale)
+          });
+
+          if (!res.ok) {
+            const errorMsg = await res.text();
+            console.warn('❌ Échec enregistrement vente :', errorMsg);
+            return null;
+          }
+
+          const data = await res.json();
+          console.log('✅ Vente enregistrée sur serveur :', data);
+          return data;
+        } catch (e) {
+          console.warn('🌐 Erreur réseau lors du POST /sales', e);
+          return null;
+        }
+      }
+
+      // Fonction pour calculer la date +30 jours
+      function getExpirationDate() {
+        const now = new Date();
+        now.setDate(now.getDate() + 30);
+        return now.toISOString().split("T")[0]; // format YYYY-MM-DD
+      }
+
+      // ---------- Init ---------- 
+      document.addEventListener('DOMContentLoaded', async function () {
+        // Chargement et initialisation des données
+        loadAppDataLocal();
+        updateStats();
+        verifierStockFaible();
+        afficherCategoriesVente();
+        afficherProduits();
+        afficherCategories();
+        afficherRapports();
+        afficherInventaire();
+        setupSearchInputs();
+
+        // Premier synchronisation avec le serveur
+        await syncFromServer();
+        updateStats();
+        verifierStockFaible();
+        afficherCategoriesVente();
+        afficherProduits();
+        afficherCategories();
+        afficherRapports();
+        afficherInventaire();
+
+        // Vérification des crédits après la synchro
+        console.log("📦 Crédits après sync :", appData.credits);
+
+        // ✅ Pré-remplir la date d’expiration dans le formulaire Upgrade
+        const expirationInput = document.getElementById("expiration");
+        const expirationDisplay = document.getElementById("expiration_display");
+
+        if (expirationInput && expirationDisplay) {
+          const expDate = getExpirationDate(); // YYYY-MM-DD
+          expirationInput.value = expDate;
+
+          // Affichage en format FR (JJ/MM/AAAA)
+          const [year, month, day] = expDate.split("-");
+          expirationDisplay.value = `Expire le : ${day}/${month}/${year}`;
+        }
+
+        // Rafraîchissement automatique toutes les 30 secondes
+        setInterval(async () => {
+          await syncFromServer();
+          updateStats();
+          verifierStockFaible();
+          afficherCategoriesVente();
+          afficherProduits();
+          afficherCategories();
+          afficherRapports();
+          afficherInventaire();
+
+          console.log("♻️ Crédits après refresh auto :", appData.credits);
+        }, 30000);
+
+        // Ajout de l'écouteur d'événement pour la sélection de période des rapports
+        const periodeRapports = document.getElementById('periodeRapports');
+        if (periodeRapports) {
+          periodeRapports.addEventListener('change', afficherRapports);
+        } else {
+          console.warn("L'élément #periodeRapports n'a pas été trouvé.");
+        }
+
+        // Gestion du bouton "Enregistrer à Crédit" dans le modal
+        const enregistrerCreditBtnObserver = new MutationObserver(() => {
+          const enregistrerCreditBtn = document.querySelector('#modalCredit button.bg-purple-600');
+          if (enregistrerCreditBtn) {
+            enregistrerCreditBtn.addEventListener('click', async function () {
+              const clientName = document.getElementById('creditClientName')?.value.trim();
+              const clientPhone = document.getElementById('creditClientPhone')?.value.trim();
+              const dueDate = document.getElementById('creditDueDate')?.value;
+
+              if (!clientName || !clientPhone || !dueDate) {
+                showNotification("⚠️ Merci de remplir toutes les informations du crédit.", "warning");
+                return;
+              }
+
+              const creditData = {
+                client_name: clientName,
+                client_phone: clientPhone,
+                due_date: dueDate,
+              };
+
+              // Finaliser la vente à crédit
+              await finaliserVente("credit", creditData);
+
+              // Fermer le modal après l'enregistrement
+              hideModalCredit();
+            });
+
+            enregistrerCreditBtnObserver.disconnect();
+          }
+        });
+
+        enregistrerCreditBtnObserver.observe(document.body, { childList: true, subtree: true });
+
+        // Gestion du message d'expiration de session
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('expired') === '1') {
+          showNotification("⚠️ Votre session a expiré. Veuillez vous reconnecter.", "warning");
+        }
+
+        // Initialisation de la page pour les crédits
+        remplirProduitsCredit();
+        renderCreditsHistory();
+      });
+
+
+
+
+      // ---------- Navigation & UI helpers (structure kept) ----------
+      let currentSection = 'menu';
+      function showSection(section) {
+        const sections = ['menu', 'vente', 'stock', 'categories', 'rapports', 'inventaire', 'credits'];
+        sections.forEach(function (s) { const el = document.getElementById(s + 'Section'); if (el) el.classList.add('hidden'); });
+        const target = document.getElementById(section + 'Section'); if (target) target.classList.remove('hidden');
+        const backBtn = document.getElementById('backBtn'); if (backBtn) backBtn.style.display = (section === 'menu') ? 'none' : 'block';
+        currentSection = section;
+        if (section === 'vente') { afficherCategoriesVente(); afficherPanier(); }
+        else if (section === 'stock') { afficherProduits(); afficherFiltresCategories(); }
+        else if (section === 'categories') { afficherCategories(); }
+        else if (section === 'rapports') { afficherRapports(); }
+        else if (section === 'inventaire') { afficherInventaire(); }
+        else if (section === 'menu') { updateStats(); verifierStockFaible(); }
+        else if (section === 'credits') {
+          afficherCredits(); // ta fonction qui remplit le tableau
+          remplirSelectProduitsCredit();
+        }
+
+      }
+
+      function showModal(modalName) {
+        const overlay = document.getElementById('modalOverlay'); if (overlay) overlay.classList.remove('hidden');
+        const modalId = 'modal' + modalName.charAt(0).toUpperCase() + modalName.slice(1);
+        const modalEl = document.getElementById(modalId);
+        if (modalEl) modalEl.classList.remove('hidden');
+        if (modalName === 'ajoutProduit') remplirSelectCategories();
+      }
+      function hideModal() {
+        const overlay = document.getElementById('modalOverlay'); if (overlay) overlay.classList.add('hidden');
+        document.querySelectorAll('[id^="modal"]').forEach(function (m) { m.classList.add('hidden'); });
+        ['nomProduit', 'categorieProduit', 'prixProduit', 'prixAchatProduit', 'stockProduit', 'descriptionProduit', 'nomCategorie', 'emojiCategorie'].forEach(function (id) { const el = document.getElementById(id); if (el) el.value = ''; });
+        document.querySelectorAll('.emoji-btn').forEach(function (btn) { btn.classList.remove('bg-blue-200', 'border-blue-400'); });
+      }
+
+      function showModalById(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.remove('hidden');
+      }
+
+      function hideModalById(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.add('hidden');
+      }
+
+      // ---------- Stats & alerts ----------
+      function updateStats() {
+        if (!appData) return;
+        const ventesTodayEl = document.getElementById('ventesToday'); if (ventesTodayEl) ventesTodayEl.textContent = appData.stats.ventesJour || 0;
+        const chiffreEl = document.getElementById('chiffreAffaires'); if (chiffreEl) chiffreEl.textContent = (appData.stats.chiffreAffaires || 0).toLocaleString() + ' F';
+        const articlesEl = document.getElementById('articlesVendus');
+        if (articlesEl) articlesEl.textContent = appData.stats.articlesVendus || 0;
+        const stockTotalEl = document.getElementById('stockTotal'); if (stockTotalEl) stockTotalEl.textContent = appData.produits.reduce(function (t, p) { return t + (p.stock || 0); }, 0);
+      }
+      function verifierStockFaible() {
+        if (!appData) return;
+        const low = appData.produits.filter(function (p) { return p.stock > 0 && p.stock <= 5; });
+        const div = document.getElementById('produitsStockFaible'); const alertDiv = document.getElementById('alertesStock');
+        if (low.length) { if (alertDiv) alertDiv.style.display = 'block'; if (div) div.innerHTML = ''; low.forEach(function (produit) { const cat = appData.categories.find(function (c) { return c.id === produit.category_id; }); const el = document.createElement('div'); el.className = 'bg-white rounded-xl p-3 flex justify-between items-center'; el.innerHTML = '<span class="font-bold">' + (cat ? cat.emoji : '📦') + ' ' + produit.name + '</span><span class="text-red-600 font-bold">' + produit.stock + ' restants</span>'; if (div) div.appendChild(el); }); }
+        else if (alertDiv) alertDiv.style.display = 'none';
+      }
+
+      // ---------- Vente / Panier ----------
+      function afficherCategoriesVente() {
+        const ctn = document.getElementById('categoriesVente'); if (!ctn) return; ctn.innerHTML = ''; if (appData.categories.length === 0) {
+          ctn.innerHTML = '<div class="text-gray-500 text-center py-4">Aucune catégorie disponible</div>';
+          return;
+        }
+        appData.categories.forEach(function (cat) { const produitsCategorie = appData.produits.filter(function (p) { return p.category_id === cat.id && p.stock > 0; }); if (!produitsCategorie.length) return; const d = document.createElement('div'); d.className = 'big-button ' + (cat.couleur || '') + ' text-white p-4 rounded-2xl text-center cursor-pointer shadow-lg'; d.addEventListener('click', function () { afficherProduitsCategorie(cat.id); }); d.innerHTML = '<div class="text-4xl mb-2">' + (cat.emoji || '') + '</div><div class="font-bold">' + cat.name + '</div><div class="text-sm opacity-90">' + produitsCategorie.length + ' produits</div>'; ctn.appendChild(d); });
+      }
+
+      function afficherProduitsCategorie(categorieId) {
+        const produits = appData.produits.filter(function (p) { return p.category_id === categorieId && p.stock > 0; }); const container = document.getElementById('categoriesVente'); if (!container) return; container.innerHTML = ''; const retourBtn = document.createElement('button'); retourBtn.textContent = '← Retour'; retourBtn.className = 'col-span-2 mb-4 text-blue-600 font-bold'; retourBtn.addEventListener('click', afficherCategoriesVente); container.appendChild(retourBtn);
+        produits.forEach(function (produit) { const div = document.createElement('div'); div.className = 'bg-white border-2 border-gray-200 p-4 rounded-2xl text-center cursor-pointer hover:border-blue-400 transition-all'; div.addEventListener('click', function () { ajouterAuPanier(produit); }); div.innerHTML = '<div class="font-bold text-lg mb-1">' + produit.name + '</div><div class="text-2xl font-bold text-green-600 mb-1">' + (produit.price || 0).toLocaleString() + ' F</div><div class="text-sm text-gray-600">Stock: ' + (produit.stock || 0) + '</div>'; container.appendChild(div); });
+      }
+
+      function ajouterAuPanier(produit) { if (!appData) return; const exist = appData.panier.find(function (i) { return i.id === produit.id; }); if (exist) { if (exist.quantite < produit.stock) exist.quantite++; else { alert('❌ Stock insuffisant!'); return; } } else appData.panier.push(Object.assign({}, produit, { quantite: 1 })); afficherPanier(); saveAppDataLocal(); }
+
+      function afficherPanier() {
+        const c = document.getElementById('panierItems'); const total = document.getElementById('totalPanier'); if (!c) return; if (!appData || !appData.panier || !appData.panier.length) { c.innerHTML = '<div class="text-gray-500 text-center py-8"><div class="text-4xl mb-2">🛒</div><div>Panier vide</div></div>'; if (total) total.textContent = '0 F'; return; }
+        c.innerHTML = ''; var totalPrix = 0; appData.panier.forEach(function (item) {
+          const div = document.createElement('div'); div.className = 'flex justify-between items-center bg-gray-50 rounded-2xl p-3'; div.innerHTML = '<div><div class="font-bold">' + item.name + '</div><div class="text-sm text-gray-600">' + (item.price || 0).toLocaleString() + ' F × ' + item.quantite + '</div></div><div class="flex items-center gap-2"><button class="bg-red-500 text-white w-8 h-8 rounded-full text-sm font-bold">-</button><span class="font-bold text-lg w-8 text-center">' + item.quantite + '</span><button class="bg-green-500 text-white w-8 h-8 rounded-full text-sm font-bold">+</button></div>'; // wire buttons
+          c.appendChild(div);
+          // attach handlers to +/- buttons
+          const btns = div.querySelectorAll('button'); if (btns && btns.length >= 2) { btns[0].addEventListener('click', function () { modifierQuantitePanier(item.id, -1); }); btns[1].addEventListener('click', function () { modifierQuantitePanier(item.id, 1); }); }
+          totalPrix += (item.price || 0) * item.quantite;
+        }); if (total) total.textContent = totalPrix.toLocaleString() + ' F';
+      }
+
+      function modifierQuantitePanier(id, delta) { if (!appData) return; const item = appData.panier.find(function (i) { return i.id === id; }); const produit = appData.produits.find(function (p) { return p.id === id; }); if (item) { item.quantite += delta; if (item.quantite <= 0) appData.panier = appData.panier.filter(function (i) { return i.id !== id; }); else if (produit && item.quantite > produit.stock) { item.quantite = produit.stock; alert('❌ Stock insuffisant!'); } afficherPanier(); saveAppDataLocal(); } }
+
+      async function finaliserVente(paymentMethod) {
+        if (paymentMethod === "credit") {
+          // ⚡ On ne passe plus ici, on ouvre le formulaire Crédit
+          showModalCredit();
+          return;
+        }
+
+        if (!appData.panier.length) {
+          showNotification('❌ Panier vide.', "error");
+          return;
+        }
+
+        // ✅ Envoi des ventes une par une au backend
+        for (const item of appData.panier) {
+          const vente = {
+            product_id: item.id,
+            quantity: item.quantite,
+            payment_method: paymentMethod
+          };
+          const created = await postSaleServer(vente);
+          if (!created) {
+            showNotification('❌ Erreur lors de l\'enregistrement de la vente.', "error");
+            return;
+          }
+        }
+
+        showNotification('✅ Vente enregistrée.', "success");
+
+        // 🔄 Vider le panier local
+        appData.panier = [];
+        saveAppDataLocal();
+
+        // 🔄 Recharger toutes les données depuis le serveur
+        await syncFromServer();
+
+        // 🔄 Rafraîchir toute l'UI
+        updateStats();
+        afficherCategoriesVente();
+        afficherProduits();
+        afficherCategories();
+        afficherRapports();
+        afficherInventaire();
+        afficherCredits(); // ⚡ Ajout pour que la section crédits soit à jour
+
+        hideModal();
+      }
+
+
+      // ---------- Produits / catégories gestion (avec POST) ----------
+      function remplirSelectCategories() {
+        const select = document.getElementById('categorieProduit');
+        if (!select) return;
+        select.innerHTML = '<option value="">Choisir catégorie</option>';
+        appData.categories.forEach(function (categ) {
+          var opt = document.createElement('option');
+          opt.value = categ.id;
+          opt.textContent = (categ.emoji ? categ.emoji + ' ' : '') + categ.name;
+          select.appendChild(opt);
+        });
+      }
+
+      async function ajouterProduit() {
+        const name = document.getElementById('nomProduit').value;
+        const category_id = parseInt(document.getElementById('categorieProduit').value);
+        const scentEl = document.getElementById('parfumProduit');
+        const scent = scentEl ? scentEl.value : '';
+        const priceAchat = parseFloat(document.getElementById('prixAchatProduit').value); // ✅ prix achat
+        const price = parseFloat(document.getElementById('prixProduit').value);
+        const stock = parseInt(document.getElementById('stockProduit').value);
+
+        // Validation
+        if (!name || !category_id || isNaN(price) || isNaN(stock) || isNaN(priceAchat)) {
+          showNotification('❌ Remplissez tous les champs correctement.', "error");
+          return;
+        }
+
+        // ✅ envoyer avec le nom correct pour la BDD
+        const produit = {
+          name: name,
+          category_id: category_id,
+          scent: scent,
+          price: price,
+          price_achat: priceAchat,
+          stock: stock
+        };
+
+        const created = await postProductServer(produit);
+        if (created) {
+          showNotification('✅ Produit ajouté (serveur).', "success");
+          await syncFromServer();
+          updateStats();
+          verifierStockFaible();
+          afficherCategoriesVente();
+          afficherProduits();
+          afficherCategories();
+          afficherRapports();
+          afficherInventaire();
+          hideModal();
+        } else {
+          showNotification('❌ Erreur lors de l\'ajout du produit.', "error");
+        }
+      }
+
+      async function ajouterCategorie() {
+        if (!appData) return;
+
+        const name = (document.getElementById('nomCategorie') || {}).value;
+        const emoji = (document.getElementById('emojiCategorie') || {}).value || '🏷️';
+
+        if (name) {
+          const newCatLocal = { id: Date.now(), name: name, emoji: emoji, couleur: 'category-habits' };
+          appData.categories.push(newCatLocal);
+
+          if (currentSection === 'categories') afficherCategories();
+          hideModal();
+          saveAppDataLocal();
+
+          const created = await postCategoryServer({ name: name, emoji: emoji });
+
+          if (created) {
+            const idx = appData.categories.findIndex(c => c.id === newCatLocal.id);
+            if (idx >= 0) appData.categories[idx] = created;
+            saveAppDataLocal();
+            syncFromServer();
+            showNotification('✅ Catégorie ajoutée (serveur).', "success");
+            await syncFromServer();
+            afficherCategories();
+            afficherCategoriesVente();
+            afficherProduits();
+
+          } else {
+            enqueueOutbox({ type: 'category', payload: { name: name }, tries: 0, id: Date.now() });
+            showNotification('✅ Catégorie ajoutée localement et mise en file d\'envoi.', "info");
+          }
+        } else {
+          showNotification('❌ Saisir un name', "error");
+        }
+      }
+
+      function afficherFiltresCategories() {
+        const container = document.getElementById('filtreCategories'); if (!container) return; container.innerHTML = ''; var btnAll = document.createElement('button'); btnAll.className = 'filtre-btn bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap'; btnAll.textContent = 'Tous'; btnAll.addEventListener('click', function () { filtrerProduits('tous'); }); container.appendChild(btnAll);
+        appData.categories.forEach(function (c) { var button = document.createElement('button'); button.className = 'filtre-btn bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap'; button.textContent = (c.emoji ? c.emoji + ' ' : '') + c.name; button.addEventListener('click', function () { filtrerProduits(c.id); }); container.appendChild(button); });
+      }
+
+      function filtrerProduits(categorieId) { document.querySelectorAll('.filtre-btn').forEach(function (btn) { btn.classList.remove('bg-blue-500', 'text-white'); btn.classList.add('bg-gray-200'); }); if (window.event && window.event.target) { var t = window.event.target; t.classList.add('bg-blue-500', 'text-white'); t.classList.remove('bg-gray-200'); } afficherProduits(categorieId); }
+
+      function afficherProduits(categorieFilter) {
+        if (typeof categorieFilter === 'undefined') categorieFilter = 'tous';
+
+        const container = document.getElementById('listeProduits');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        let produits = appData.produits.slice();
+
+        if (produits.length === 0) {
+          container.innerHTML = '<div class="text-gray-500 text-center py-4">Aucun produit trouvé</div>';
+          return;
+        }
+
+        if (categorieFilter !== 'tous') {
+          produits = produits.filter(p => p.category_id === categorieFilter);
+        }
+
+        produits.forEach(function (produit) {
+          const categorie = appData.categories.find(c => c.id === produit.category_id);
+
+          const stockColor = (produit.stock < 5) ? 'text-red-600' :
+            (produit.stock < 10) ? 'text-orange-600' :
+              'text-green-600';
+
+          let stockBadge = '';
+          if (produit.stock <= 5) {
+            stockBadge = `<span class="ml-2 inline-block px-2 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full">⚠️</span>`;
+          } else if (produit.stock < 10) {
+            stockBadge = `<span class="ml-2 inline-block px-2 py-0.5 text-xs font-bold text-white bg-orange-500 rounded-full">⚠️</span>`;
+          }
+
+          let bgAlertClass = '';
+          if (produit.stock <= 5) bgAlertClass = 'bg-red-50';
+          else if (produit.stock < 10) bgAlertClass = 'bg-orange-50';
+
+          const div = document.createElement('div');
+          div.className = 'rounded-2xl p-4 shadow-lg ' + bgAlertClass;
+
+          const descriptionHtml = produit.description
+            ? `<div class="text-xs text-gray-500 mt-1">${produit.description}</div>`
+            : '';
+
+          div.innerHTML =
+            `<div class="flex justify-between items-start mb-3">
+         <div>
+           <div class="text-lg font-bold">${produit.name}</div>
+           <div class="text-sm text-gray-600">
+             ${categorie ? (categorie.emoji + ' ' + categorie.name) : 'Sans catégorie'}
+           </div>
+           ${descriptionHtml}
+         </div>
+         <div class="text-right">
+           <div class="text-xl font-bold text-green-600">${(produit.price || 0).toLocaleString()} F</div>
+           <div class="text-sm ${stockColor} font-bold">Stock: ${produit.stock || 0}${stockBadge}</div>
+           <div class="text-xs text-gray-500">Achat: ${(produit.priceAchat || produit.price_achat || 0).toLocaleString()} F</div>
+         </div>
+       </div>
+       <div class="flex gap-2">
+         <button class="btn-edit bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm font-bold">✏️ Éditer</button>
+         <button class="btn-mod-stock-minus bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-bold">- Stock</button>
+         <button class="btn-mod-stock-plus bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-bold">+ Stock</button>
+         <button class="btn-suppr bg-gray-500 text-white px-4 py-2 rounded-lg text-sm">🗑️</button>
+       </div>`;
+
+          container.appendChild(div);
+
+          const btnEdit = div.querySelector('.btn-edit');
+          if (btnEdit) btnEdit.addEventListener('click', () => ouvrirModalEdit(produit));
+
+
+          // Wire buttons
+          const btnMinus = div.querySelector('.btn-mod-stock-minus');
+          if (btnMinus) btnMinus.addEventListener('click', () => modifierStock(produit.id, -1));
+
+          const btnPlus = div.querySelector('.btn-mod-stock-plus');
+          if (btnPlus) btnPlus.addEventListener('click', () => modifierStock(produit.id, 1));
+
+          const btnSuppr = div.querySelector('.btn-suppr');
+          if (btnSuppr) btnSuppr.addEventListener('click', () => supprimerProduit(produit.id));
+        });
+      }
+
+      function modifierStock(id, delta) {
+        var produit = appData.produits.find(function (p) { return p.id === id; });
+        if (produit && produit.stock + delta >= 0) {
+          produit.stock += delta;
+          afficherProduits();
+          updateStats();
+          saveAppDataLocal();
+
+          // ✅ on envoie bien "price_achat"
+          authfetch(API_BASE + '/products/' + id, {
+            method: 'PATCH', // PATCH plutôt que PUT pour ne mettre à jour que les champs modifiés
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: produit.name,
+              price: produit.price,
+              price_achat: produit.priceAchat || produit.price_achat || 0,
+              stock: produit.stock,
+              description: produit.description
+            })
+          }).then(function (r) {
+            if (!r.ok) console.warn('update failed');
+          }).catch(function () { });
+        }
+      }
+
+      async function supprimerProduit(id) {
+        const ok = await confirm("❓ Supprimer ce produit ?");
+        if (!ok) {
+          showNotification("❌ Suppression annulée", "warning");
+          return;
+        }
+
+        // Suppression locale
+        appData.produits = appData.produits.filter(p => p.id !== id);
+        afficherProduits();
+        updateStats();
+        saveAppDataLocal();
+
+        // Suppression côté backend
+        authfetch(API_BASE + "/products/" + id, { method: "DELETE" })
+          .then(() => {
+            showNotification("✅ Produit supprimé avec succès", "success");
+          })
+          .catch(() => {
+            showNotification("⚠️ Erreur lors de la suppression côté serveur", "error");
+          });
+      }
+
+      // ---------- Catégories UI ----------
+      function selectEmoji(emoji) { var el = document.getElementById('emojiCategorie'); if (el) el.value = emoji; document.querySelectorAll('.emoji-btn').forEach(function (btn) { btn.classList.remove('bg-blue-200', 'border-blue-400'); }); if (window.event && window.event.target) window.event.target.classList.add('bg-blue-200', 'border-blue-400'); }
+
+      function afficherCategories() {
+        var ctn = document.getElementById('listeCategories');
+        if (!ctn) return;
+        ctn.innerHTML = '';
+
+        if (appData.categories.length === 0) {
+          ctn.innerHTML = '<div class="text-gray-500 text-center py-4">Aucune catégorie trouvée</div>';
+          return;
+        }
+
+        appData.categories.forEach(function (cat) {
+          var produitsCount = appData.produits.filter(function (p) { return p.category_id === cat.id; }).length;
+
+          var div = document.createElement('div');
+          div.className = (cat.couleur || '') + ' text-white rounded-2xl p-6 shadow-lg';
+          div.innerHTML = `
+      <div class="flex justify-between items-center">
+        <div>
+          <div class="text-4xl mb-2">${cat.emoji || ''}</div>
+          <div class="text-xl font-bold">${cat.name}</div>
+          <div class="text-sm opacity-90">${produitsCount} produits</div>
+        </div>
+        <button class="bg-white bg-opacity-20 text-white px-3 py-2 rounded-lg text-sm">🗑️</button>
+      </div>`;
+
+          // Rendre le bouton actif
+          const btn = div.querySelector('button');
+          if (btn) {
+            btn.addEventListener('click', () => supprimerCategorie(cat.id));
+          }
+
+          ctn.appendChild(div);
+        });
+      }
+
+      // ✅ Supprimer une catégorie
+      async function supprimerCategorie(id) {
+        const ok = await confirm('❓ Supprimer cette catégorie ?');
+        if (!ok) {
+          showNotification("❌ Suppression annulée", "warning");
+          return;
+        }
+
+        try {
+          const res = await authfetch(API_BASE + '/categories/' + id, { method: 'DELETE' });
+          const data = await res.json();
+
+          if (!res.ok) {
+            // 🔴 Erreur renvoyée par le backend
+            showNotification('❌ ' + (data.error || 'Erreur lors de la suppression de la catégorie'), "error");
+            return;
+          }
+
+          // ✅ Suppression réussie
+          showNotification('✅ ' + (data.message || 'Catégorie supprimée avec succès'), "success");
+
+          // Retirer de la liste locale
+          appData.categories = appData.categories.filter(c => c.id !== id);
+          afficherCategories();
+          saveAppDataLocal();
+
+        } catch (err) {
+          console.error('Erreur réseau lors de la suppression de catégorie', err);
+          showNotification('❌ Impossible de contacter le serveur.', "error");
+        }
+      }
+
+      function afficherRapports() {
+        // Vérification si les données sont prêtes
+        if (!appData.ventes?.length || !appData.produits?.length) {
+          console.warn("⏳ Données ventes/produits pas encore prêtes, on attend...");
+          document.getElementById('rapportLoading').style.display = 'block';
+          return;
+        }
+
+        // ✅ Masquer le message de chargement si données prêtes
+        document.getElementById('rapportLoading').style.display = 'none';
+
+        const periode = document.getElementById('periodeRapports')?.value || 'tout';
+        const ventesFiltrees = filtrerVentesParPeriode(appData.ventes || [], periode);
+
+        // --- Calcul paiements filtrés ---
+        const paiementsMap = {};
+        ventesFiltrees.forEach(v => {
+          const method = v.payment_method || 'inconnu';
+          const montant = parseFloat(v.total || (v.price || 0) * (v.quantity || 0)) || 0;
+          paiementsMap[method] = (paiementsMap[method] || 0) + montant;
+        });
+        appData.stats.paiements = paiementsMap;
+
+        // --- Chiffre d’affaires ---
+        const totalJour = filtrerVentesParPeriode(appData.ventes, 'jour')
+          .reduce((s, v) => s + (v.total || (v.price || 0) * (v.quantity || 0)), 0);
+        const totalSemaine = filtrerVentesParPeriode(appData.ventes, 'semaine')
+          .reduce((s, v) => s + (v.total || (v.price || 0) * (v.quantity || 0)), 0);
+        const totalMois = filtrerVentesParPeriode(appData.ventes, 'mois')
+          .reduce((s, v) => s + (v.total || (v.price || 0) * (v.quantity || 0)), 0);
+        const totalTout = filtrerVentesParPeriode(appData.ventes, 'tout')
+          .reduce((s, v) => s + (v.total || (v.price || 0) * (v.quantity || 0)), 0);
+
+        // --- Injection DOM ---
+        document.getElementById('recettesJour').textContent = totalJour.toLocaleString() + ' F';
+        document.getElementById('recettesSemaine').textContent = totalSemaine.toLocaleString() + ' F';
+        document.getElementById('recettesMois').textContent = totalMois.toLocaleString() + ' F';
+        if (document.getElementById('recettesTout')) {
+          document.getElementById('recettesTout').textContent = totalTout.toLocaleString() + ' F';
+        }
+
+        // --- Paiements ---
+        const containerPaiements = document.getElementById('rapportsPaiements');
+        containerPaiements.innerHTML = '';
+        const methodesNoms = {
+          especes: { name: 'Espèces', emoji: '💵', couleur: 'green' },
+          wave: { name: 'Wave', emoji: '📱', couleur: 'blue' },
+          orange: { name: 'Orange Money', emoji: '📞', couleur: 'orange' }
+        };
+        const totalPaiements = Object.values(paiementsMap).reduce((s, v) => s + v, 0);
+
+        Object.keys(paiementsMap).forEach(m => {
+          const montant = paiementsMap[m] || 0;
+          const info = methodesNoms[m] || { name: m, emoji: '', couleur: 'gray' };
+          const pct = totalPaiements > 0 ? ((montant / totalPaiements) * 100).toFixed(1) : 0;
+          const div = document.createElement('div');
+          div.className = `bg-${info.couleur}-50 rounded-2xl p-3 flex justify-between items-center`;
+          div.innerHTML = `
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">${info.emoji || ''}</span>
+        <span class="font-bold">${info.name}</span>
+      </div>
+      <div class="text-right">
+        <div class="font-bold">${montant.toLocaleString()} F</div>
+        <div class="text-xs text-gray-600">${pct}% du total</div>
+      </div>
+    `;
+          containerPaiements.appendChild(div);
+        });
+
+        // --- Produits populaires ---
+        const cPop = document.getElementById('produitsPopulaires');
+        cPop.innerHTML = '';
+        const populaires = appData.produits.filter(p => p.vendu > 0)
+          .sort((a, b) => b.vendu - a.vendu)
+          .slice(0, 5);
+
+        if (!populaires.length) {
+          cPop.innerHTML = '<div class="text-gray-500 text-center py-4">Aucune vente</div>';
+        } else {
+          populaires.forEach(p => {
+            const d = document.createElement('div');
+            d.className = 'flex justify-between items-center bg-gray-50 rounded-lg p-3';
+            d.innerHTML = `<div class="font-bold">${p.name}</div>
+                     <div class="text-blue-600 font-bold">${p.vendu} vendus</div>`;
+            cPop.appendChild(d);
+          });
+        }
+
+        // --- Graphiques filtrés ---
+        updateCharts(ventesFiltrees);
+
+        // --- Historique des ventes --- 
+        tryRenderSalesHistory(ventesFiltrees);
+
+        // --- Crédits --- 
+        if (appData?.credits?.length) {
+          afficherStatsCredits();
+        } else {
+          console.warn("⏳ Données crédits pas encore prêtes ou vides");
+        }
+      }
+
+
+      function updateCharts(ventesFiltrees) {
+        var ventes = ventesFiltrees || appData.ventes || [];
+
+        // --- Graphique ventes par jour ---
+        var byDay = {};
+        ventes.forEach(function (v) {
+          if (!v.date) return;
+          let dateObj = new Date(v.date || v.created_at || v.timestamp);
+          if (isNaN(dateObj)) return;
+          var d = dateObj.toISOString().slice(0, 10);
+          byDay[d] = (byDay[d] || 0) + (v.total || (v.price || 0) * (v.quantity || 0));
+        });
+        var labels = Object.keys(byDay).sort();
+        var data = labels.map(function (l) { return byDay[l]; });
+        if (chartVentesByDay) chartVentesByDay.destroy();
+        var ctx1 = document.getElementById('chartVentesByDay');
+        if (ctx1) {
+          chartVentesByDay = new Chart(ctx1.getContext('2d'), {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Total ventes par jour',
+                data: data,
+                borderColor: '#4f46e5',
+                backgroundColor: 'rgba(79,70,229,0.15)',
+                fill: true
+              }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+          });
+        }
+
+        // --- Produits populaires ---
+        var productsSorted = (appData.produits || []).slice().sort(function (a, b) {
+          return (b.vendu || 0) - (a.vendu || 0);
+        }).slice(0, 8);
+        var labels2 = productsSorted.map(function (p) { return p.name; });
+        var data2 = productsSorted.map(function (p) { return p.vendu || 0; });
+        if (chartTopProduits) chartTopProduits.destroy();
+        var ctx2 = document.getElementById('chartTopProduits');
+        if (ctx2) {
+          chartTopProduits = new Chart(ctx2.getContext('2d'), {
+            type: 'bar',
+            data: {
+              labels: labels2,
+              datasets: [{
+                label: 'Quantités vendues',
+                data: data2,
+                backgroundColor: 'rgba(16,185,129,0.8)'
+              }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+          });
+        }
+
+        // --- Graphique paiements avec pourcentages ---
+        var pays = appData.stats.paiements || {};
+        var totalPaiements = Object.values(pays).reduce((sum, val) => sum + val, 0);
+        var labels3 = Object.keys(pays).map(function (k) {
+          var pct = totalPaiements > 0 ? ((pays[k] / totalPaiements) * 100).toFixed(1) : 0;
+          return `${k.charAt(0).toUpperCase() + k.slice(1)} (${pct}%)`;
+        });
+        var data3 = Object.keys(pays).map(function (k) { return pays[k] || 0; });
+        if (chartPaiements) chartPaiements.destroy();
+        var ctx3 = document.getElementById('chartPaiements');
+        if (ctx3) {
+          chartPaiements = new Chart(ctx3.getContext('2d'), {
+            type: 'pie',
+            data: {
+              labels: labels3,
+              datasets: [{
+                data: data3,
+                backgroundColor: ['#10b981', '#3b82f6', '#f97316', '#6b7280'] // Vert, bleu, orange, gris
+              }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+          });
+        }
+
+        // --- Graphique stocks faibles ---
+        var produitsFaibles = (appData.produits || []).filter(p => p.stock <= 5);
+        var labelsStock = produitsFaibles.map(p => p.name);
+        var dataStock = produitsFaibles.map(p => p.stock);
+        if (window.chartStocksFaibles && typeof window.chartStocksFaibles.destroy === 'function') {
+          window.chartStocksFaibles.destroy();
+        }
+        var ctxStock = document.getElementById('chartStocksFaibles');
+        if (ctxStock) {
+          window.chartStocksFaibles = new Chart(ctxStock.getContext('2d'), {
+            type: 'bar',
+            data: {
+              labels: labelsStock,
+              datasets: [{
+                label: 'Stock restant',
+                data: dataStock,
+                backgroundColor: 'rgba(239,68,68,0.8)'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              indexAxis: 'y',
+              scales: { x: { beginAtZero: true } }
+            }
+          });
+        }
+      }
+
+
+      // ---------- Inventaire ----------
+      function afficherInventaire() {
+        var tbody = document.getElementById('inventaireListe'); if (!tbody) return; tbody.innerHTML = ''; if (appData.produits.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500 py-4">Aucun produit dans l’inventaire</td></tr>';
+          return;
+        }
+        appData.produits.forEach(function (p) { var profitRealise = (p.vendu || 0) * ((p.price || 0) - (p.priceAchat || p.price_achat || 0)); var tr = document.createElement('tr'); tr.innerHTML = '<td class="p-2 border">' + p.name + '</td><td class="p-2 border">' + ((p.priceAchat || p.price_achat || 0).toLocaleString()) + ' F</td><td class="p-2 border">' + ((p.price || 0).toLocaleString()) + ' F</td><td class="p-2 border">' + (p.stock || 0) + '</td><td class="p-2 border">' + (p.vendu || 0) + '</td><td class="p-2 border">' + profitRealise.toLocaleString() + ' F</td>'; tbody.appendChild(tr); });
+      }
+
+      // ---------- Search handlers for inventory and categories ----------
+      function setupSearchInputs() {
+        var inv = document.getElementById('searchInventaire'); if (inv) { inv.addEventListener('input', function () { var term = this.value.toLowerCase(); document.querySelectorAll('#inventaireListe tr').forEach(function (row) { var prodName = (row.cells[0] && row.cells[0].textContent || '').toLowerCase(); row.style.display = prodName.indexOf(term) !== -1 ? '' : 'none'; }); }); }
+        var cat = document.getElementById('searchCategorie'); if (cat) { cat.addEventListener('input', function () { var term = this.value.toLowerCase(); document.querySelectorAll('#listeCategories > div').forEach(function (div) { var catName = (div.textContent || '').toLowerCase(); div.style.display = catName.indexOf(term) !== -1 ? '' : 'none'; }); }); }
+      }
+
+
+      function ouvrirModalEdit(produit) {
+        // Remplir le formulaire
+        document.getElementById('editNomProduit').value = produit.name;
+        document.getElementById('editCategorieProduit').innerHTML = '<option value="">Choisir catégorie</option>';
+        appData.categories.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = (c.emoji ? c.emoji + ' ' : '') + c.name;
+          if (c.id === produit.category_id) opt.selected = true;
+          document.getElementById('editCategorieProduit').appendChild(opt);
+        });
+        document.getElementById('editPrixAchatProduit').value = produit.priceAchat || produit.price_achat || 0;
+        document.getElementById('editPrixProduit').value = produit.price;
+        document.getElementById('editStockProduit').value = produit.stock;
+        document.getElementById('editDescriptionProduit').value = produit.description || '';
+
+        // Stocker l'ID du produit en cours d'édition
+        document.getElementById('modalEditProduit').dataset.id = produit.id;
+
+        // Afficher la modale
+        showModal('editProduit');
+      }
+
+      async function mettreAJourProduit() {
+        const id = document.getElementById('modalEditProduit').dataset.id;
+        const produit = {
+          name: document.getElementById('editNomProduit').value,
+          category_id: parseInt(document.getElementById('editCategorieProduit').value),
+          price_achat: parseFloat(document.getElementById('editPrixAchatProduit').value),
+          price: parseFloat(document.getElementById('editPrixProduit').value),
+          stock: parseInt(document.getElementById('editStockProduit').value),
+          description: document.getElementById('editDescriptionProduit').value
+        };
+
+        if (!produit.name || isNaN(produit.price) || isNaN(produit.price_achat) || isNaN(produit.stock)) {
+          showNotification('❌ Remplissez tous les champs correctement.', 'error');
+          return;
+        }
+
+        try {
+          const res = await authfetch(API_BASE + '/products/' + id, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(produit)
+          });
+
+          if (!res.ok) {
+            showNotification('❌ Erreur lors de la mise à jour du produit.', 'error');
+            return;
+          }
+
+          showNotification('✅ Produit mis à jour.', 'success');
+          hideModal();
+          await syncFromServer();
+          afficherProduits();
+          afficherInventaire();
+          updateStats();
+        } catch (err) {
+          console.error(err);
+          showNotification('❌ Impossible de contacter le serveur.', 'error');
+        }
+      }
+
+
+      function filtrerVentesParPeriode(ventes, periode) {
+        const now = new Date();
+        return ventes.filter(v => {
+          const dateVente = new Date(v.date || v.created_at || v.timestamp);
+          if (isNaN(dateVente)) return false;
+
+          if (periode === 'jour') {
+            return dateVente.toISOString().slice(0, 10) === now.toISOString().slice(0, 10);
+          }
+          if (periode === 'semaine') {
+            const debutSemaine = new Date(now);
+            debutSemaine.setDate(now.getDate() - now.getDay()); // dimanche comme début
+            debutSemaine.setHours(0, 0, 0, 0);
+            return dateVente >= debutSemaine && dateVente <= now;
+          }
+          if (periode === 'mois') {
+            return dateVente.getMonth() === now.getMonth() &&
+              dateVente.getFullYear() === now.getFullYear();
+          }
+          return true; // "tout"
+        });
+      }
+
+      // ✅ Annuler une vente
+      async function annulerVente(id) {
+        const ok = await confirm('❓ Annuler cette vente ?');
+        if (!ok) {
+          showNotification("❌ Annulation annulée", "warning");
+          return;
+        }
+
+        try {
+          const res = await authfetch(API_BASE + '/sales/' + id, { method: 'DELETE' });
+          if (!res.ok) {
+            showNotification('❌ Erreur lors de l\'annulation de la vente.', 'error');
+            return;
+          }
+          showNotification('✅ Vente annulée.', 'success');
+          await syncFromServer();
+          afficherRapports();
+          updateStats();
+        } catch (err) {
+          console.error(err);
+          showNotification('❌ Impossible de contacter le serveur.', 'error');
+        }
+      }
+
+      async function modifierVente(id) {
+        const vente = appData.ventes.find(v => Number(v.id) === Number(id));
+        if (!vente) {
+          showNotification("❌ Vente introuvable", 'error');
+          return;
+        }
+
+        // Demande la nouvelle quantité (laisser vide = pas de changement)
+        let newQuantity = prompt(
+          `Quantité actuelle: ${vente.quantity}\n👉 Nouvelle quantité (laisser vide pour ne pas changer) :`
+        );
+
+        // Demande le nouveau mode de paiement
+        let newPayment = prompt(
+          `Paiement actuel: ${vente.payment_method}\n👉 Nouveau mode de paiement (especes, wave, orange...) (laisser vide pour ne pas changer) :`
+        );
+
+        // Préparer le corps de la requête
+        const body = {};
+        if (newQuantity && !isNaN(newQuantity)) {
+          body.quantity = Number(newQuantity);
+        }
+        if (newPayment && newPayment.trim() !== "") {
+          body.payment_method = newPayment.trim();
+        }
+
+        if (Object.keys(body).length === 0) {
+          showNotification("⚠️ Aucun changement effectué.", 'warning');
+          return;
+        }
+
+        try {
+          const res = await authfetch(API_BASE + "/sales/" + id, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          });
+
+          if (!res.ok) {
+            const errData = await res.json();
+            showNotification("❌ Erreur lors de la modification : " + (errData.error || res.status), 'error');
+            return;
+          }
+
+          const updated = await res.json();
+          showNotification("✅ Vente modifiée avec succès !", 'success');
+          console.log("Vente mise à jour :", updated);
+
+          // Recharge les données depuis le serveur
+          syncFromServer();
+
+        } catch (e) {
+          console.error("Erreur modifierVente:", e);
+          showNotification("❌ Erreur réseau ou serveur", 'error');
+        }
+      }
+
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      let chartVentesJourInstance = null;
+      function renderVentesChart() {
+        if (!appData.stats.historique || appData.stats.historique.length === 0) return;
+
+        if (chartVentesJourInstance) {
+          chartVentesJourInstance.destroy();
+        }
+
+        const labels = appData.stats.historique.map(s => new Date(s.date).toLocaleDateString());
+        const dataCA = appData.stats.historique.map(s => parseInt(s.total_montant, 10));
+        const dataQte = appData.stats.historique.map(s => parseInt(s.total_quantite || 0, 10));
+
+        const ctx = document.getElementById('chartVentesJour').getContext('2d');
+        chartVentesJourInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Chiffre d\'affaires (F)',
+                data: dataCA,
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                yAxisID: 'y'
+              },
+              {
+                label: 'Articles vendus',
+                data: dataQte,
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                yAxisID: 'y1'
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            stacked: false,
+            scales: {
+              y: { type: 'linear', position: 'left' },
+              y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false } }
+            }
+          }
+        });
+      }
+
+      function authfetch(url, options = {}) {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          console.warn("Token manquant, rejet de la promesse");
+          return Promise.reject(new Error('Token manquant'));
+        }
+
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const now = Math.floor(Date.now() / 1000);
+          if (payload.exp && payload.exp < now) {
+            console.warn("⚠️ Token expiré");
+            localStorage.removeItem('authToken');
+            return Promise.reject(new Error('Token expiré'));
+          }
+        } catch (e) {
+          console.error("Erreur décodage token:", e);
+        }
+
+        const headers = {
+          ...(options.headers || {}),
+          'Authorization': 'Bearer ' + token
+        };
+
+        return fetch(url, { ...options, headers }).then(res => {
+          if (res.status === 401) {
+            localStorage.removeItem('authToken');
+            return Promise.reject(new Error('401 Unauthorized'));
+          }
+          return res;
+        });
+      }
+
+      function renderSalesHistory(ventes) {
+        const tbody = document.getElementById('salesHistoryBody');
+        tbody.innerHTML = ''; // Vider avant remplissage
+
+        ventes.forEach(v => {
+          // Trouver le produit correspondant
+          const prod = appData.produits.find(p => Number(p.id) === Number(v.product_id));
+
+          // Calcul du montant
+          const montant = Number(v.total) || (Number(v.price) * Number(v.quantity));
+
+          // Créer la ligne de la vente
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+      <td class="p-2 border">${new Date(v.date || v.created_at).toLocaleString()}</td>
+      <td class="p-2 border">${prod ? prod.name : 'Inconnu'}</td>
+      <td class="p-2 border">${v.quantity}</td>
+      <td class="p-2 border">${montant.toLocaleString()} F</td>
+      <td class="p-2 border">${v.payment_method || ''}</td>
+      <td class="p-2 border text-center">
+        <button class="bg-yellow-500 text-white px-2 py-1 rounded text-xs" onclick="modifierVente(${v.id})">✏️</button>
+        <button class="bg-red-500 text-white px-2 py-1 rounded text-xs" onclick="annulerVente(${v.id})">🗑️</button>
+      </td>
+    `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function ouvrirModal(vente) {
+        document.getElementById("venteId").value = vente.id;
+        document.getElementById("venteQuantite").value = vente.quantity;
+        document.getElementById("ventePaiement").value = vente.payment_method;
+
+        document.getElementById("modalModifierVente").classList.remove("hidden");
+        document.getElementById("modalModifierVente").classList.add("flex");
+      }
+
+      function fermerModal() {
+        document.getElementById("modalModifierVente").classList.add("hidden");
+        document.getElementById("modalModifierVente").classList.remove("flex");
+      }
+
+      // Quand on soumet le formulaire
+      document.addEventListener("DOMContentLoaded", () => {
+        const formModifier = document.getElementById("formModifierVente");
+        if (formModifier) {
+          formModifier.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const id = document.getElementById("venteId")?.value;
+            const quantity = parseInt(document.getElementById("venteQuantite")?.value, 10);
+            const payment_method = document.getElementById("ventePaiement")?.value;
+
+            if (!id || !quantity || quantity <= 0 || !payment_method) {
+              showNotification("❌ Champs invalides.", "error");
+              return;
+            }
+
+            try {
+              const res = await authfetch(`${API_BASE}/sales/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ quantity, payment_method })
+              });
+
+              if (!res.ok) throw new Error("Erreur lors de la modification");
+
+              showNotification("✅ Vente modifiée avec succès", "success");
+              fermerModal();
+              syncFromServer(); // recharge les données
+
+            } catch (err) {
+              console.error("Erreur modifierVente:", err);
+              showNotification("❌ Erreur lors de la modification de la vente", "error");
+            }
+          });
+        }
+      });
+
+      // Quand on clique sur ✏️ dans le tableau
+      function modifierVente(id) {
+        const vente = appData.ventes.find(v => Number(v.id) === Number(id));
+        if (!vente) {
+          showNotification("❌ Vente introuvable", "error");
+          return;
+        }
+        ouvrirModal(vente);
+      }
+
+    </script>
+
+    <template id="offline-page">
+      <!DOCTYPE html>
+      <html lang="fr">
+
+      <head>
+        <meta charset="UTF-8">
+        <title>Hors ligne</title>
+        <style>
+          body {
+            font-family: sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: #f9f9f9;
+          }
+
+          h2 {
+            color: #6D28D9;
+          }
+
+          p {
+            color: #444;
+          }
+        </style>
+      </head>
+
+      <body>
+        <h2>⚠️ Vous êtes hors connexion</h2>
+        <p>Pas d’inquiétude, vos données locales restent accessibles.<br>
+          Vérifiez votre connexion Internet pour continuer.</p>
+      </body>
+
+      </html>
+    </template>
+
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/pwa/sw.js")
+            .then(() => console.log("📦 Service Worker installé et ⚡ activé"))
+            .catch(err => console.error("❌ Erreur SW:", err));
+        });
+      }
+
+      // --- Données locales pour les crédits ---
+      if (!appData || typeof appData !== "object") appData = {};
+      if (!appData.credits) appData.credits = [];
+
+      // Remplit la liste des produits dans le formulaire crédit
+      function remplirProduitsCredit() {
+        const select = document.getElementById("creditProduct");
+        if (!select) return;
+        select.innerHTML = "";
+        (appData.produits || []).forEach(p => {
+          const opt = document.createElement("option");
+          opt.value = p.id;
+          opt.textContent = `${p.name} (${p.price} F)`;
+          select.appendChild(opt);
+        });
+      }
+
+      // Soumission formulaire crédit
+      document.addEventListener("DOMContentLoaded", () => {
+        const creditForm = document.getElementById("creditForm");
+        if (creditForm) {
+          creditForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const client = document.getElementById("creditClient")?.value.trim();
+            const product_id = document.getElementById("creditProduct")?.value;
+            const quantity = parseInt(document.getElementById("creditQuantity")?.value, 10);
+            const due_date = document.getElementById("creditDueDate")?.value;
+
+            if (!client || !product_id || !quantity || quantity <= 0) {
+              showNotification("❌ Veuillez remplir tous les champs correctement.", "error");
+              return;
+            }
+
+            // Trouver le produit
+            const produit = appData.produits.find(p => p.id == product_id);
+            if (!produit) {
+              showNotification("❌ Produit introuvable.", "error");
+              return;
+            }
+
+            const montant = (produit.price || 0) * quantity;
+            const credit = {
+              id: Date.now(), // id temporaire local
+              date: new Date().toISOString(),
+              client,
+              product_id,
+              product_name: produit.name,
+              quantity,
+              montant,
+              due_date,
+              status: "non payé"
+            };
+
+            // Sauvegarde locale (backend à connecter plus tard)
+            appData.credits.push(credit);
+
+            renderCreditsHistory();
+            creditForm.reset();
+            showNotification("✅ Vente à crédit enregistrée !", "success");
+          });
+        }
+      });
+
+      // Afficher l’historique des crédits
+      function renderCreditsHistory() {
+        const tbody = document.getElementById("creditsHistoryBody");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+
+        if (!appData.credits?.length) {
+          tbody.innerHTML = `<tr><td colspan="8" class="text-center text-gray-500 py-4">Aucun crédit enregistré</td></tr>`;
+          return;
+        }
+
+        appData.credits.forEach(c => {
+          // ✅ Chercher le produit lié à ce crédit
+          const prod = appData.produits?.find(p => p.id === c.product_id);
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+      <td class="p-2 border">${c.client_name || '-'}</td>
+      <td class="p-2 border">${c.client_phone || '-'}</td>
+      <td class="p-2 border">${prod ? prod.name : 'Inconnu'}</td>
+      <td class="p-2 border">${c.total?.toLocaleString() || 0} F</td>
+      <td class="p-2 border">${c.due_date ? new Date(c.due_date).toLocaleDateString() : '-'}</td>
+      <td class="p-2 border">
+        ${c.paid
+              ? '<span class="text-green-600 font-bold">✅ Payé</span>'
+              : '<span class="text-red-600 font-bold">❌ Non payé</span>'}
+      </td>
+      <td class="p-2 border text-center">
+        ${c.paid ? '' : `
+          <button class="bg-green-500 text-white px-2 py-1 rounded text-xs" 
+            onclick="marquerRembourse(${c.id})">💰 Marquer comme payé</button>
+        `}
+      </td>
+    `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function showModalCredit() {
+        const modalPaiement = document.getElementById("modalPaiement");
+        const modalCredit = document.getElementById("modalCredit");
+
+        if (modalPaiement && modalCredit) {
+          // Fermer la modale Paiement
+          modalPaiement.classList.add("hidden");
+
+          // Ouvrir la modale Crédit
+          modalCredit.classList.remove("hidden");
+
+          // ✅ Mettre à jour la date à chaque ouverture
+          const dateInput = document.getElementById("creditDueDate");
+          if (dateInput) {
+            const today = new Date().toISOString().split("T")[0];
+            dateInput.value = today;
+            dateInput.min = today;
+          }
+        }
+      }
+
+
+      function hideModalCredit() {
+        document.getElementById("modalCredit").classList.add("hidden");
+        document.getElementById("modalPaiement").classList.remove("hidden");
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const formCredit = document.getElementById("formCredit");
+        if (formCredit) {
+          formCredit.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const creditData = {
+              client_name: document.getElementById("creditClientName")?.value.trim(),
+              client_phone: document.getElementById("creditClientPhone")?.value.trim(),
+              due_date: document.getElementById("creditDueDate")?.value || null
+            };
+
+            if (!creditData.client_name || !creditData.client_phone) {
+              showNotification("❌ Veuillez renseigner le nom et le téléphone du client.", "error");
+              return;
+            }
+
+            await finaliserVente("credit", creditData);
+            showNotification("✅ Crédit enregistré avec succès !", "success");
+          });
+        }
+      });
+
+
+      let chartCredits; // global
+
+      // === Initialisation du graphique crédits ===
+      let creditChart; // variable globale
+
+      function initCreditChart() {
+        const ctx = document.getElementById("chartCredits");
+        if (!ctx) return;
+
+        creditChart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: [], // Dates
+            datasets: [
+              {
+                label: "Total dû",
+                data: [],
+                borderColor: "rgba(139, 92, 246, 1)", // violet
+                backgroundColor: "rgba(139, 92, 246, 0.2)",
+                fill: true,
+                tension: 0.3
+              },
+              {
+                label: "Remboursé",
+                data: [],
+                borderColor: "rgba(34, 197, 94, 1)", // vert
+                backgroundColor: "rgba(34, 197, 94, 0.2)",
+                fill: true,
+                tension: 0.3
+              },
+              {
+                label: "Impayés",
+                data: [],
+                borderColor: "rgba(239, 68, 68, 1)", // rouge
+                backgroundColor: "rgba(239, 68, 68, 0.2)",
+                fill: true,
+                tension: 0.3
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: true },
+              title: { display: true, text: "Évolution des crédits" }
+            },
+            scales: {
+              x: { title: { display: true, text: "Date" } },
+              y: { title: { display: true, text: "Montant (F)" }, beginAtZero: true }
+            }
+          }
+        });
+      }
+
+
+      // === Fonction afficherCredits ===
+      function afficherCredits() {
+        console.log("📊 Credits récupérés:", appData.credits);
+
+        // --- Calcul des totaux globaux ---
+        const totalDu = appData.credits.reduce((s, c) => s + (c.total || 0), 0);
+        const totalRembourse = appData.credits
+          .filter(c => c.paid)
+          .reduce((s, c) => s + (c.total || 0), 0);
+        const totalImpayes = totalDu - totalRembourse;
+
+        // --- Mise à jour des compteurs ---
+        const elEncours = document.getElementById("creditsTotalEncours");
+        if (elEncours) elEncours.textContent = totalDu.toLocaleString() + " F";
+
+        const elRemb = document.getElementById("creditsTotalRembourses");
+        if (elRemb) elRemb.textContent = totalRembourse.toLocaleString() + " F";
+
+        const elImp = document.getElementById("creditsTotalImpaye");
+        if (elImp) elImp.textContent = totalImpayes.toLocaleString() + " F";
+
+        // --- Historique par date ---
+        const dailyStats = {};
+        appData.credits.forEach(c => {
+          const date = (c.created_at ? new Date(c.created_at) : new Date()).toISOString().split("T")[0];
+          if (!dailyStats[date]) {
+            dailyStats[date] = { totalDu: 0, totalRembourse: 0, totalImpayes: 0 };
+          }
+          dailyStats[date].totalDu += c.total || 0;
+          if (c.paid) {
+            dailyStats[date].totalRembourse += c.total || 0;
+          } else {
+            dailyStats[date].totalImpayes += c.total || 0;
+          }
+        });
+
+        const labels = Object.keys(dailyStats).sort();
+
+        // --- Transformation en cumulatif ---
+        let cumulDu = 0, cumulRemb = 0, cumulImp = 0;
+        const dataDu = [];
+        const dataRemb = [];
+        const dataImp = [];
+
+        labels.forEach(d => {
+          cumulDu += dailyStats[d].totalDu;
+          cumulRemb += dailyStats[d].totalRembourse;
+          cumulImp += dailyStats[d].totalImpayes;
+
+          dataDu.push(cumulDu);
+          dataRemb.push(cumulRemb);
+          dataImp.push(cumulImp);
+        });
+
+        // --- Création / mise à jour du graphique ---
+        const ctx = document.getElementById("chartCredits")?.getContext("2d");
+        if (ctx) {
+          if (window.creditChart) {
+            window.creditChart.destroy();
+          }
+          window.creditChart = new Chart(ctx, {
+            type: "line",
+            data: {
+              labels: labels,
+              datasets: [
+                {
+                  label: "Total dû",
+                  data: dataDu,
+                  borderColor: "purple",
+                  backgroundColor: "rgba(128,0,128,0.2)",
+                  fill: true
+                },
+                {
+                  label: "Remboursé",
+                  data: dataRemb,
+                  borderColor: "green",
+                  backgroundColor: "rgba(0,128,0,0.2)",
+                  fill: true
+                },
+                {
+                  label: "Impayés",
+                  data: dataImp,
+                  borderColor: "red",
+                  backgroundColor: "rgba(255,0,0,0.2)",
+                  fill: true
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { position: "top" },
+                title: { display: true, text: "Évolution cumulée des crédits" }
+              },
+              interaction: {
+                mode: "index",
+                intersect: false
+              }
+            }
+          });
+        }
+
+        // --- Mise à jour du tableau ---
+        const body = document.getElementById("creditsHistoryBody");
+        if (body) {
+          body.innerHTML = "";
+          appData.credits.forEach(c => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+        <td class="p-2 border">${new Date(c.created_at).toLocaleDateString()}</td>
+        <td class="p-2 border">${c.client_name || "-"}</td>
+        <td class="p-2 border">${c.product_name || "-"}</td>
+        <td class="p-2 border">${c.quantity}</td>
+        <td class="p-2 border">${(c.total || 0).toLocaleString()} F</td>
+        <td class="p-2 border">${c.due_date ? new Date(c.due_date).toLocaleDateString() : "-"}</td>
+        <td class="p-2 border ${c.paid ? "text-green-600" : "text-red-600"}">
+          ${c.paid ? "Payé" : "Non payé"}
+        </td>
+        <td class="p-2 border">
+          ${c.paid ? "✔️" : `<button onclick="ouvrirModalRemboursement(${c.id})" class="bg-blue-500 text-white px-2 py-1 rounded">Rembourser</button>`}
+        </td>
+      `;
+            body.appendChild(tr);
+          });
+        }
+      }
+
+
+
+
+      // ✅ Finaliser une vente à crédit
+      async function finaliserVenteCredit() {
+        if (!appData.panier.length) {
+          showNotification("❌ Panier vide.", "error");
+          return;
+        }
+
+        // Récupérer les infos du formulaire crédit
+        const clientName = document.getElementById("creditClientName")?.value.trim();
+        const clientPhone = document.getElementById("creditClientPhone")?.value.trim();
+        const dueDateInput = document.getElementById("creditDueDate");
+        const dueDate = dueDateInput?.value || null;
+
+        console.log("Infos crédit saisies :", { clientName, clientPhone, dueDate });
+
+        if (!clientName || !clientPhone || !dueDate) {
+          showNotification("⚠️ Merci de remplir toutes les informations du crédit.", "warning");
+          return;
+        }
+
+        // Envoyer les ventes une par une
+        for (const item of appData.panier) {
+          const venteCredit = {
+            product_id: item.id,
+            quantity: item.quantite,
+            payment_method: "credit", // ✅ Marqué comme crédit
+            client_name: clientName,
+            client_phone: clientPhone,
+            due_date: dueDate,
+            paid: false // ✅ Par défaut non payé
+          };
+
+          const created = await postSaleServer(venteCredit);
+          if (!created) {
+            showNotification("❌ Erreur lors de l'enregistrement de la vente à crédit.", "error");
+            return;
+          }
+        }
+
+        showNotification("✅ Vente à crédit enregistrée.", "success");
+
+        // Vider le panier local
+        appData.panier = [];
+        saveAppDataLocal();
+
+        // Recharger toutes les données depuis le serveur
+        await syncFromServer();
+
+        // Rafraîchir toute l'UI
+        updateStats();
+        afficherCategoriesVente();
+        afficherProduits();
+        afficherCategories();
+        afficherRapports();
+        afficherInventaire();
+        afficherCredits();
+        verifierStockFaible();
+
+        // Ne ferme QUE le modal crédit
+        hideModalCredit();
+      }
+
+      // ✅ Marquer un crédit comme payé
+      async function marquerCreditPaye(id) {
+        const ok = await confirm("❓ Confirmer que ce crédit a été payé ?");
+        if (!ok) {
+          showNotification("❌ Action annulée", "warning");
+          return;
+        }
+
+        try {
+          const res = await authfetch(`${API_BASE}/sales/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paid: true })
+          });
+
+          if (!res.ok) {
+            const errMsg = await res.text();
+            showNotification("❌ Erreur lors de la mise à jour du crédit : " + errMsg, "error");
+            return;
+          }
+
+          showNotification("✅ Crédit marqué comme payé.", "success");
+          await syncFromServer();
+          afficherStatsCredits(); // rafraîchit uniquement le tableau crédits
+
+        } catch (e) {
+          console.error("Erreur réseau marquerCreditPaye:", e);
+          showNotification("❌ Impossible de contacter le serveur.", "error");
+        }
+      }
+
+      // 👉 Ouvrir le modal remboursement
+      function ouvrirModalRemboursement(saleId) {
+        console.log("🟣 ouvrirModalRemboursement appelé avec saleId =", saleId);
+        const modal = document.getElementById("modalRemboursement");
+        document.getElementById("remboursementVenteId").value = saleId;
+
+        modal.classList.remove("hidden");
+        modal.style.display = "flex"; // ✅ force affichage en mode flex
+      }
+
+      window.ouvrirModalRemboursement = ouvrirModalRemboursement; // ✅ rendre global
+
+      // 👉 Fermer le modal
+      function hideModalRemboursement() {
+        const modal = document.getElementById("modalRemboursement");
+        modal.classList.add("hidden");
+        modal.style.display = "none"; // ✅ force fermeture
+        document.getElementById("remboursementVenteId").value = "";
+      }
+
+      window.hideModalRemboursement = hideModalRemboursement; // ✅ rendre global
+
+      // 👉 Confirmer le remboursement avec un mode de paiement choisi
+      async function confirmerRemboursement(method) {
+        const id = document.getElementById("remboursementVenteId").value;
+        console.log("🟢 confirmerRemboursement avec ID =", id, "méthode =", method); // ✅ Debug
+        if (!id) return;
+
+        try {
+          const res = await authfetch(API_BASE + "/sales/" + id, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paid: true, repayment_method: method })
+          });
+
+          if (!res.ok) {
+            const errorMsg = await res.text();
+            console.error("Erreur remboursement:", errorMsg);
+            showNotification("❌ Erreur lors du remboursement", "error");
+            return;
+          }
+
+          showNotification("✅ Crédit remboursé avec succès !", "success");
+          hideModalRemboursement();
+
+          // 🔄 Recharger les données à jour
+          await syncFromServer();
+          afficherCredits();
+          afficherRapports();
+
+        } catch (err) {
+          console.error("Erreur confirmerRemboursement:", err);
+          showNotification("❌ Erreur réseau lors du remboursement", "error");
+        }
+      }
+
+      window.confirmerRemboursement = confirmerRemboursement; // ✅ rendre global
+
+
+
+      function afficherStatsCredits() {
+        const container = document.getElementById("creditsListe");
+        if (!container) return;
+
+        container.innerHTML = "";
+
+        const credits = appData?.credits || [];
+
+        if (!credits.length) {
+          container.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 py-4">Aucun crédit enregistré</td></tr>`;
+          return;
+        }
+
+        credits.forEach(c => {
+          const produit = appData.produits?.find(p => p.id === parseInt(c.product_id));
+          const produitName = produit ? produit.name : "Inconnu";
+
+          const statut = c.paid ?
+            `<span class="text-green-600 font-bold">Payé</span>` :
+            `<span class="text-red-600 font-bold">Impayé</span>`;
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+      <td class="p-2 border">${c.client_name || "-"}</td>
+      <td class="p-2 border">${c.client_phone || "-"}</td>
+      <td class="p-2 border">${produitName}</td>
+      <td class="p-2 border">${(c.total || 0).toLocaleString()} F</td>
+      <td class="p-2 border">${c.due_date ? new Date(c.due_date).toLocaleDateString() : "-"}</td>
+      <td class="p-2 border">${statut}</td>
+      <td class="p-2 border text-center">
+        ${!c.paid ? `
+          <button class="bg-green-500 text-white px-2 py-1 rounded text-xs"
+            onclick="marquerCreditPaye(${c.id})">✅ Marquer payé</button>
+        ` : ""}
+      </td>
+    `;
+          container.appendChild(tr);
+        });
+      }
+
+      function marquerRembourse(venteId) {
+        document.getElementById("remboursementVenteId").value = venteId;
+        document.getElementById("modalRemboursement").classList.remove("hidden");
+      }
+
+      function remplirSelectProduitsCredit() {
+        const select = document.getElementById('creditProduct');
+        if (!select) return;
+
+        // vider avant de recharger
+        select.innerHTML = '';
+
+        if (!appData.produits || appData.produits.length === 0) {
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.textContent = 'Aucun produit disponible';
+          select.appendChild(opt);
+          return;
+        }
+
+        appData.produits.forEach(prod => {
+          const opt = document.createElement('option');
+          opt.value = prod.id;
+          opt.textContent = `${prod.name} (${prod.stock} dispo - ${prod.price}F)`;
+          select.appendChild(opt);
+        });
+      }
+
+      function logout() {
+        localStorage.removeItem('authToken');
+        window.location.replace('login.html');
+      }
+
+      let deferredPrompt;
+      const installBtn = document.getElementById('installBtn');
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        console.log("📲 Événement beforeinstallprompt déclenché !");
+        e.preventDefault();
+        deferredPrompt = e;
+        installBtn.classList.remove('hidden'); // Afficher le bouton
+      });
+
+      installBtn?.addEventListener('click', async () => {
+        if (!deferredPrompt) {
+          console.log("⚠️ Aucun prompt disponible (app peut déjà être installée)");
+          return;
+        }
+
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`✅ Résultat installation: ${outcome}`);
+        deferredPrompt = null;
+        installBtn.classList.add('hidden'); // Cacher après installation
+      });
+
+      // Juste pour debug
+      console.log("🔎 Script bouton d’installation chargé !");
+
+      function getCurrentUserId() {
+        const id = localStorage.getItem("userId");
+        return id ? parseInt(id, 10) : null;
+      }
+
+      async function handleAddProductClick() {
+        try {
+          const token = localStorage.getItem("authToken");
+          if (!token) {
+            showNotification("❌ Vous devez être connecté pour ajouter un produit", "error");
+            return;
+          }
+
+          const userId = getCurrentUserId();
+          if (!userId) {
+            showNotification("❌ Utilisateur introuvable", "error");
+            return;
+          }
+
+          // 🔎 Vérifier l’utilisateur connecté
+          const userRes = await fetch(`${API_BASE}/auth/users`, {
+            headers: { "Authorization": `Bearer ${token}` }
+          });
+
+          if (!userRes.ok) throw new Error("Erreur API Utilisateurs " + userRes.status);
+
+          const users = await userRes.json();
+          const currentUser = users.find(u => u.id === userId);
+
+          if (!currentUser) {
+            showNotification("❌ Utilisateur introuvable", "error");
+            return;
+          }
+
+          // 🚫 Cas 1 : Upgrade en attente = blocage total
+          if (currentUser.upgrade_status === "en attente") {
+            showNotification("⏳ Votre demande Premium est en attente de validation. Vous ne pouvez pas ajouter de produit pour le moment.", "warning");
+            return;
+          }
+
+          // 🔄 Charger produits existants
+          const prodRes = await fetch(`${API_BASE}/products`, {
+            headers: { "Authorization": `Bearer ${token}` }
+          });
+
+          if (!prodRes.ok) throw new Error("Erreur API Produits " + prodRes.status);
+
+          const products = await prodRes.json();
+          const userProducts = products.filter(p => p.user_id === userId);
+
+          // ✅ Cas 2 : Premium validé
+          if (currentUser.plan === "Premium" && currentUser.upgrade_status === "validé") {
+            showModal("ajoutProduit"); // pas de limite
+            return;
+          }
+
+          // ✅ Cas 3 : Free ou rejeté => limite 5 produits
+          if (currentUser.plan === "Free" || currentUser.upgrade_status === "rejeté") {
+            if (userProducts.length >= 5) {
+              showModalById("premiumModal"); // proposer upgrade
+            } else {
+              showModal("ajoutProduit"); // peut ajouter
+            }
+            return;
+          }
+
+          // 🔒 Sécurité : fallback
+          showModal("ajoutProduit");
+
+        } catch (err) {
+          console.error("Erreur handleAddProductClick:", err);
+          showNotification("❌ Impossible d’ajouter le produit", "error");
+        }
+      }
+
+
+      function closePremiumModal() {
+        document.getElementById("premiumModal").classList.add("hidden");
+        document.getElementById("contactModal").classList.remove("hidden"); // ouvre le 2e modal immédiatement
+      }
+
+      function closeContactModal() {
+        document.getElementById("contactModal").classList.add("hidden");
+      }
+
+      // Soumission du formulaire Upgrade
+      document.getElementById("upgradeForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const phone = document.getElementById("phone").value.trim();
+        const payment_method = document.getElementById("payment_method").value.trim();
+        const amount = document.getElementById("amount").value.trim();
+        const expiration = document.getElementById("expiration").value;
+
+        if (!phone || !payment_method || !amount || !expiration) {
+          showNotification("❌ Tous les champs sont requis.", "error");
+          return;
+        }
+
+        try {
+          const token = localStorage.getItem("authToken");
+
+          const res = await fetch("https://ma-boutique-backend-3.onrender.com/auth/upgrade", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              phone,
+              payment_method,
+              amount,
+              expiration,
+              upgrade_status: "en_attente"
+            })
+          });
+
+          if (!res.ok) {
+            let errorMsg = "Impossible d’upgrader.";
+            try {
+              const data = await res.json();
+              if (data.error) errorMsg = data.error;
+            } catch (err) {
+              errorMsg = await res.text();
+            }
+            showNotification("❌ Erreur : " + errorMsg, "error");
+            return;
+          }
+
+          const data = await res.json();
+
+          showNotification("✅ Votre demande Premium est envoyée et en attente de validation par un administrateur !", "success");
+          closeContactModal();
+          updateHeader?.();
+          window.location.reload();
+
+        } catch (err) {
+          console.error("❌ Erreur upgrade:", err);
+          showNotification("❌ Erreur réseau. Veuillez réessayer.", "error");
+        }
+      });
+
+      function showNotification(message, type = "info") {
+        // Créer le conteneur si non existant
+        let container = document.getElementById("toast-container");
+        if (!container) {
+          container = document.createElement("div");
+          container.id = "toast-container";
+          document.body.appendChild(container);
+        }
+
+        // Créer le toast
+        const toast = document.createElement("div");
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+
+        // Ajouter le toast au conteneur
+        container.appendChild(toast);
+
+        // Retirer après 4s
+        setTimeout(() => {
+          toast.remove();
+        }, 4000);
+      }
+
+      function closeGuide() {
+        document.getElementById("userGuide").style.display = "none";
+        // ✅ On mémorise la fermeture
+        localStorage.setItem("guideClosed", "true");
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // ✅ Vérifie si l’utilisateur a déjà fermé le guide
+        if (localStorage.getItem("guideClosed") === "true") {
+          document.getElementById("userGuide").style.display = "none";
+        }
+      });
+
+      // ✅ Remplace confirm par une version moderne
+      function customConfirm(message) {
+        return new Promise((resolve) => {
+          // Créer l’overlay
+          const overlay = document.createElement("div");
+          overlay.id = "custom-confirm-overlay";
+
+          // Contenu (avec backticks !)
+          overlay.innerHTML = `
+      <div class="custom-confirm-box">
+        <p>${message}</p>
+        <div class="custom-confirm-actions">
+          <button class="custom-confirm-btn custom-confirm-yes">Confirmer</button>
+          <button class="custom-confirm-btn custom-confirm-no">Annuler</button>
+        </div>
+      </div>
+    `;
+
+          document.body.appendChild(overlay);
+
+          // Boutons
+          overlay.querySelector(".custom-confirm-yes").addEventListener("click", () => {
+            resolve(true);
+            overlay.remove();
+          });
+          overlay.querySelector(".custom-confirm-no").addEventListener("click", () => {
+            resolve(false);
+            overlay.remove();
+          });
+        });
+      }
+
+      // ✅ Polyfill : remplacer confirm natif
+      window.confirm = function (message) {
+        console.log("⚡ confirm appelé avec :", message);
+        return customConfirm(message);
+      };
+
+    </script>
+
+</body>
+
+</html>

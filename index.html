@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ma Boutique - Gestion Complète</title>
+    <meta name="api-base" content="https://samacommerce-backend-v2.onrender.com">
+
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/categories.css">
+    <link rel="stylesheet" href="css/tables.css">
+    <link rel="stylesheet" href="css/emoji.css">
+    <link rel="stylesheet" href="css/toasts.css">
+    <link rel="stylesheet" href="css/confirm.css">
+    <link rel="stylesheet" href="css/responsive.css">
+
+    <script type="module" src="js/app.js"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- PWA meta -->
+    <link rel="manifest" href="./pwa/manifest.json">
+    <meta name="theme-color" content="#6D28D9">
+    <!-- iOS support -->
+    <link rel="apple-touch-icon" href="/pwa/icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
+
+</head>
+
+<body class="bg-gradient-to-br from-purple-50 to-pink-50">
+    <div id="syncBanner" style="display:none;" class="bg-blue-500 text-white text-center py-2 text-sm">
+        🔄 Synchronisation en cours...
+    </div>
+
+    <div class="app-container">
+        <!-- En-tête -->
+        <div class="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6">
+            <div class="flex items-center justify-between">
+                <button class="text-3xl" id="backBtn" onclick="showSection('menu')" style="display: none;">←</button>
+                <div class="text-center flex-1">
+                    <h1 id="appHeader" class="text-2xl font-bold">🏪 Ma Boutique</h1>
+                    <div class="text-sm opacity-90">Ventes aujourd'hui: <span class="pulse" id="ventesToday">0</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="text-3xl pulse">💰</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Principal -->
+        <div class="p-6 space-y-6" id="menuSection">
+            <button onclick="logout()" class="bg-red-600 px-3 py-1 rounded text-white text-sm">🔓 Déconnexion</button>
+            <button id="installBtn" class="hidden bg-green-600 px-3 py-1 rounded text-white text-sm"> 📲
+                Installer</button>
+
+            <div id="userGuide"
+                class="bg-violet-100 border border-violet-300 text-violet-800 p-4 rounded-lg mb-4 flex justify-between items-start">
+                <div>
+                    <h2 class="font-bold text-lg mb-1">👋 Bienvenue !</h2>
+                    <p class="text-sm">
+                    <ol class="text-left list-decimal list-inside space-y-1">
+                        <li>➕ Commencez par aller dans la section Catégories pour organiser vos produits. Cliquer sur le
+                            bouton "+ Ajouter" pour créer une catégorie</li>
+                        <li>Ensuite, aller à la section Stock pour gérer vos produits</li>
+                        <li>Vous pouvez commencer à vendre en allant dans la section Vendre</li>
+                        <li>Pour voir vos chiffres, allez dans la section Chiffres</li>
+                        <li>Consultez la section Inventaire pour suivre vos bénéfices</li>
+                        <li>Utilisez la section Crédits pour gérer les ventes à crédit</li>
+                        <li>N’oubliez pas de vérifier les alertes de stock faible sur la page d’accueil</li>
+                        <li>L'application est gratuite et vous pouvez ajouter jusqu'à 5 produits, pour plus, envisagez
+                            la version Pro.</li>
+                    </ol>
+                    </p>
+                </div>
+                <button onclick="closeGuide()" class="ml-4 text-violet-700 hover:text-violet-900 font-bold">✕</button>
+            </div>
+
+            <!-- Résumé du jour -->
+            <div class="bg-white rounded-3xl p-6 shadow-lg">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <span class="text-2xl mr-2">📊</span> Aujourd'hui
+                </h3>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="text-center bg-green-50 rounded-2xl p-4">
+                        <div class="text-2xl font-bold text-green-600" id="chiffreAffaires">0 F</div>
+                        <div class="text-xs text-green-700">Argent reçu</div>
+                    </div>
+                    <div class="text-center bg-blue-50 rounded-2xl p-4">
+                        <div class="text-2xl font-bold text-blue-600" id="articlesVendus">0</div>
+                        <div class="text-xs text-blue-700">Articles vendus</div>
+                    </div>
+                    <div class="text-center bg-orange-50 rounded-2xl p-4">
+                        <div class="text-2xl font-bold text-orange-600" id="stockTotal">0</div>
+                        <div class="text-xs text-orange-700">En stock</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions principales (ajouté Inventaire à côté de Rapports) -->
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <button
+                    class="big-button bg-gradient-to-br from-green-400 to-green-600 text-white p-8 rounded-3xl text-center shadow-lg"
+                    onclick="showSection('vente')">
+                    <div class="text-6xl mb-3">💳</div>
+                    <div class="font-bold text-xl">VENDRE</div>
+                    <div class="text-sm opacity-90">Vendre un article</div>
+                </button>
+
+                <button
+                    class="big-button bg-gradient-to-br from-blue-400 to-blue-600 text-white p-8 rounded-3xl text-center shadow-lg"
+                    onclick="showSection('stock')">
+                    <div class="text-6xl mb-3">📦</div>
+                    <div class="font-bold text-xl">STOCK</div>
+                    <div class="text-sm opacity-90">Gérer produits</div>
+                </button>
+
+                <button
+                    class="big-button bg-gradient-to-br from-purple-400 to-purple-600 text-white p-8 rounded-3xl text-center shadow-lg"
+                    onclick="showSection('categories')">
+                    <div class="text-6xl mb-3">🏷️</div>
+                    <div class="font-bold text-xl">CATÉGORIES</div>
+                    <div class="text-sm opacity-90">Organiser</div>
+                </button>
+
+                <button
+                    class="big-button bg-gradient-to-br from-orange-400 to-orange-600 text-white p-8 rounded-3xl text-center shadow-lg"
+                    onclick="showSection('rapports')">
+                    <div class="text-6xl mb-3">📈</div>
+                    <div class="font-bold text-xl">CHIFFRES</div>
+                    <div class="text-sm opacity-90">Voir gains</div>
+                </button>
+
+                <button
+                    class="big-button bg-gradient-to-br from-teal-400 to-teal-600 text-white p-8 rounded-3xl text-center shadow-lg"
+                    onclick="showSection('inventaire')">
+                    <div class="text-6xl mb-3">📋</div>
+                    <div class="font-bold text-xl">INVENTAIRE</div>
+                    <div class="text-sm opacity-90">Voir bénéfices</div>
+                </button>
+
+                <button
+                    class="big-button bg-gradient-to-br from-purple-400 to-purple-600 text-white p-8 rounded-3xl text-center shadow-lg"
+                    onclick="showSection('credits')">
+                    <div class="text-6xl mb-3">📝</div>
+                    <div class="font-bold text-xl">CRÉDITS</div>
+                    <div class="text-sm opacity-90">Gérer dettes clients</div>
+                </button>
+
+            </div>
+
+            <!-- Alertes stock faible -->
+            <div class="bg-gradient-to-r from-red-100 to-orange-100 rounded-3xl p-6 shadow-lg" id="alertesStock"
+                style="display: none;">
+                <h3 class="text-lg font-bold mb-4 flex items-center text-red-700"><span class="text-2xl mr-2">⚠️</span>
+                    Presque fini</h3>
+                <div class="space-y-2" id="produitsStockFaible"></div>
+            </div>
+        </div>
+
+        <!-- Section Vente -->
+        <div class="hidden slide-in p-6" id="venteSection">
+            <h2 class="text-2xl font-bold mb-6 text-center">💳 Vendre</h2>
+
+            <!-- Panier -->
+            <div class="bg-white rounded-3xl p-6 shadow-lg mb-6">
+                <h3 class="text-lg font-bold mb-4 flex items-center"><span class="text-2xl mr-2">🛒</span> Panier</h3>
+                <div class="space-y-3 mb-4 min-h-[100px]" id="panierItems">
+                    <div class="text-gray-500 text-center py-8">
+                        <div class="text-4xl mb-2">🛒</div>
+                        <div>Panier vide</div>
+                    </div>
+                </div>
+                <div class="border-t pt-4">
+                    <div class="flex justify-between items-center text-2xl font-bold mb-4"><span>TOTAL:</span><span
+                            class="text-green-600" id="totalPanier">0 F</span></div>
+                    <button
+                        class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg"
+                        onclick="showModal('paiement')">💰 ENCAISSER</button>
+                </div>
+            </div>
+
+            <!-- Sélection par catégorie -->
+            <div class="space-y-4">
+                <h3 class="text-lg font-bold">Choisir produits</h3>
+                <div class="grid grid-cols-2 gap-3" id="categoriesVente"></div>
+            </div>
+        </div>
+
+        <!-- Section Stock -->
+        <div class="hidden slide-in p-6" id="stockSection">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">📦 Mon Stock</h2>
+                <button class="bg-blue-600 text-white px-4 py-2 rounded-2xl text-sm font-bold"
+                    onclick="handleAddProductClick()">+ AJOUTER</button>
+
+            </div>
+
+            <div class="flex gap-2 mb-6 overflow-x-auto pb-2" id="filtreCategories"><button
+                    class="filtre-btn bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap"
+                    onclick="filtrerProduits('tous')">Tous</button></div>
+            <div class="space-y-4" id="listeProduits"></div>
+        </div>
+
+        <!-- Section Catégories -->
+        <div class="hidden slide-in p-6" id="categoriesSection">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">🏷️ Catégories</h2><button
+                    class="bg-purple-600 text-white px-4 py-2 rounded-2xl text-sm font-bold"
+                    onclick="showModal('ajoutCategorie')">+ AJOUTER</button>
+            </div>
+            <input type="text" id="searchCategorie" placeholder="🔍 Rechercher une catégorie..."
+                class="w-full p-2 border rounded mb-4">
+            <div class="space-y-4" id="listeCategories"></div>
+        </div>
+
+        <!-- Section Rapports (CHIFFRES) -->
+        <div class="hidden slide-in p-6" id="rapportsSection">
+            <h2 class="text-2xl font-bold mb-6 text-center">📈 Chiffres</h2>
+            <div class="mb-4 text-center">
+                <label for="periodeRapports" class="mr-2 font-bold">Période :</label>
+                <select id="periodeRapports" class="p-2 border rounded">
+                    <option value="jour">Aujourd'hui</option>
+                    <option value="semaine">Cette semaine</option>
+                    <option value="mois">Ce mois</option>
+                    <option value="tout">Tout</option>
+                </select>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-white rounded-3xl p-6 shadow-lg">
+                    <h3 class="text-lg font-bold mb-4">💰 Résumé</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Aujourd'hui -->
+                        <div class="bg-green-50 rounded-2xl p-4 text-center">
+                            <div class="text-3xl font-bold text-green-600" id="recettesJour">0 F</div>
+                            <div class="text-sm text-green-700">Aujourd'hui</div>
+                        </div>
+
+                        <!-- Cette semaine -->
+                        <div class="bg-blue-50 rounded-2xl p-4 text-center">
+                            <div class="text-3xl font-bold text-blue-600" id="recettesSemaine">0 F</div>
+                            <div class="text-sm text-blue-700">Cette semaine</div>
+                        </div>
+
+                        <!-- Ce mois -->
+                        <div class="bg-yellow-50 rounded-2xl p-4 text-center">
+                            <div class="text-3xl font-bold text-yellow-600" id="recettesMois">0 F</div>
+                            <div class="text-sm text-yellow-700">Ce mois</div>
+                        </div>
+
+                        <!-- Tout -->
+                        <div class="bg-purple-50 rounded-2xl p-4 text-center">
+                            <div class="text-3xl font-bold text-purple-600" id="recettesTout">0 F</div>
+                            <div class="text-sm text-purple-700">Tout</div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="bg-white rounded-3xl p-6 shadow-lg">
+                    <h3 class="text-lg font-bold mb-4">💳 Paiements</h3>
+                    <div class="space-y-3" id="rapportsPaiements"></div>
+                </div>
+
+                <div class="bg-white rounded-3xl p-6 shadow-lg">
+                    <h3 class="text-lg font-bold mb-4">🔥 Produits Populaires</h3>
+                    <div class="space-y-3" id="produitsPopulaires"></div>
+                </div>
+
+                <!-- Graphiques -->
+                <div class="bg-white rounded-3xl p-6 shadow-lg">
+                    <h3 class="text-lg font-bold mb-4">📊 Graphiques</h3>
+
+                    <div class="chart-container"><canvas id="chartVentesByDay"></canvas></div>
+                    <div class="chart-container"><canvas id="chartTopProduits"></canvas></div>
+                    <div class="chart-container"><canvas id="chartPaiements"></canvas></div>
+                    <div class="chart-container"><canvas id="chartStocksFaibles"></canvas></div>
+                    <canvas id="chartVentesJour" height="100"></canvas>
+
+                    <div id="salesHistory" class="bg-white rounded-3xl p-6 shadow-lg mt-6 overflow-x-auto">
+                        <h3 class="text-lg font-bold mb-4">📜 Historique des ventes</h3>
+                        <table class="w-full table-sm" class="overflow-x-auto">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="p-2 border">Date</th>
+                                    <th class="p-2 border">Produit</th>
+                                    <th class="p-2 border">Qté</th>
+                                    <th class="p-2 border">Montant</th>
+                                    <th class="p-2 border">Paiement</th>
+                                    <th class="p-2 border">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="salesHistoryBody">
+                                <!-- Les lignes seront ajoutées en JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Bloc suivi des crédits -->
+                    <div id="creditsStats" class="bg-white rounded-3xl p-4 shadow-lg mt-6">
+                        <canvas id="chartCredits" class="mt-4" height="150"></canvas>
+                    </div>
+
+
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Section Ventes à Crédit -->
+        <div class="hidden slide-in p-6" id="creditsSection">
+            <h2 class="text-2xl font-bold mb-6 text-center">💳 Ventes à Crédit</h2>
+
+            <!-- Formulaire enregistrement crédit -->
+            <div class="bg-white rounded-3xl p-8 shadow-xl mb-8 border border-gray-100">
+                <h3 class="text-xl font-bold mb-6 flex items-center gap-2 text-purple-700">
+                    <span class="text-2xl">➕</span> Nouvelle vente à crédit
+                </h3>
+
+                <form id="creditForm" class="space-y-5">
+                    <!-- Client -->
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-gray-700">👤 Client</label>
+                        <input type="text" id="creditClient" placeholder="Nom du client"
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-500 transition">
+                    </div>
+
+                    <!-- Téléphone -->
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-gray-700">📞 Téléphone</label>
+                        <input type="tel" id="creditPhone" placeholder="Téléphone du client"
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-500 transition">
+                    </div>
+
+                    <!-- Produit -->
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-gray-700">📦 Produit</label>
+                        <select id="creditProduct"
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-500 transition bg-white">
+                        </select>
+                    </div>
+
+                    <!-- Quantité -->
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-gray-700">🔢 Quantité</label>
+                        <input type="number" id="creditQuantity" min="1" value="1"
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-500 transition">
+                    </div>
+
+                    <!-- Échéance -->
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-gray-700">📅 Échéance</label>
+                        <input type="date" id="creditDueDate"
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-500 transition">
+                    </div>
+
+                    <!-- Bouton -->
+                    <button type="submit"
+                        class="w-full bg-gradient-to-r from-purple-600 to-purple-800 text-white py-3 rounded-xl font-semibold text-lg shadow-md hover:scale-[1.02] hover:shadow-lg transition">
+                        💾 Enregistrer à crédit
+                    </button>
+                </form>
+            </div>
+
+
+
+            <!-- Résumé crédits -->
+            <div id="creditsResume"
+                class="mb-4 bg-purple-50 rounded-xl p-4 flex flex-col md:flex-row justify-around gap-3 text-center">
+                <div>
+                    <div class="text-lg font-bold text-purple-700" id="creditsTotalEncours">0 F</div>
+                    <div class="text-sm text-gray-600">Total en cours</div>
+                </div>
+                <div>
+                    <div class="text-lg font-bold text-green-700" id="creditsTotalRembourses">0 F</div>
+                    <div class="text-sm text-gray-600">Total remboursé</div>
+                </div>
+                <div>
+                    <div class="text-lg font-bold text-red-700" id="creditsTotalImpaye">0 F</div>
+                    <div class="text-sm text-gray-600">Impayés restants</div>
+                </div>
+            </div>
+
+            <!-- Graphique crédits -->
+            <div class="bg-white rounded-3xl p-4 shadow-lg mb-6">
+                <canvas id="chartCredits" height="100"></canvas>
+            </div>
+
+            <!-- Montant total dû -->
+            <p id="creditsStatus" class="text-center mb-4 text-sm text-gray-600">Chargement…</p>
+            <p id="creditsMontant" class="text-center mb-4 text-sm font-semibold text-gray-800">Montant total dû : 0 F
+            </p>
+
+
+
+            <!-- Liste crédits -->
+            <div class="bg-white rounded-3xl p-6 shadow-lg">
+                <h3 class="text-lg font-bold mb-2">📜 Historique des crédits</h3>
+                <p id="creditsResume" class="text-sm text-center text-gray-600 mb-4"></p> <!-- ✅ compteur ici -->
+
+                <div class="overflow-x-auto">
+                    <table class="w-full table-sm">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="p-2 border">Date</th>
+                                <th class="p-2 border">Client</th>
+                                <th class="p-2 border">Produit</th>
+                                <th class="p-2 border">Qté</th>
+                                <th class="p-2 border">Montant</th>
+                                <th class="p-2 border">Échéance</th>
+                                <th class="p-2 border">Statut</th>
+                                <th class="p-2 border">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="creditsHistoryBody">
+                            <!-- Rempli par JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+
+        <!-- Section Inventaire -->
+        <div id="inventaireSection" class="hidden slide-in p-6">
+            <h2 class="text-2xl font-bold mb-6 text-center">📋 Inventaire & Bénéfices</h2>
+            <input type="text" id="searchInventaire" placeholder="🔍 Rechercher un produit..."
+                class="w-full p-2 border rounded mb-4">
+
+            <!-- 👉 le wrapper overflow-x-auto autour du tableau -->
+            <div class="bg-white rounded-3xl p-4 shadow-lg overflow-x-auto">
+                <table class="w-full table-sm min-w-[600px]">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="p-2 border">Produit</th>
+                            <th class="p-2 border">Achat</th>
+                            <th class="p-2 border">Vente</th>
+                            <th class="p-2 border">En stock</th>
+                            <th class="p-2 border">Vendues</th>
+                            <th class="p-2 border">Bénéfice réalisé</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventaireListe"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="creditsSection" class="hidden slide-in p-6 overflow-x-auto">
+            <h2 class="text-2xl font-bold mb-6 text-center">📝 Ventes à Crédit</h2>
+
+            <div class="bg-white rounded-3xl p-4 shadow-lg overflow-x-auto">
+                <table class="w-full table-sm min-w-[700px]">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="p-2 border">Client</th>
+                            <th class="p-2 border">Téléphone</th>
+                            <th class="p-2 border">Produit</th>
+                            <th class="p-2 border">Montant dû</th>
+                            <th class="p-2 border">Échéance</th>
+                            <th class="p-2 border">Statut</th>
+                            <th class="p-2 border">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="creditsListe">
+                        <!-- Lignes ajoutées en JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modales -->
+        <div class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4"
+            id="modalOverlay">
+
+            <!-- Modal Ajout Produit -->
+            <div class="bg-white rounded-3xl p-6 w-full max-w-sm hidden fade-in" id="modalAjoutProduit">
+                <h3 class="text-2xl font-bold mb-6 text-center">📦 Nouveau Produit</h3>
+                <div class="space-y-4">
+                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="nomProduit" placeholder="Nom du produit"
+                        type="text" />
+                    <select class="w-full p-4 border-2 rounded-2xl text-lg" id="categorieProduit">
+                        <option value="">Choisir catégorie</option>
+                    </select>
+                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="prixAchatProduit"
+                        placeholder="Prix achat (F CFA)" type="number" />
+                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="prixProduit"
+                        placeholder="Prix vente (F CFA)" type="number" />
+                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="stockProduit"
+                        placeholder="Quantité en stock" type="number" />
+                    <textarea class="w-full p-4 border-2 rounded-2xl text-lg h-20" id="descriptionProduit"
+                        placeholder="Description (optionnel)"></textarea>
+                    <div class="flex gap-3">
+                        <button class="flex-1 bg-gray-300 text-gray-700 py-4 rounded-2xl font-bold"
+                            onclick="hideModal()">Annuler</button>
+                        <button class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold"
+                            onclick="ajouterProduit()">Ajouter</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Éditer Produit -->
+            <div class="bg-white rounded-3xl p-6 w-full max-w-sm hidden fade-in" id="modalEditProduit">
+                <h3 class="text-2xl font-bold mb-6 text-center">✏️ Modifier Produit</h3>
+                <div class="space-y-4">
+                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="editNomProduit"
+                        placeholder="Nom du produit" type="text" />
+                    <select class="w-full p-4 border-2 rounded-2xl text-lg" id="editCategorieProduit">
+                        <option value="">Choisir catégorie</option>
+                    </select>
+                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="editPrixAchatProduit"
+                        placeholder="Prix achat (F CFA)" type="number" />
+                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="editPrixProduit"
+                        placeholder="Prix vente (F CFA)" type="number" />
+                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="editStockProduit"
+                        placeholder="Quantité en stock" type="number" />
+                    <textarea class="w-full p-4 border-2 rounded-2xl text-lg h-20" id="editDescriptionProduit"
+                        placeholder="Description (optionnel)"></textarea>
+                    <div class="flex gap-3">
+                        <button class="flex-1 bg-gray-300 text-gray-700 py-4 rounded-2xl font-bold"
+                            onclick="hideModal()">Annuler</button>
+                        <button class="flex-1 bg-green-600 text-white py-4 rounded-2xl font-bold"
+                            onclick="mettreAJourProduit()">Mettre à jour</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Ajout Catégorie -->
+            <div id="modalAjoutCategorie"
+                class="hidden fade-in bg-white/95 backdrop-blur-xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-gray-200">
+
+                <!-- Titre -->
+                <h3
+                    class="text-2xl font-extrabold mb-6 text-center text-purple-700 flex items-center justify-center gap-2">
+                    🏷️ Nouvelle Catégorie
+                </h3>
+
+                <!-- Contenu -->
+                <div class="space-y-5">
+
+                    <!-- Champ de saisie -->
+                    <input id="nomCategorie" type="text" placeholder="Nom de la catégorie"
+                        class="w-full p-4 border-2 border-gray-200 rounded-2xl text-lg focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition bg-white/90 shadow-sm" />
+
+                    <!-- Palette Emoji -->
+                    <div class="emoji-grid max-h-72 overflow-y-auto pr-1">
+
+                        <!-- 👕 Mode -->
+                        <button class="emoji-btn" onclick="selectEmoji('👕')">👕</button>
+                        <button class="emoji-btn" onclick="selectEmoji('👖')">👖</button>
+                        <button class="emoji-btn" onclick="selectEmoji('👗')">👗</button>
+                        <button class="emoji-btn" onclick="selectEmoji('👔')">👔</button>
+                        <button class="emoji-btn" onclick="selectEmoji('👟')">👟</button>
+                        <button class="emoji-btn" onclick="selectEmoji('👠')">👠</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🎩')">🎩</button>
+                        <button class="emoji-btn" onclick="selectEmoji('👜')">👜</button>
+                        <button class="emoji-btn" onclick="selectEmoji('💍')">💍</button>
+                        <button class="emoji-btn" onclick="selectEmoji('⌚')">⌚</button>
+
+                        <!-- 💄 Beauté / Cosmétiques -->
+                        <button class="emoji-btn" onclick="selectEmoji('💄')">💄</button>
+                        <button class="emoji-btn" onclick="selectEmoji('💅')">💅</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🧴')">🧴</button>
+                        <button class="emoji-btn" onclick="selectEmoji('💇‍♀️')">💇‍♀️</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🪞')">🪞</button>
+
+                        <!-- 🍔 Nourriture -->
+                        <button class="emoji-btn" onclick="selectEmoji('🍎')">🍎</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🍌')">🍌</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🍇')">🍇</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🥦')">🥦</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🍞')">🍞</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🥩')">🥩</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🍔')">🍔</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🍕')">🍕</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🍟')">🍟</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🍩')">🍩</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🥤')">🥤</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🍷')">🍷</button>
+
+                        <!-- 📱 Électronique -->
+                        <button class="emoji-btn" onclick="selectEmoji('📱')">📱</button>
+                        <button class="emoji-btn" onclick="selectEmoji('💻')">💻</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🖥️')">🖥️</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🎧')">🎧</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🎮')">🎮</button>
+                        <button class="emoji-btn" onclick="selectEmoji('📷')">📷</button>
+                        <button class="emoji-btn" onclick="selectEmoji('📺')">📺</button>
+                        <button class="emoji-btn" onclick="selectEmoji('⌨️')">⌨️</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🖱️')">🖱️</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🔋')">🔋</button>
+
+                        <!-- 🛋️ Maison -->
+                        <button class="emoji-btn" onclick="selectEmoji('🛋️')">🛋️</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🛏️')">🛏️</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🚪')">🚪</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🪑')">🪑</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🪟')">🪟</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🪞')">🪞</button>
+
+                        <!-- ⚽ Sport -->
+                        <button class="emoji-btn" onclick="selectEmoji('⚽')">⚽</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🏀')">🏀</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🏈')">🏈</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🎾')">🎾</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🏓')">🏓</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🥊')">🥊</button>
+                        <button class="emoji-btn" onclick="selectEmoji('⛸️')">⛸️</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🚴‍♂️')">🚴‍♂️</button>
+
+                        <!-- 🧸 Jouets -->
+                        <button class="emoji-btn" onclick="selectEmoji('🧸')">🧸</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🚂')">🚂</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🪀')">🪀</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🎲')">🎲</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🎯')">🎯</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🪁')">🪁</button>
+
+                        <!-- 🔧 Outils -->
+                        <button class="emoji-btn" onclick="selectEmoji('🔧')">🔧</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🪚')">🪚</button>
+                        <button class="emoji-btn" onclick="selectEmoji('⚒️')">⚒️</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🔨')">🔨</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🪛')">🪛</button>
+                        <button class="emoji-btn" onclick="selectEmoji('🧰')">🧰</button>
+
+                    </div>
+
+                    <!-- Input caché -->
+                    <input id="emojiCategorie" type="hidden" value="🏷️" />
+
+                    <!-- Boutons -->
+                    <div class="flex gap-4">
+                        <button onclick="hideModal()"
+                            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-4 rounded-2xl font-semibold shadow-md transition">
+                            Annuler
+                        </button>
+                        <button onclick="ajouterCategorie()"
+                            class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-4 rounded-2xl font-semibold shadow-md transition">
+                            Ajouter
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Méthodes de Paiement -->
+            <div class="bg-white rounded-3xl p-6 w-full max-w-sm hidden fade-in" id="modalPaiement">
+                <h3 class="text-2xl font-bold mb-6 text-center">💳 Choisir Paiement</h3>
+                <div class="space-y-4">
+                    <button
+                        class="w-full bg-green-500 text-white p-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3"
+                        onclick="finaliserVente('especes')">
+                        <span class="text-2xl">💵</span> Espèces
+                    </button>
+                    <button
+                        class="w-full bg-blue-500 text-white p-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3"
+                        onclick="finaliserVente('wave')">
+                        <span class="text-2xl">📱</span> Wave
+                    </button>
+                    <button
+                        class="w-full bg-orange-500 text-white p-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3"
+                        onclick="finaliserVente('orange')">
+                        <span class="text-2xl">📞</span> Orange Money
+                    </button>
+
+                    <!-- ✅ Nouveau bouton Crédit -->
+                    <button
+                        class="w-full bg-purple-500 text-white p-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3"
+                        onclick="showModalCredit()">
+                        <span class="text-2xl">📝</span> Crédit
+                    </button>
+
+
+                    <button class="w-full bg-gray-300 text-gray-700 p-4 rounded-2xl text-lg font-bold"
+                        onclick="hideModal()">Annuler</button>
+                </div>
+            </div>
+
+            <!-- ✅ Modal Vente à Crédit -->
+            <div class="bg-white rounded-3xl p-6 w-full max-w-sm hidden fade-in" id="modalCredit">
+                <h3 class="text-2xl font-bold mb-6 text-center">📝 Vente à Crédit</h3>
+
+                <div class="space-y-4">
+                    <input type="text" id="creditClientName" placeholder="👤 Nom du client"
+                        class="w-full p-3 border rounded-lg">
+                    <input type="tel" id="creditClientPhone" placeholder="📞 Téléphone du client"
+                        class="w-full p-3 border rounded-lg">
+
+                    <!-- ✅ Champ date corrigé -->
+                    <input type="date" id="creditDueDate" class="w-full p-3 border rounded-lg">
+                </div>
+
+                <div class="mt-6 space-y-3">
+                    <button class="w-full bg-purple-600 text-white p-3 rounded-2xl font-bold"
+                        onclick="finaliserVenteCredit()">
+                        ✅ Enregistrer à Crédit
+                    </button>
+                    <button class="w-full bg-gray-300 text-gray-700 p-3 rounded-2xl font-bold"
+                        onclick="hideModalCredit()">
+                        ❌ Annuler
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Méthodes de modification vente -->
+            <div id="modalModifierVente" class="fixed inset-0 bg-black/50 hidden items-center justify-center">
+                <div class="bg-white rounded-xl p-6 w-96 shadow-lg">
+                    <h2 class="text-lg font-bold mb-4">✏️ Modifier la vente</h2>
+
+                    <form id="formModifierVente" class="space-y-3">
+                        <input type="hidden" id="venteId">
+
+                        <div>
+                            <label class="block text-sm">Quantité</label>
+                            <input type="number" id="venteQuantite" class="w-full border rounded p-2" required>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm">Méthode de paiement</label>
+                            <select id="ventePaiement" class="w-full border rounded p-2">
+                                <option value="especes">Espèces</option>
+                                <option value="wave">Wave</option>
+                                <option value="orange">Orange Money</option>
+                            </select>
+                        </div>
+
+                        <div class="flex justify-end gap-2">
+                            <button type="button" onclick="fermerModal()"
+                                class="px-3 py-2 bg-gray-300 rounded">Annuler</button>
+                            <button type="submit" class="px-3 py-2 bg-blue-600 text-white rounded">Enregistrer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ✅ Modal Remboursement Crédit -->
+        <div id="modalRemboursement"
+            class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
+            <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
+                <h3 class="text-xl font-bold mb-4 text-center">💰 Remboursement Crédit</h3>
+                <input type="hidden" id="remboursementVenteId">
+
+                <div class="space-y-3">
+                    <button
+                        class="w-full bg-green-500 text-white p-3 rounded-xl font-bold flex items-center justify-center gap-3"
+                        onclick="confirmerRemboursement('especes')">💵 Espèces</button>
+
+                    <button
+                        class="w-full bg-blue-500 text-white p-3 rounded-xl font-bold flex items-center justify-center gap-3"
+                        onclick="confirmerRemboursement('wave')">📱 Wave</button>
+
+                    <button
+                        class="w-full bg-orange-500 text-white p-3 rounded-xl font-bold flex items-center justify-center gap-3"
+                        onclick="confirmerRemboursement('orange')">📞 Orange Money</button>
+
+                    <button class="w-full bg-gray-400 text-white p-3 rounded-xl font-bold"
+                        onclick="hideModalRemboursement()">❌ Annuler</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Upsell Premium -->
+        <div id="premiumModal"
+            class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div class="bg-white rounded-2xl shadow-lg p-6 max-w-sm w-full text-center">
+                <h2 class="text-xl font-bold mb-4">🚀 Passez en Premium</h2>
+                <p class="text-gray-600 mb-4">
+                    Votre plan <strong>Free</strong> vous permet d’ajouter jusqu’à <strong>5 produits</strong>.<br>
+                    Pour débloquer un nombre illimité de produits, contactez un administrateur.
+                </p>
+                <div class="bg-gray-100 p-3 rounded-xl mb-4">
+                    <p class="text-sm text-gray-800">
+                        📞 Appelez ou envoyez un message à :<br>
+                        <strong>+221 78 157 10 09 ou +221 77 348 57 91</strong>
+                    </p>
+                </div>
+                <button onclick="hideModalById('premiumModal'); showModalById('contactModal')"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold">
+                    OK
+                </button>
+
+            </div>
+        </div>
+
+        <!-- Modal Upgrade Premium -->
+        <div id="contactModal"
+            class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div class="bg-white rounded-2xl shadow-lg p-6 max-w-sm w-full text-center">
+                <h2 class="text-xl font-bold mb-4">🚀 Passer en Premium</h2>
+                <p class="text-gray-600 mb-4">
+                    Remplissez vos informations pour compléter votre demande de passage en <strong>Premium</strong>.
+                </p>
+
+                <form id="upgradeForm" class="space-y-3">
+                    <!-- Numéro de téléphone -->
+                    <input type="tel" id="phone" placeholder="Numéro de téléphone (WhatsApp de préférence)"
+                        class="w-full border rounded-lg px-3 py-2" required>
+
+                    <!-- Méthode de paiement -->
+                    <select id="payment_method" class="w-full border rounded-lg px-3 py-2" required>
+                        <option value="">-- Choisissez un moyen de paiement --</option>
+                        <option value="wave">Wave</option>
+                        <option value="orange">Orange Money</option>
+                        <option value="cash">Espèces</option>
+                    </select>
+
+                    <!-- Montant fixe -->
+                    <input type="number" id="amount" value="5000" readonly
+                        class="w-full border rounded-lg px-3 py-2 bg-gray-100 cursor-not-allowed" />
+
+                    <!-- Date d’expiration calculée -->
+                    <input type="hidden" id="expiration">
+                    <input type="text" id="expiration_display" readonly
+                        class="w-full border rounded-lg px-3 py-2 bg-gray-100 cursor-not-allowed" />
+
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold w-full">
+                        Envoyer
+                    </button>
+                </form>
+
+                <!-- Message contact -->
+                <div class="mt-4 text-sm text-gray-700">
+                    📞 Pour valider votre abonnement, contactez un administrateur :
+                    <br><strong>+221 78 157 10 09</strong> ou <strong>+221 77 348 57 91</strong>
+                    <br>(appel, WhatsApp ou SMS)
+                </div>
+
+                <button onclick="hideModalById('contactModal')" class="mt-3 text-gray-500 hover:text-gray-800">
+                    Annuler
+                </button>
+            </div>
+        </div>
+
+        <div id="rapportLoading" style="display:none;"> </div>
+
+        <template id="offline-page">
+            <!DOCTYPE html>
+            <html lang="fr">
+
+            <head>
+                <meta charset="UTF-8">
+                <title>Hors ligne</title>
+                <style>
+                    body {
+                        font-family: sans-serif;
+                        text-align: center;
+                        padding: 50px;
+                        background: #f9f9f9;
+                    }
+
+                    h2 {
+                        color: #6D28D9;
+                    }
+
+                    p {
+                        color: #444;
+                    }
+                </style>
+            </head>
+
+            <body>
+                <h2>⚠️ Vous êtes hors connexion</h2>
+                <p>Pas d’inquiétude, vos données locales restent accessibles.<br>
+                    Vérifiez votre connexion Internet pour continuer.</p>
+            </body>
+
+            </html>
+        </template>
+</body>
+
+</html>

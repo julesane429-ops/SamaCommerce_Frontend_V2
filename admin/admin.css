@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+.sidebar-link:hover {
+    background: rgba(139, 92, 246, 0.1);
+}
+
+.sidebar-link.active {
+    background: rgba(139, 92, 246, 0.2);
+    border-right: 3px solid #8b5cf6;
+}
+
+.stat-card {
+    transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.subscriber-card {
+    transition: all 0.3s ease;
+}
+
+.subscriber-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+.alert-badge {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.transaction-item {
+    border-left: 4px solid transparent;
+}
+
+.transaction-item.income {
+    border-left-color: #10b981;
+}
+
+.transaction-item.expense {
+    border-left-color: #ef4444;
+}
+
+.sidebar-hidden {
+    transform: translateX(-100%);
+}
+
+.main-expanded {
+    margin-left: 0 !important;
+}
+
+#mainContent {
+    transition: margin-left 0.3s ease;
+}
+
+.modal {
+    backdrop-filter: blur(4px);
+}
+
+.subscriber-card {
+    transition: all 0.4s ease;
+}
+
+.subscriber-card.fade-out {
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+.subscriber-card.flash-green {
+    animation: flashGreen 1s ease;
+}
+
+.subscriber-card.flash-red {
+    animation: flashRed 1s ease;
+}
+
+@keyframes flashGreen {
+    0% {
+        background-color: #d1fae5;
+    }
+
+    /* vert clair */
+    100% {
+        background-color: white;
+    }
+}
+
+@keyframes flashRed {
+    0% {
+        background-color: #fee2e2;
+    }
+
+    /* rouge clair */
+    100% {
+        background-color: white;
+    }
+}

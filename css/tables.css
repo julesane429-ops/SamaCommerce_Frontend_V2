@@ -1,0 +1,8 @@
+.table-sm td,
+.table-sm th {
+    padding: 0.5rem;
+}
+
+.chart-container {
+    height: 250px;
+}

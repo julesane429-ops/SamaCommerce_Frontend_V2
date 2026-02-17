@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Connexion - Ma Boutique</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="login.js"></script>
+  <link rel="stylesheet" href="login.css">
+</head>
+
+<body class="font-sans antialiased">
+  <div class="fixed inset-0 bg-black/30 md:bg-black/20 pointer-events-none"></div>
+
+  <main class="relative w-full min-h-svh flex items-center justify-center md:justify-end p-4 md:pr-16">
+    <section
+      class="w-full max-w-md md:max-w-lg bg-white/90 md:bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl border border-white/40 p-6 sm:p-8">
+      <div class="text-center mb-6">
+        <div class="bg-purple-600 text-white w-14 h-14 flex items-center justify-center rounded-full mx-auto shadow-lg">
+          🔑</div>
+        <h1 class="text-2xl font-bold mt-3 text-gray-900">Connexion</h1>
+        <p class="text-sm text-gray-600">Accédez à votre compte</p>
+      </div>
+
+      <label class="block text-sm font-medium text-gray-700 mb-1" for="email">Email</label>
+      <input type="email" id="email" placeholder="ex: nom@exemple.com"
+        class="w-full p-3 border border-gray-200 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition bg-white/90">
+
+      <label class="block text-sm font-medium text-gray-700 mb-1" for="password">Mot de passe</label>
+      <input type="password" id="password" placeholder="••••••••"
+        class="w-full p-3 border border-gray-200 rounded-xl mb-5 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition bg-white/90">
+
+      <div id="twofaSection" class="hidden mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="twofaCode">Code 2FA</label>
+        <input type="text" id="twofaCode" maxlength="6" placeholder="123456"
+          class="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition bg-white/90">
+        <button id="verify2faBtn"
+          class="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl font-semibold shadow-md mt-3 transition">
+          Vérifier le code
+        </button>
+      </div>
+
+      <button id="loginBtn"
+        class="w-full bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-xl font-semibold shadow-md transition active:scale-[0.99]">Se
+        connecter</button>
+
+      <p class="text-center text-sm mt-4 text-gray-700">
+        Pas encore de compte ?
+        <a href="register.html" class="text-purple-700 font-semibold hover:underline">Créer un compte</a>
+      </p>
+    </section>
+  </main>
+
+  <!-- MODAL GUIDE -->
+  <div id="loginGuideOverlay" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div id="loginGuide"
+      class="relative bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-6 rounded-2xl shadow-2xl max-w-lg w-[90%] animate-fadeIn">
+
+      <!-- Bouton de fermeture -->
+      <button onclick="closeLoginGuide()"
+        class="absolute top-3 right-3 text-blue-600 hover:text-blue-900 transition-colors duration-200 font-bold text-xl leading-none focus:outline-none">
+        ✕
+      </button>
+
+      <!-- Contenu -->
+      <div class="pr-6">
+        <h2 class="font-bold text-xl mb-3 flex items-center gap-2">
+          <span class="text-2xl">🔑</span>
+          Besoin d’aide ?
+        </h2>
+        <p class="text-sm leading-relaxed text-blue-700">
+          Entrez votre email et votre mot de passe pour accéder à votre espace.
+          Si vous n’avez pas encore de compte, cliquez sur
+          <span class="font-semibold">"Créer un compte"</span>.
+        </p>
+        <ul class="list-disc list-inside mt-3 space-y-2 text-sm leading-relaxed text-blue-700">
+          <li>
+            <span class="font-medium">Android / Ordinateur :</span> ouvrez cette page dans
+            <span class="italic">Chrome</span>, après connexion vous verrez le bouton
+            <span class="font-semibold">"Installer"</span>.
+          </li>
+          <li>
+            <span class="font-medium">Apple (iPhone, iPad) :</span> ouvrez cette page dans
+            <span class="italic">Safari</span>, puis appuyez sur le bouton
+            <span class="font-semibold">"Partager"</span> et sélectionnez
+            <span class="font-semibold">"Ajouter à l’écran d’accueil"</span>.
+          </li>
+        </ul>
+        <p class="mt-3 text-sm leading-relaxed text-blue-700">
+          Vous pourrez ainsi accéder rapidement à l’application depuis votre écran d’accueil.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "https://ma-boutique-backend-3.onrender.com";
+  </script>
+</body>
+
+</html>

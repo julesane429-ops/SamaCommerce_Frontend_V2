@@ -1,0 +1,36 @@
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 0.75rem;
+}
+
+.emoji-btn {
+    font-size: 2rem;
+    padding: 0.8rem;
+    border-radius: 1rem;
+    background: #f9fafb;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.emoji-btn:hover {
+    transform: scale(1.15);
+    background: #ede9fe;
+    border-color: #a78bfa;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.emoji-btn:active {
+    transform: scale(0.95);
+    background: #ddd6fe;
+}
+
+.emoji-btn.selected {
+    background: #c4b5fd;
+    border-color: #7c3aed;
+    color: white;
+    transform: scale(1.2);
+    box-shadow: 0 6px 12px rgba(124, 58, 237, 0.3);
+}

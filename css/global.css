@@ -1,0 +1,20 @@
+.app-container {
+    max-width: 100%;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+    border-radius: 25px;
+    overflow: hidden;
+    background: white;
+    min-height: 100vh;
+}
+
+.big-button {
+    transition: all 0.25s ease;
+    transform: scale(1);
+}
+
+.big-button:hover {
+    transform: scale(1.03);
+}

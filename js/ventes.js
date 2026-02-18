@@ -341,4 +341,3 @@ export function filtrerVentesParPeriode(ventes, periode) {
     return true; // "tout"
   });
 }
-

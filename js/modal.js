@@ -127,3 +127,16 @@ export function closeGuide() {
   localStorage.setItem("guideClosed", "true");
 }
 
+export function ouvrirModal(vente) {
+  document.getElementById("venteId").value = vente.id;
+  document.getElementById("venteQuantite").value = vente.quantity;
+  document.getElementById("ventePaiement").value = vente.payment_method;
+
+  document.getElementById("modalModifierVente").classList.remove("hidden");
+  document.getElementById("modalModifierVente").classList.add("flex");
+}
+
+export function fermerModal() {
+  document.getElementById("modalModifierVente").classList.add("hidden");
+  document.getElementById("modalModifierVente").classList.remove("flex");
+}

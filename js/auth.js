@@ -23,5 +23,5 @@ export function getCurrentUserId() {
 }
 export function logout() {
     localStorage.removeItem('authToken');
-    window.location.replace('login.html');
+    window.location.replace('/login/login.html');
 }

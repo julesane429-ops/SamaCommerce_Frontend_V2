@@ -47,7 +47,15 @@
             body: JSON.stringify({ username, password, company_name })
           });
 
-          const data = await res.json();
+          const rawText = await res.text();
+          console.log("Réponse brute du serveur:", rawText); // ✅ debug ajouté
+
+          let data;
+          try {
+            data = JSON.parse(rawText);
+          } catch {
+            data = { error: "Réponse non JSON" };
+          }
 
           if (res.ok) {
             showNotification('✅ Compte créé avec succès ! Connectez-vous.', "success");
@@ -55,6 +63,7 @@
           } else {
             showNotification('❌ Erreur : ' + (data.error || "Problème inconnu"), "error");
           }
+
         } catch (err) {
           console.error("Erreur lors de la requête:", err);
           showNotification("❌ Erreur de connexion au serveur.", "error");

@@ -15,6 +15,7 @@ import { supprimerProduit, mettreAJourProduit, ajouterProduit, filtrerProduits, 
 import { afficherCategories, afficherProduits, afficherCategoriesVente,afficherProduitsCategorie, verifierStockFaible, afficherCredits } from "./ui.js";
 import { showSection } from "./utils.js";
 
+
 // ✅ Annuler une vente
 export async function annulerVente(id) {
   const ok = await confirm('❓ Annuler cette vente ?');

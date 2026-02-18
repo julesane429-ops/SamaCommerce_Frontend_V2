@@ -15,8 +15,6 @@ import { supprimerProduit, mettreAJourProduit, ajouterProduit, filtrerProduits, 
 import { afficherCategories, afficherProduits, afficherCategoriesVente,afficherProduitsCategorie, verifierStockFaible, afficherCredits } from "./ui.js";
 import { showSection } from "./utils.js";
 
-
-
 // ✅ Annuler une vente
 export async function annulerVente(id) {
   const ok = await confirm('❓ Annuler cette vente ?');
@@ -95,48 +93,6 @@ export async function modifierVente(id) {
   } catch (e) {
     console.error("Erreur modifierVente:", e);
     showNotification("❌ Erreur réseau ou serveur", 'error');
-  }
-}
-
-// Remplit le tbody unique sans jamais créer de nouvelle table
-
-export function renderSalesHistory(ventes) {
-  purgeSalesHistoryClones();
-
-  const tbody = document.getElementById('salesHistoryBody');
-  if (!tbody) return;
-
-  const periode = document.getElementById('periodeRapports')?.value || 'tout';
-  const key = `${periode}|${ventes?.length || 0}|${appData.produits?.length || 0}`;
-  if (key === _lastSalesKey) return;
-  _lastSalesKey = key;
-
-  tbody.innerHTML = '';
-
-  if (!Array.isArray(ventes) || ventes.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-500 p-4">Aucune vente</td></tr>`;
-    return;
-  }
-
-  for (const v of ventes) {
-    const prod = (appData.produits || []).find(p => Number(p.id) === Number(v.product_id));
-    const unit = Number(v.price ?? 0);
-    const qty = Number(v.quantity ?? 0);
-    const montant = Number.isFinite(Number(v.total)) ? Number(v.total) : (unit * qty);
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="p-2 border">${new Date(v.date || v.created_at).toLocaleString()}</td>
-      <td class="p-2 border">${prod ? prod.name : 'Inconnu'}</td>
-      <td class="p-2 border">${v.quantity ?? 0}</td>
-      <td class="p-2 border">${(Number.isFinite(montant) ? montant : 0).toLocaleString()} F</td>
-      <td class="p-2 border">${v.payment_method || ''}</td>
-      <td class="p-2 border text-center">
-        <button class="bg-yellow-500 text-white px-2 py-1 rounded text-xs" onclick="modifierVente(${v.id})">✏️</button>
-        <button class="bg-red-500 text-white px-2 py-1 rounded text-xs" onclick="annulerVente(${v.id})">🗑️</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
   }
 }
 

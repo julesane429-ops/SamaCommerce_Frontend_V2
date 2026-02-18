@@ -4,7 +4,6 @@ import { afficherInventaire, setupSearchInputs, remplirSelectProduitsCredit } fr
 import { updateCharts, renderVentesChart, initCreditChart } from "./charts.js";
 import { authfetch, postCategoryServer, postProductServer, syncFromServer } from "./api.js";
 import { getCurrentUserId, logout } from "./auth.js";
-import { selectEmoji, supprimerCategorie, ajouterCategorie,remplirSelectCategories, afficherFiltresCategories } from "./categories.js";
 import { renderCreditsHistory,marquerCreditPaye, confirmerRemboursement, remplirProduitsCredit } from "./credits.js";
 import { loadAppDataLocal, saveAppDataLocal, enqueueOutbox, processOutboxOne, processOutboxAll, updateHeader, getExpirationDate } from "./index.js";
 import { showModal, hideModal, ouvrirModalEdit, showModalCredit, hideModalCredit, ouvrirModalRemboursement, hideModalRemboursement, showModalById, hideModalById, closePremiumModal, closeContactModal, closeGuide } from "./modal.js";

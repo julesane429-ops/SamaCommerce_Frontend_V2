@@ -1,21 +1,7 @@
 // rapports.js
-import { appData,chartVentesByDay, chartTopProduits, chartPaiements, chartStocksFaibles, creditChart, _lastSalesKey, _isRenderingSalesHistory, chartVentesJourInstance, deferredPrompt, installBtn, currentSection, chartCredits } from "./state.js";
-// import { afficherRapports, updateStats, afficherStatsCredits  } from "./rapports.js";
-import { afficherInventaire, setupSearchInputs, remplirSelectProduitsCredit } from "./inventaire.js";
-import { updateCharts, renderVentesChart, initCreditChart } from "./charts.js";
-import { authfetch, postCategoryServer, postProductServer, syncFromServer } from "./api.js";
-import { getCurrentUserId, logout } from "./auth.js";
-import { selectEmoji, supprimerCategorie, ajouterCategorie,remplirSelectCategories, afficherFiltresCategories } from "./categories.js";
-import { renderCreditsHistory,marquerCreditPaye, confirmerRemboursement, remplirProduitsCredit } from "./credits.js";
-import { loadAppDataLocal, saveAppDataLocal, enqueueOutbox, processOutboxOne, processOutboxAll, updateHeader, getExpirationDate } from "./index.js";
-import { showModal, hideModal, ouvrirModalEdit, showModalCredit, hideModalCredit, ouvrirModalRemboursement, hideModalRemboursement, showModalById, hideModalById, closePremiumModal, closeContactModal, closeGuide } from "./modal.js";
-import { showNotification, customConfirm,  } from "./notification.js";
-import { handleAddProductClick } from "./premium.js";
-import { supprimerProduit, mettreAJourProduit, ajouterProduit, filtrerProduits, modifierStock } from "./produits.js";
-import { afficherCategories, afficherProduits, afficherCategoriesVente,afficherProduitsCategorie, verifierStockFaible, afficherCredits } from "./ui.js";
-import { showSection } from "./utils.js";
-import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier, afficherPanier, modifierQuantitePanier, finaliserVente, tryRenderSalesHistory, ouvrirModal, fermerModal, modifierVente, marquerRembourse, purgeSalesHistoryClones, filtrerVentesParPeriode } from "./ventes.js";
-
+import { appData } from "./state.js";
+import { updateCharts } from "./charts.js";
+import { tryRenderSalesHistory, filtrerVentesParPeriode } from "./ventes.js";
 
 
 export function updateStats() {

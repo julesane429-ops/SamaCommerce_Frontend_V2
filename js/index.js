@@ -26,16 +26,16 @@ import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier
 
     if (!token) {
       console.log("Pas de token, redirection vers login.html");
-      window.location.replace('login.html?expired=1');
+      window.location.replace('login/login.html?expired=1');
     } else if (role === "admin") {
       console.log("Utilisateur admin détecté, redirection vers admin.html");
-      window.location.replace('admin.html');
+      window.location.replace('admin/admin.html');
     } else {
       console.log("Utilisateur normal détecté, reste sur index.html");
     }
   } catch (e) {
     console.error("Erreur lors du check initial :", e);
-    window.location.replace('login.html?expired=1');
+    window.location.replace('login/login.html?expired=1');
   }
 })();
 

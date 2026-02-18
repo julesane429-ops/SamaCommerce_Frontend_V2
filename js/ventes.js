@@ -289,16 +289,6 @@ export function fermerModal() {
   document.getElementById("modalModifierVente").classList.remove("flex");
 }
 
-// Quand on clique sur ✏️ dans le tableau
-export function modifierVente(id) {
-  const vente = appData.ventes.find(v => Number(v.id) === Number(id));
-  if (!vente) {
-    showNotification("❌ Vente introuvable", "error");
-    return;
-  }
-  ouvrirModal(vente);
-}
-
 export function marquerRembourse(venteId) {
   document.getElementById("remboursementVenteId").value = venteId;
   document.getElementById("modalRemboursement").classList.remove("hidden");

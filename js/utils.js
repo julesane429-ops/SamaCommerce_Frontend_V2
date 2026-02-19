@@ -1,5 +1,5 @@
 // utils.js
-import { appData,chartVentesByDay, chartTopProduits, chartPaiements, chartStocksFaibles, creditChart, _lastSalesKey, _isRenderingSalesHistory, chartVentesJourInstance, deferredPrompt, installBtn, currentSection, chartCredits } from "./state.js";
+import { appData,chartVentesByDay, chartTopProduits, chartPaiements, chartStocksFaibles, creditChart, _lastSalesKey, _isRenderingSalesHistory, chartVentesJourInstance, deferredPrompt, installBtn, currentSection, chartCredits, setCurrentSection} from "./state.js";
 import { afficherRapports, updateStats, afficherStatsCredits  } from "./rapports.js";
 import { afficherInventaire, setupSearchInputs, remplirSelectProduitsCredit } from "./inventaire.js";
 import { updateCharts, renderVentesChart, initCreditChart } from "./charts.js";
@@ -16,6 +16,7 @@ import { afficherCategories, afficherProduits, afficherCategoriesVente,afficherP
 import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier, afficherPanier, modifierQuantitePanier, finaliserVente, tryRenderSalesHistory, ouvrirModal, marquerRembourse, purgeSalesHistoryClones, filtrerVentesParPeriode, modifierVente } from "./ventes.js";
 
 
+setCurrentSection(section);
 
 // ---------- Navigation & UI helpers (structure kept) ----------
 

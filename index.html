@@ -38,18 +38,17 @@
     <div class="app-container">
         <!-- En-tête -->
         <div class="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6">
-            <div class="flex items-center justify-between">
-                <button class="text-3xl" id="backBtn" onclick="showSection('menu')" style="display: none;">←</button>
-                <div class="text-center flex-1">
-                    <h1 id="appHeader" class="text-2xl font-bold">🏪 Ma Boutique</h1>
-                    <div class="text-sm opacity-90">Ventes aujourd'hui: <span class="pulse" id="ventesToday">0</span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-3">
-                    <div class="text-3xl pulse">💰</div>
-                </div>
-            </div>
-        </div>
+  <div class="flex items-center justify-between">
+    <button class="text-3xl" id="backBtn" style="display: none;">←</button>
+    <div class="text-center flex-1">
+      <h1 id="appHeader" class="text-2xl font-bold">🏪 Ma Boutique</h1>
+      <div class="text-sm opacity-90">Ventes aujourd'hui: <span class="pulse" id="ventesToday">0</span></div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="text-3xl pulse">💰</div>
+    </div>
+  </div>
+</div>
 
         <!-- Menu Principal -->
         <div class="p-6 space-y-6" id="menuSection">
@@ -100,57 +99,46 @@
                 </div>
             </div>
 
-            <!-- Actions principales (ajouté Inventaire à côté de Rapports) -->
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <button
-                    class="big-button bg-gradient-to-br from-green-400 to-green-600 text-white p-8 rounded-3xl text-center shadow-lg"
-                    onclick="showSection('vente')">
-                    <div class="text-6xl mb-3">💳</div>
-                    <div class="font-bold text-xl">VENDRE</div>
-                    <div class="text-sm opacity-90">Vendre un article</div>
-                </button>
+            <!-- Actions principales -->
+<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
 
-                <button
-                    class="big-button bg-gradient-to-br from-blue-400 to-blue-600 text-white p-8 rounded-3xl text-center shadow-lg"
-                    onclick="showSection('stock')">
-                    <div class="text-6xl mb-3">📦</div>
-                    <div class="font-bold text-xl">STOCK</div>
-                    <div class="text-sm opacity-90">Gérer produits</div>
-                </button>
+  <button class="big-button bg-gradient-to-br from-green-400 to-green-600 text-white p-8 rounded-3xl text-center shadow-lg" data-section="vente">
+    <div class="text-6xl mb-3">💳</div>
+    <div class="font-bold text-xl">VENDRE</div>
+    <div class="text-sm opacity-90">Vendre un article</div>
+  </button>
 
-                <button
-                    class="big-button bg-gradient-to-br from-purple-400 to-purple-600 text-white p-8 rounded-3xl text-center shadow-lg"
-                    onclick="showSection('categories')">
-                    <div class="text-6xl mb-3">🏷️</div>
-                    <div class="font-bold text-xl">CATÉGORIES</div>
-                    <div class="text-sm opacity-90">Organiser</div>
-                </button>
+  <button class="big-button bg-gradient-to-br from-blue-400 to-blue-600 text-white p-8 rounded-3xl text-center shadow-lg" data-section="stock">
+    <div class="text-6xl mb-3">📦</div>
+    <div class="font-bold text-xl">STOCK</div>
+    <div class="text-sm opacity-90">Gérer produits</div>
+  </button>
 
-                <button
-                    class="big-button bg-gradient-to-br from-orange-400 to-orange-600 text-white p-8 rounded-3xl text-center shadow-lg"
-                    onclick="showSection('rapports')">
-                    <div class="text-6xl mb-3">📈</div>
-                    <div class="font-bold text-xl">CHIFFRES</div>
-                    <div class="text-sm opacity-90">Voir gains</div>
-                </button>
+  <button class="big-button bg-gradient-to-br from-purple-400 to-purple-600 text-white p-8 rounded-3xl text-center shadow-lg" data-section="categories">
+    <div class="text-6xl mb-3">🏷️</div>
+    <div class="font-bold text-xl">CATÉGORIES</div>
+    <div class="text-sm opacity-90">Organiser</div>
+  </button>
 
-                <button
-                    class="big-button bg-gradient-to-br from-teal-400 to-teal-600 text-white p-8 rounded-3xl text-center shadow-lg"
-                    onclick="showSection('inventaire')">
-                    <div class="text-6xl mb-3">📋</div>
-                    <div class="font-bold text-xl">INVENTAIRE</div>
-                    <div class="text-sm opacity-90">Voir bénéfices</div>
-                </button>
+  <button class="big-button bg-gradient-to-br from-orange-400 to-orange-600 text-white p-8 rounded-3xl text-center shadow-lg" data-section="rapports">
+    <div class="text-6xl mb-3">📈</div>
+    <div class="font-bold text-xl">CHIFFRES</div>
+    <div class="text-sm opacity-90">Voir gains</div>
+  </button>
 
-                <button
-                    class="big-button bg-gradient-to-br from-purple-400 to-purple-600 text-white p-8 rounded-3xl text-center shadow-lg"
-                    onclick="showSection('credits')">
-                    <div class="text-6xl mb-3">📝</div>
-                    <div class="font-bold text-xl">CRÉDITS</div>
-                    <div class="text-sm opacity-90">Gérer dettes clients</div>
-                </button>
+  <button class="big-button bg-gradient-to-br from-teal-400 to-teal-600 text-white p-8 rounded-3xl text-center shadow-lg" data-section="inventaire">
+    <div class="text-6xl mb-3">📋</div>
+    <div class="font-bold text-xl">INVENTAIRE</div>
+    <div class="text-sm opacity-90">Voir bénéfices</div>
+  </button>
 
-            </div>
+  <button class="big-button bg-gradient-to-br from-purple-400 to-purple-600 text-white p-8 rounded-3xl text-center shadow-lg" data-section="credits">
+    <div class="text-6xl mb-3">📝</div>
+    <div class="font-bold text-xl">CRÉDITS</div>
+    <div class="text-sm opacity-90">Gérer dettes clients</div>
+  </button>
+
+</div>
 
             <!-- Alertes stock faible -->
             <div class="bg-gradient-to-r from-red-100 to-orange-100 rounded-3xl p-6 shadow-lg" id="alertesStock"

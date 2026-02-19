@@ -44,3 +44,4 @@ export function showSection(section) {
     remplirSelectProduitsCredit();
   }
 }
+window.showSection = showSection;

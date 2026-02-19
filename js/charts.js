@@ -175,7 +175,7 @@ export function renderVentesChart() {
 export function initCreditChart() {
   const ctx = document.getElementById("chartCredits");
   if (!ctx) return;
-
+  if (creditChart) creditChart.destroy();
   creditChart = new Chart(ctx, {
     type: "line",
     data: {

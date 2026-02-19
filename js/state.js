@@ -17,6 +17,14 @@ export let chartStocksFaibles = null;
 export let creditChart = null;
 export let _lastSalesKey = "";
 export let _isRenderingSalesHistory = false;
+
+export function setIsRenderingSalesHistory(value) {
+  _isRenderingSalesHistory = value;
+}
+
+export function getIsRenderingSalesHistory() {
+  return _isRenderingSalesHistory;
+}
 export let chartVentesJourInstance = null;
 export let deferredPrompt = null;
 export let installBtn = document.getElementById('installBtn');

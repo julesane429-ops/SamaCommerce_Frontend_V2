@@ -9,7 +9,7 @@ import { initCreditChart } from "./charts.js";
 import { authfetch, syncFromServer } from "./api.js";
 import { renderCreditsHistory, remplirProduitsCredit } from "./credits.js";
 import { loadAppDataLocal, getExpirationDate } from "./index.js";
-import { hideModalCredit, fermerModal } from "./modal.js";
+import { hideModalCredit, fermerModal, closeGuide } from "./modal.js";
 import { showNotification } from "./notification.js";
 import { afficherCategories, afficherProduits, afficherCategoriesVente, verifierStockFaible, afficherCredits } from "./ui.js";
 import { finaliserVente } from "./ventes.js";
@@ -219,6 +219,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ======================
   // 🔟 Guide utilisateur
   // ======================
+
+  const btnCloseGuide = document.getElementById("btnCloseGuide");
+
+  if (btnCloseGuide) {
+    btnCloseGuide.addEventListener("click", closeGuide);
+  }
+
   if (localStorage.getItem("guideClosed") === "true") {
     const guide = document.getElementById("userGuide");
     if (guide) guide.style.display = "none";
@@ -237,15 +244,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (backBtn) {
     backBtn.addEventListener('click', () => showSection('menu'));
   }
- /// PDF boutons
+  /// PDF boutons
   const btnInv = document.getElementById("btnPdfInventaire");
-    if (btnInv) {
-        btnInv.addEventListener("click", generateInventairePDF);
-    }
+  if (btnInv) {
+    btnInv.addEventListener("click", generateInventairePDF);
+  }
 
-    const btnRap = document.getElementById("btnPdfRapports");
-    if (btnRap) {
-        btnRap.addEventListener("click", generateRapportsPDF);
-    }
+  const btnRap = document.getElementById("btnPdfRapports");
+  if (btnRap) {
+    btnRap.addEventListener("click", generateRapportsPDF);
+  }
 
 });

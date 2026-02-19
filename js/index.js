@@ -13,7 +13,7 @@ import { showNotification, customConfirm } from "./notification.js";
 import { handleAddProductClick } from "./premium.js";
 import { supprimerProduit, mettreAJourProduit, ajouterProduit, filtrerProduits, modifierStock } from "./produits.js";
 import { afficherCategories, afficherProduits, afficherCategoriesVente, afficherProduitsCategorie, verifierStockFaible, afficherCredits } from "./ui.js";
-import { showSection } from "./utils.js";
+import { showSection,generateInventairePDF,generateRapportsPDF } from "./utils.js";
 import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier, afficherPanier, modifierQuantitePanier, finaliserVente, tryRenderSalesHistory, ouvrirModal, marquerRembourse, purgeSalesHistoryClones, filtrerVentesParPeriode, modifierVente } from "./ventes.js";
 
 // ------------------- Exposer globalement -------------------
@@ -94,6 +94,8 @@ window.afficherCredits = afficherCredits;
 
 // Utils
 window.showSection = showSection;
+window.generateInventairePDF = generateInventairePDF;
+window.generateRapportsPDF = generateRapportsPDF;
 
 // Ventes
 window.annulerVente = annulerVente;

@@ -14,6 +14,16 @@ import { afficherCategories, afficherProduits, afficherCategoriesVente,afficherP
 import { showSection } from "./utils.js";
 import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier, afficherPanier, modifierQuantitePanier, finaliserVente, tryRenderSalesHistory, ouvrirModal, marquerRembourse, purgeSalesHistoryClones, filtrerVentesParPeriode, modifierVente  } from "./ventes.js";
 
+// api.js
+// URL de base de ton serveur API
+export const API_BASE = "https://samacommerce-backend-v2.onrender.com/api";
+
+// Expose toutes les fonctions sur window si nécessaire
+window.authfetch = authfetch;
+window.postSaleServer = postSaleServer;
+window.postCategoryServer = postCategoryServer;
+window.postProductServer = postProductServer;
+window.syncFromServer = syncFromServer;
 
 
 export function authfetch(url, options = {}) {

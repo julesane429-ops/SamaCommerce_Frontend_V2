@@ -20,8 +20,11 @@ export let _isRenderingSalesHistory = false;
 export let chartVentesJourInstance = null;
 export let deferredPrompt = null;
 export let installBtn = document.getElementById('installBtn');
+
+// ✅ currentSection corrigé pour pouvoir setter
 export let currentSection = 'menu';
 export function setCurrentSection(section) {
   currentSection = section;
 }
-export let chartCredits; 
+
+export let chartCredits;

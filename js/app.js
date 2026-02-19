@@ -223,4 +223,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (guide) guide.style.display = "none";
   }
 
+  // Tous les boutons principaux
+  document.querySelectorAll('.big-button[data-section]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const section = btn.dataset.section;
+      showSection(section);
+    });
+  });
+
+  // Bouton retour
+  const backBtn = document.getElementById('backBtn');
+  if (backBtn) {
+    backBtn.addEventListener('click', () => showSection('menu'));
+  }
+
 });

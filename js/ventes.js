@@ -1,5 +1,5 @@
 // ventes.js
-import { appData,chartVentesByDay, chartTopProduits, chartPaiements, chartStocksFaibles, creditChart, _lastSalesKey, _isRenderingSalesHistory, chartVentesJourInstance, deferredPrompt, installBtn, currentSection, chartCredits,getIsRenderingSalesHistory, setIsRenderingSalesHistory } from "./state.js";
+import { appData,chartVentesByDay, chartTopProduits, chartPaiements, chartStocksFaibles, creditChart, _lastSalesKey, _isRenderingSalesHistory, chartVentesJourInstance, deferredPrompt, installBtn, currentSection, chartCredits,getIsRenderingSalesHistory, setIsRenderingSalesHistory,getLastSalesKey, setLastSalesKey } from "./state.js";
 import { afficherRapports, updateStats, afficherStatsCredits  } from "./rapports.js";
 import { afficherInventaire, setupSearchInputs, remplirSelectProduitsCredit } from "./inventaire.js";
 import { updateCharts, renderVentesChart, initCreditChart } from "./charts.js";
@@ -229,8 +229,9 @@ export function renderSalesHistory(ventes) {
 
   const periode = document.getElementById('periodeRapports')?.value || 'tout';
   const key = `${periode}|${ventes?.length || 0}|${appData.produits?.length || 0}`;
-  if (key === _lastSalesKey) return;
-  _lastSalesKey = key;
+
+  if (key === getLastSalesKey()) return;
+  setLastSalesKey(key); // ✅ utilise le setter
 
   tbody.innerHTML = '';
 

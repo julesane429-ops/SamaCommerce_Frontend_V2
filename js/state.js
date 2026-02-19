@@ -21,4 +21,7 @@ export let chartVentesJourInstance = null;
 export let deferredPrompt = null;
 export let installBtn = document.getElementById('installBtn');
 export let currentSection = 'menu';
+export function setCurrentSection(section) {
+  currentSection = section;
+}
 export let chartCredits; 

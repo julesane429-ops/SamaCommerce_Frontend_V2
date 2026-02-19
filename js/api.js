@@ -16,7 +16,7 @@ import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier
 
 // api.js
 // URL de base de ton serveur API
-export const API_BASE = "https://samacommerce-backend-v2.onrender.com/api";
+export const API_BASE = "https://samacommerce-backend-v2.onrender.com";
 
 // Expose toutes les fonctions sur window si nécessaire
 window.authfetch = authfetch;

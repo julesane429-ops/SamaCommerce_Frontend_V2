@@ -127,6 +127,8 @@ export function closeGuide() {
   localStorage.setItem("guideClosed", "true");
 }
 
+window.closeGuide = closeGuide;
+
 export function ouvrirModal(vente) {
   document.getElementById("venteId").value = vente.id;
   document.getElementById("venteQuantite").value = vente.quantity;

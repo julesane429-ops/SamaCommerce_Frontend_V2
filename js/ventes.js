@@ -1,5 +1,5 @@
 // ventes.js
-import { appData,chartVentesByDay, chartTopProduits, chartPaiements, chartStocksFaibles, creditChart, _lastSalesKey, _isRenderingSalesHistory, chartVentesJourInstance, deferredPrompt, installBtn, currentSection, chartCredits } from "./state.js";
+import { appData,chartVentesByDay, chartTopProduits, chartPaiements, chartStocksFaibles, creditChart, _lastSalesKey, _isRenderingSalesHistory, chartVentesJourInstance, deferredPrompt, installBtn, currentSection, chartCredits,getIsRenderingSalesHistory, setIsRenderingSalesHistory } from "./state.js";
 import { afficherRapports, updateStats, afficherStatsCredits  } from "./rapports.js";
 import { afficherInventaire, setupSearchInputs, remplirSelectProduitsCredit } from "./inventaire.js";
 import { updateCharts, renderVentesChart, initCreditChart } from "./charts.js";
@@ -15,7 +15,6 @@ import { handleAddProductClick } from "./premium.js";
 import { supprimerProduit, mettreAJourProduit, ajouterProduit, filtrerProduits, modifierStock } from "./produits.js";
 import { afficherCategories, afficherProduits, afficherCategoriesVente,afficherProduitsCategorie, verifierStockFaible, afficherCredits } from "./ui.js";
 import { showSection } from "./utils.js";
-
 
 // ✅ Annuler une vente
 export async function annulerVente(id) {
@@ -263,8 +262,8 @@ export function renderSalesHistory(ventes) {
 }
 
 export function tryRenderSalesHistory(ventesFiltrees) {
-  if (_isRenderingSalesHistory) return;
-  _isRenderingSalesHistory = true;
+  if (getIsRenderingSalesHistory()) return;
+  setIsRenderingSalesHistory(true);
   try {
     if (!appData?.ventes?.length || !appData?.produits?.length) {
       const tbody = document.getElementById('salesHistoryBody');
@@ -273,7 +272,7 @@ export function tryRenderSalesHistory(ventesFiltrees) {
       renderSalesHistory(ventesFiltrees);
     }
   } finally {
-    _isRenderingSalesHistory = false;
+    setIsRenderingSalesHistory(false);
   }
 }
 

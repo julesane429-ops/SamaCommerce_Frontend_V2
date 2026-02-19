@@ -13,6 +13,7 @@ import { hideModalCredit, fermerModal } from "./modal.js";
 import { showNotification } from "./notification.js";
 import { afficherCategories, afficherProduits, afficherCategoriesVente, verifierStockFaible, afficherCredits } from "./ui.js";
 import { finaliserVente } from "./ventes.js";
+import { showSection } from "./utils.js";
 
 // ==========================
 // CONFIG

@@ -45,7 +45,7 @@ function logout() {
 
     // Redirection vers la page de login
     setTimeout(() => {
-        window.location.href = "login.html";
+        window.location.href = "/login/login.html";
     }, 800);
 }
 

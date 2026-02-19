@@ -15,7 +15,17 @@ export let chartTopProduits = null;
 export let chartPaiements = null;
 export let chartStocksFaibles = null;
 export let creditChart = null;
+// state.js
 export let _lastSalesKey = "";
+
+export function setLastSalesKey(value) {
+  _lastSalesKey = value;
+}
+
+export function getLastSalesKey() {
+  return _lastSalesKey;
+}
+
 export let _isRenderingSalesHistory = false;
 
 export function setIsRenderingSalesHistory(value) {

@@ -7,7 +7,7 @@ import {
 
 import { afficherRapports, updateStats, afficherStatsCredits } from "./rapports.js";
 import { afficherInventaire, setupSearchInputs, remplirSelectProduitsCredit } from "./inventaire.js";
-import { afficherCategoriesVente, afficherPanier, afficherProduits, afficherFiltresCategories, afficherCategories, afficherCredits, remplirSelectProduitsCredit } from "./ui.js";
+import { afficherCategoriesVente, afficherPanier, afficherProduits, afficherFiltresCategories, afficherCategories, afficherCredits } from "./ui.js";
 
 export function showSection(section) {
   const sections = ['menu', 'vente', 'stock', 'categories', 'rapports', 'inventaire', 'credits'];

@@ -1,21 +1,114 @@
-import { appData,chartVentesByDay, chartTopProduits, chartPaiements, chartStocksFaibles, creditChart, _lastSalesKey, _isRenderingSalesHistory, chartVentesJourInstance, deferredPrompt, installBtn, currentSection, chartCredits } from "./state.js";
-import { afficherRapports, updateStats, afficherStatsCredits  } from "./rapports.js";
+// ------------------- Importations -------------------
+import { appData, chartVentesByDay, chartTopProduits, chartPaiements, chartStocksFaibles, creditChart, _lastSalesKey, _isRenderingSalesHistory, chartVentesJourInstance, deferredPrompt, installBtn, currentSection, chartCredits } from "./state.js";
+
+import { afficherRapports, updateStats, afficherStatsCredits } from "./rapports.js";
 import { afficherInventaire, setupSearchInputs, remplirSelectProduitsCredit } from "./inventaire.js";
 import { updateCharts, renderVentesChart, initCreditChart } from "./charts.js";
 import { authfetch, postCategoryServer, postProductServer, syncFromServer } from "./api.js";
 import { getCurrentUserId, logout } from "./auth.js";
-window.logout = logout;
-import { selectEmoji, supprimerCategorie, ajouterCategorie,remplirSelectCategories, afficherFiltresCategories } from "./categories.js";
-import { renderCreditsHistory,marquerCreditPaye, confirmerRemboursement, remplirProduitsCredit } from "./credits.js";
+import { selectEmoji, supprimerCategorie, ajouterCategorie, remplirSelectCategories, afficherFiltresCategories } from "./categories.js";
+import { renderCreditsHistory, marquerCreditPaye, confirmerRemboursement, remplirProduitsCredit } from "./credits.js";
 import { showModal, hideModal, ouvrirModalEdit, showModalCredit, hideModalCredit, ouvrirModalRemboursement, hideModalRemboursement, showModalById, hideModalById, closePremiumModal, closeContactModal, closeGuide, fermerModal } from "./modal.js";
-import { showNotification, customConfirm,  } from "./notification.js";
+import { showNotification, customConfirm } from "./notification.js";
 import { handleAddProductClick } from "./premium.js";
 import { supprimerProduit, mettreAJourProduit, ajouterProduit, filtrerProduits, modifierStock } from "./produits.js";
-import { afficherCategories, afficherProduits, afficherCategoriesVente,afficherProduitsCategorie, verifierStockFaible, afficherCredits } from "./ui.js";
+import { afficherCategories, afficherProduits, afficherCategoriesVente, afficherProduitsCategorie, verifierStockFaible, afficherCredits } from "./ui.js";
 import { showSection } from "./utils.js";
-window.showSection = showSection;
-import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier, afficherPanier, modifierQuantitePanier, finaliserVente, tryRenderSalesHistory, ouvrirModal, marquerRembourse, purgeSalesHistoryClones, filtrerVentesParPeriode, modifierVente  } from "./ventes.js";
+import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier, afficherPanier, modifierQuantitePanier, finaliserVente, tryRenderSalesHistory, ouvrirModal, marquerRembourse, purgeSalesHistoryClones, filtrerVentesParPeriode, modifierVente } from "./ventes.js";
 
+// ------------------- Exposer globalement -------------------
+// State / auth
+window.logout = logout;
+window.getCurrentUserId = getCurrentUserId;
+
+// Rapports
+window.afficherRapports = afficherRapports;
+window.updateStats = updateStats;
+window.afficherStatsCredits = afficherStatsCredits;
+
+// Inventaire
+window.afficherInventaire = afficherInventaire;
+window.setupSearchInputs = setupSearchInputs;
+window.remplirSelectProduitsCredit = remplirSelectProduitsCredit;
+
+// Charts
+window.updateCharts = updateCharts;
+window.renderVentesChart = renderVentesChart;
+window.initCreditChart = initCreditChart;
+
+// API
+window.authfetch = authfetch;
+window.postCategoryServer = postCategoryServer;
+window.postProductServer = postProductServer;
+window.syncFromServer = syncFromServer;
+
+// Categories
+window.selectEmoji = selectEmoji;
+window.supprimerCategorie = supprimerCategorie;
+window.ajouterCategorie = ajouterCategorie;
+window.remplirSelectCategories = remplirSelectCategories;
+window.afficherFiltresCategories = afficherFiltresCategories;
+
+// Credits
+window.renderCreditsHistory = renderCreditsHistory;
+window.marquerCreditPaye = marquerCreditPaye;
+window.confirmerRemboursement = confirmerRemboursement;
+window.remplirProduitsCredit = remplirProduitsCredit;
+
+// Modal
+window.showModal = showModal;
+window.hideModal = hideModal;
+window.ouvrirModalEdit = ouvrirModalEdit;
+window.showModalCredit = showModalCredit;
+window.hideModalCredit = hideModalCredit;
+window.ouvrirModalRemboursement = ouvrirModalRemboursement;
+window.hideModalRemboursement = hideModalRemboursement;
+window.showModalById = showModalById;
+window.hideModalById = hideModalById;
+window.closePremiumModal = closePremiumModal;
+window.closeContactModal = closeContactModal;
+window.closeGuide = closeGuide;
+window.fermerModal = fermerModal;
+
+// Notification
+window.showNotification = showNotification;
+window.customConfirm = customConfirm;
+
+// Premium
+window.handleAddProductClick = handleAddProductClick;
+
+// Produits
+window.supprimerProduit = supprimerProduit;
+window.mettreAJourProduit = mettreAJourProduit;
+window.ajouterProduit = ajouterProduit;
+window.filtrerProduits = filtrerProduits;
+window.modifierStock = modifierStock;
+
+// UI
+window.afficherCategories = afficherCategories;
+window.afficherProduits = afficherProduits;
+window.afficherCategoriesVente = afficherCategoriesVente;
+window.afficherProduitsCategorie = afficherProduitsCategorie;
+window.verifierStockFaible = verifierStockFaible;
+window.afficherCredits = afficherCredits;
+
+// Utils
+window.showSection = showSection;
+
+// Ventes
+window.annulerVente = annulerVente;
+window.renderSalesHistory = renderSalesHistory;
+window.finaliserVenteCredit = finaliserVenteCredit;
+window.ajouterAuPanier = ajouterAuPanier;
+window.afficherPanier = afficherPanier;
+window.modifierQuantitePanier = modifierQuantitePanier;
+window.finaliserVente = finaliserVente;
+window.tryRenderSalesHistory = tryRenderSalesHistory;
+window.ouvrirModal = ouvrirModal;
+window.marquerRembourse = marquerRembourse;
+window.purgeSalesHistoryClones = purgeSalesHistoryClones;
+window.filtrerVentesParPeriode = filtrerVentesParPeriode;
+window.modifierVente = modifierVente;
 
 
 (function () {
@@ -144,24 +237,3 @@ export function getExpirationDate() {
   now.setDate(now.getDate() + 30);
   return now.toISOString().split("T")[0]; // format YYYY-MM-DD
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

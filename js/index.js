@@ -4,6 +4,7 @@ import { afficherInventaire, setupSearchInputs, remplirSelectProduitsCredit } fr
 import { updateCharts, renderVentesChart, initCreditChart } from "./charts.js";
 import { authfetch, postCategoryServer, postProductServer, syncFromServer } from "./api.js";
 import { getCurrentUserId, logout } from "./auth.js";
+window.logout = logout;
 import { selectEmoji, supprimerCategorie, ajouterCategorie,remplirSelectCategories, afficherFiltresCategories } from "./categories.js";
 import { renderCreditsHistory,marquerCreditPaye, confirmerRemboursement, remplirProduitsCredit } from "./credits.js";
 import { showModal, hideModal, ouvrirModalEdit, showModalCredit, hideModalCredit, ouvrirModalRemboursement, hideModalRemboursement, showModalById, hideModalById, closePremiumModal, closeContactModal, closeGuide, fermerModal } from "./modal.js";
@@ -13,7 +14,6 @@ import { supprimerProduit, mettreAJourProduit, ajouterProduit, filtrerProduits, 
 import { afficherCategories, afficherProduits, afficherCategoriesVente,afficherProduitsCategorie, verifierStockFaible, afficherCredits } from "./ui.js";
 import { showSection } from "./utils.js";
 import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier, afficherPanier, modifierQuantitePanier, finaliserVente, tryRenderSalesHistory, ouvrirModal, marquerRembourse, purgeSalesHistoryClones, filtrerVentesParPeriode, modifierVente  } from "./ventes.js";
-
 
 
 
@@ -62,13 +62,24 @@ const defaultData = {
 // ---------- localStorage helpers ----------
 export function loadAppDataLocal() {
   const raw = localStorage.getItem('boutique_appData');
+
   if (raw) {
-    try { appData = JSON.parse(raw); }
-    catch (e) { appData = JSON.parse(JSON.stringify(defaultData)); }
-  } else appData = JSON.parse(JSON.stringify(defaultData));
-  appData.produits.forEach(p => { if (typeof p.priceAchat === 'undefined') p.priceAchat = p.price_achat || 0; });
-  // ensure outbox exists
-  if (!localStorage.getItem('boutique_outbox')) localStorage.setItem('boutique_outbox', JSON.stringify([]));
+    try {
+      Object.assign(appData, JSON.parse(raw));
+    } catch (e) {
+      Object.assign(appData, JSON.parse(JSON.stringify(defaultData)));
+    }
+  } else {
+    Object.assign(appData, JSON.parse(JSON.stringify(defaultData)));
+  }
+
+  appData.produits.forEach(p => {
+    if (typeof p.priceAchat === 'undefined')
+      p.priceAchat = p.price_achat || 0;
+  });
+
+  if (!localStorage.getItem('boutique_outbox'))
+    localStorage.setItem('boutique_outbox', JSON.stringify([]));
 }
 
 export function saveAppDataLocal() { localStorage.setItem('boutique_appData', JSON.stringify(appData)); }

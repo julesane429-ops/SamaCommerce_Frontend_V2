@@ -237,5 +237,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (backBtn) {
     backBtn.addEventListener('click', () => showSection('menu'));
   }
+ /// PDF boutons
+  const btnInv = document.getElementById("btnPdfInventaire");
+    if (btnInv) {
+        btnInv.addEventListener("click", generateInventairePDF);
+    }
+
+    const btnRap = document.getElementById("btnPdfRapports");
+    if (btnRap) {
+        btnRap.addEventListener("click", generateRapportsPDF);
+    }
 
 });

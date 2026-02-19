@@ -1,10 +1,11 @@
 // ⚡ Fonction de redirection selon le rôle
 function redirectAccordingToRole(role) {
     console.log("Redirection selon rôle :", role);
+
     if (role === "admin") {
-        window.location.replace('admin.html');
+        window.location.replace('/admin/admin.html');
     } else {
-        window.location.replace('index.html');
+        window.location.replace('/index.html');
     }
 }
 

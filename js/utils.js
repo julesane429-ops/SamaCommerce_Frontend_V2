@@ -7,8 +7,10 @@ import {
 
 import { afficherRapports, updateStats, afficherStatsCredits } from "./rapports.js";
 import { afficherInventaire, setupSearchInputs, remplirSelectProduitsCredit } from "./inventaire.js";
-import { afficherCategoriesVente, afficherPanier, afficherProduits, afficherCategories, afficherCredits } from "./ui.js";
+import { afficherCategoriesVente, afficherProduits, afficherCategories, afficherCredits } from "./ui.js";
 import { selectEmoji, supprimerCategorie, ajouterCategorie,remplirSelectCategories, afficherFiltresCategories } from "./categories.js";
+import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier, afficherPanier, modifierQuantitePanier, finaliserVente, tryRenderSalesHistory, ouvrirModal, marquerRembourse, purgeSalesHistoryClones, filtrerVentesParPeriode, modifierVente  } from "./ventes.js";
+
 
 export function showSection(section) {
   const sections = ['menu', 'vente', 'stock', 'categories', 'rapports', 'inventaire', 'credits'];

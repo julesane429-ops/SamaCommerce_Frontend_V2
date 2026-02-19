@@ -33,6 +33,11 @@ function showNotification(message, type = "info") {
     }, 4000);
 }
 
+function closeLoginGuide() {
+    document.getElementById("loginGuideOverlay").style.display = "none";
+    localStorage.setItem("loginGuideClosed", "true");
+}
+
 // ⚡ Tout le DOM ready
 document.addEventListener('DOMContentLoaded', () => {
 

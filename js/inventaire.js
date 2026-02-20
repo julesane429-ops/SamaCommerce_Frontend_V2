@@ -1,7 +1,5 @@
 // inventaire.js
 import { appData } from "./state.js";
-import { Chart, registerables } from "chart.js";
-Chart.register(...registerables);
 
 let chartInventaireInstance = null;
 
@@ -30,7 +28,6 @@ export function afficherInventaire() {
     .map(p => {
       let vendu = p.vendu || 0;
 
-      // Filtrage par période (sur ventes si disponibles)
       if (periode !== "tout" && p.ventes) {
         const now = new Date();
         const ventesPeriode = p.ventes.filter(v => {
@@ -59,7 +56,7 @@ export function afficherInventaire() {
       '<tr><td colspan="7" class="text-center text-gray-500 py-4">Aucun produit correspondant</td></tr>';
   }
 
-  // --- Statistiques ---
+  // --- Statistiques mini-cartes ---
   const totalStock = produitsFiltres.reduce((s, p) => s + (p.stock || 0), 0);
   const valeurStock = produitsFiltres.reduce((s, p) => s + (p.stock || 0) * (p.priceAchat || p.price_achat || 0), 0);
   const profitTotal = produitsFiltres.reduce((s, p) => s + ((p.vendu || 0) * ((p.price || 0) - (p.priceAchat || p.price_achat || 0))), 0);
@@ -113,7 +110,7 @@ export function afficherInventaire() {
   const ctx = document.getElementById("chartInventaire")?.getContext("2d");
   if (ctx) {
     if (chartInventaireInstance) chartInventaireInstance.destroy();
-    chartInventaireInstance = new Chart(ctx, {
+    chartInventaireInstance = new window.Chart(ctx, {
       type: "bar",
       data: {
         labels: produitsFiltres.map(p => p.name),

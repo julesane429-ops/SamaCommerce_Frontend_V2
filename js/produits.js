@@ -83,44 +83,40 @@ export async function mettreAJourProduit() {
 export async function ajouterProduit() {
   const name = document.getElementById('nomProduit').value;
   const category_id = parseInt(document.getElementById('categorieProduit').value);
-  const scentEl = document.getElementById('parfumProduit');
-  const scent = scentEl ? scentEl.value : '';
-  const priceAchat = parseFloat(document.getElementById('prixAchatProduit').value); // ✅ prix achat
-  const price = parseFloat(document.getElementById('prixProduit').value);
+  const priceAchat = parseFloat(document.getElementById('prixAchatProduit').value);
+  const price_retail = parseFloat(document.getElementById('prixDetailProduit').value);
+  const price_wholesale = parseFloat(document.getElementById('prixGrosProduit').value) || null;
   const stock = parseInt(document.getElementById('stockProduit').value);
+  const unit = document.getElementById('unitProduit').value;
 
-  // Validation
-  if (!name || !category_id || isNaN(price) || isNaN(stock) || isNaN(priceAchat)) {
+  if (!name || !category_id || isNaN(price_retail) || isNaN(stock) || isNaN(priceAchat)) {
     showNotification('❌ Remplissez tous les champs correctement.', "error");
     return;
   }
 
-  // ✅ envoyer avec le nom correct pour la BDD
   const produit = {
-    name: name,
-    category_id: category_id,
-    scent: scent,
-    price: price,
+    name,
+    category_id,
+    price: price_retail, // compatibilité
+    price_retail,
+    price_wholesale,
     price_achat: priceAchat,
-    stock: stock
+    stock,
+    unit
   };
 
   const created = await postProductServer(produit);
+
   if (created) {
-    showNotification('✅ Produit ajouté (serveur).', "success");
+    showNotification('✅ Produit ajouté', "success");
     await syncFromServer();
-    updateStats();
-    verifierStockFaible();
-    afficherCategoriesVente();
     afficherProduits();
-    afficherCategories();
-    afficherRapports();
-    afficherInventaire();
     hideModal();
   } else {
-    showNotification('❌ Erreur lors de l\'ajout du produit.', "error");
+    showNotification('❌ Erreur ajout produit', "error");
   }
 }
+
 
 export function filtrerProduits(categorieId) { document.querySelectorAll('.filtre-btn').forEach(function (btn) { btn.classList.remove('bg-blue-500', 'text-white'); btn.classList.add('bg-gray-200'); }); if (window.event && window.event.target) { var t = window.event.target; t.classList.add('bg-blue-500', 'text-white'); t.classList.remove('bg-gray-200'); } afficherProduits(categorieId); }
 

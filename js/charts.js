@@ -222,3 +222,54 @@ export function initCreditChart() {
     }
   });
 }
+
+export function chartEvolutionCA(ventes) {
+  const ctx = document.getElementById("chartVentesJour");
+  if (!ctx) return;
+
+  const map = {};
+
+  ventes.forEach(v => {
+    if (!v.paid) return;
+
+    const date = new Date(v.date).toLocaleDateString();
+    const montant = v.total || (v.price || 0) * (v.quantity || 0);
+
+    map[date] = (map[date] || 0) + montant;
+  });
+
+  new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: Object.keys(map),
+      datasets: [{
+        label: "CA encaissé",
+        data: Object.values(map),
+        borderWidth: 2
+      }]
+    }
+  });
+}
+
+export function chartCreditsStats(credits) {
+  const ctx = document.getElementById("chartCredits");
+  if (!ctx) return;
+
+  let payes = 0;
+  let impayes = 0;
+
+  credits.forEach(c => {
+    if (c.paid) payes += c.total;
+    else impayes += c.total;
+  });
+
+  new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: ["Payés", "Impayés"],
+      datasets: [{
+        data: [payes, impayes]
+      }]
+    }
+  });
+}

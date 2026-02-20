@@ -150,3 +150,24 @@ export function generateRapportsPDF() {
 
     doc.save(`rapport_chiffres_${new Date().toISOString().split("T")[0]}.pdf`);
 }
+
+export function genererJournal(ventes) {
+  const container = document.getElementById("journalComptable");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  ventes.forEach(v => {
+    const montant = v.total || (v.price || 0) * (v.quantity || 0);
+    const statut = v.paid ? "Encaissement" : "Créance";
+
+    const div = document.createElement("div");
+    div.className = "flex justify-between border-b py-1";
+    div.innerHTML = `
+      <div>${new Date(v.date).toLocaleDateString()}</div>
+      <div>${statut}</div>
+      <div>${montant.toLocaleString()} F</div>
+    `;
+    container.appendChild(div);
+  });
+}

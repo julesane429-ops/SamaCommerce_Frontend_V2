@@ -159,40 +159,6 @@ export function updateCharts(ventesFiltrees) {
   }
 }
 
-// ==========================
-// ==== VENTES JOURNALIER ====
-// ==========================
-export function renderVentesChart() {
-  if (!appData.stats.historique || appData.stats.historique.length === 0) return;
-
-  if (window.chartVentesJourInstance && typeof window.chartVentesJourInstance.destroy === "function") {
-    window.chartVentesJourInstance.destroy();
-  }
-
-  const labels = appData.stats.historique.map(s => new Date(s.date).toLocaleDateString());
-  const dataCA = appData.stats.historique.map(s => parseInt(s.total_montant, 10));
-  const dataQte = appData.stats.historique.map(s => parseInt(s.total_quantite || 0, 10));
-
-  const ctx = document.getElementById('chartVentesJour');
-  if (!ctx) return;
-
-  window.chartVentesJourInstance = new Chart(ctx.getContext('2d'), {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [
-        { label: 'Chiffre d\'affaires (F)', data: dataCA, borderColor: 'rgb(75,192,192)', backgroundColor: 'rgba(75,192,192,0.2)', yAxisID: 'y' },
-        { label: 'Articles vendus', data: dataQte, borderColor: 'rgb(255,99,132)', backgroundColor: 'rgba(255,99,132,0.2)', yAxisID: 'y1' }
-      ]
-    },
-    options: {
-      responsive: true,
-      interaction: { mode: 'index', intersect: false },
-      stacked: false,
-      scales: { y: { type: 'linear', position: 'left' }, y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false } } }
-    }
-  });
-}
 
 // ==========================
 // ==== CREDITS CHART ====
@@ -227,18 +193,26 @@ export function chartEvolutionCA(ventes) {
   const ctx = document.getElementById("chartVentesJour");
   if (!ctx) return;
 
+  // 🔥 On détruit l'ancien graphique
+  if (window.chartVentesJourInstance && typeof window.chartVentesJourInstance.destroy === "function") {
+    window.chartVentesJourInstance.destroy();
+  }
+
   const map = {};
 
   ventes.forEach(v => {
     if (!v.paid) return;
 
-    const date = new Date(v.date).toLocaleDateString();
+    const dateObj = new Date(v.date || v.created_at || v.timestamp);
+    if (isNaN(dateObj)) return;
+
+    const date = dateObj.toISOString().slice(0, 10);
     const montant = v.total || (v.price || 0) * (v.quantity || 0);
 
     map[date] = (map[date] || 0) + montant;
   });
 
-  new Chart(ctx, {
+  window.chartVentesJourInstance = new Chart(ctx.getContext("2d"), {
     type: "line",
     data: {
       labels: Object.keys(map),
@@ -247,6 +221,10 @@ export function chartEvolutionCA(ventes) {
         data: Object.values(map),
         borderWidth: 2
       }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
     }
   });
 }

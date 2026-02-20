@@ -1,25 +1,10 @@
 // inventaire.js
-import { appData,chartVentesByDay, chartTopProduits, chartPaiements, chartStocksFaibles, creditChart, _lastSalesKey, _isRenderingSalesHistory, chartVentesJourInstance, deferredPrompt, installBtn, currentSection, chartCredits } from "./state.js";
-import { afficherRapports, updateStats, afficherStatsCredits  } from "./rapports.js";
-import { updateCharts, initCreditChart } from "./charts.js";
-import { authfetch, postCategoryServer, postProductServer, syncFromServer } from "./api.js";
-import { getCurrentUserId, logout } from "./auth.js";
-import { selectEmoji, supprimerCategorie, ajouterCategorie,remplirSelectCategories, afficherFiltresCategories } from "./categories.js";
-import { renderCreditsHistory,marquerCreditPaye, confirmerRemboursement, remplirProduitsCredit } from "./credits.js";
-import { loadAppDataLocal, saveAppDataLocal, enqueueOutbox, processOutboxOne, processOutboxAll, updateHeader, getExpirationDate } from "./index.js";
-import { showModal, hideModal, ouvrirModalEdit, showModalCredit, hideModalCredit, ouvrirModalRemboursement, hideModalRemboursement, showModalById, hideModalById, closePremiumModal, closeContactModal, closeGuide, fermerModal } from "./modal.js";
-import { showNotification, customConfirm,  } from "./notification.js";
-import { handleAddProductClick } from "./premium.js";
-import { supprimerProduit, mettreAJourProduit, ajouterProduit, filtrerProduits, modifierStock } from "./produits.js";
-import { afficherCategories, afficherProduits, afficherCategoriesVente,afficherProduitsCategorie, verifierStockFaible, afficherCredits } from "./ui.js";
-import { showSection } from "./utils.js";
-import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier, afficherPanier, modifierQuantitePanier, finaliserVente, tryRenderSalesHistory, ouvrirModal, marquerRembourse, purgeSalesHistoryClones, filtrerVentesParPeriode, modifierVente  } from "./ventes.js";
-
-
-// ---------- Inventaire ----------
+import { appData } from "./state.js";
+import { Chart } from "chart.js";
 
 let chartInventaireInstance = null;
 
+// ---------- Affichage Inventaire ----------
 export function afficherInventaire() {
   const tbody = document.getElementById("inventaireListe");
   const statsContainer = document.getElementById("inventaireStats");
@@ -34,39 +19,53 @@ export function afficherInventaire() {
     return;
   }
 
-  // --- Filtrer par période si nécessaire ---
-  let produitsFiltres = [...appData.produits];
+  // --- Filtrage ---
+  const termeRecherche = document.getElementById("searchInventaire")?.value.toLowerCase() || "";
+  const filtreStock = document.getElementById("filterStock")?.value || "";
   const periode = document.getElementById("filterPeriode")?.value || "tout";
 
-  if (periode !== "tout") {
-    const now = new Date();
-    produitsFiltres = produitsFiltres.map(p => {
-      const ventes = p.ventes || []; // tu peux adapter selon structure appData
-      let ventesPeriode = ventes.filter(v => {
-        const d = new Date(v.date || v.created_at);
-        if (periode === "jour") {
-          return d.toDateString() === now.toDateString();
-        } else if (periode === "semaine") {
-          const weekStart = new Date(now);
-          weekStart.setDate(now.getDate() - now.getDay());
-          return d >= weekStart && d <= now;
-        } else if (periode === "mois") {
-          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-        }
-      });
-      return { ...p, vendu: ventesPeriode.reduce((s, v) => s + (v.quantity || 0), 0) };
+  let produitsFiltres = appData.produits
+    .filter(p => (p.name || "").toLowerCase().includes(termeRecherche))
+    .map(p => {
+      let vendu = p.vendu || 0;
+
+      // Filtrage par période (sur ventes si disponibles)
+      if (periode !== "tout" && p.ventes) {
+        const now = new Date();
+        const ventesPeriode = p.ventes.filter(v => {
+          const d = new Date(v.date || v.created_at);
+          if (periode === "jour") return d.toDateString() === now.toDateString();
+          if (periode === "semaine") {
+            const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay());
+            return d >= weekStart && d <= now;
+          }
+          if (periode === "mois") return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+          return true;
+        });
+        vendu = ventesPeriode.reduce((s, v) => s + (v.quantity || 0), 0);
+      }
+
+      return { ...p, vendu };
+    })
+    .filter(p => {
+      if (filtreStock === "low") return p.stock <= 5 && p.stock > 0;
+      if (filtreStock === "out") return p.stock === 0;
+      return true;
     });
+
+  if (produitsFiltres.length === 0) {
+    tbody.innerHTML =
+      '<tr><td colspan="7" class="text-center text-gray-500 py-4">Aucun produit correspondant</td></tr>';
   }
 
-  // --- Calculs globaux pour stats ---
+  // --- Statistiques ---
   const totalStock = produitsFiltres.reduce((s, p) => s + (p.stock || 0), 0);
   const valeurStock = produitsFiltres.reduce((s, p) => s + (p.stock || 0) * (p.priceAchat || p.price_achat || 0), 0);
   const profitTotal = produitsFiltres.reduce((s, p) => s + ((p.vendu || 0) * ((p.price || 0) - (p.priceAchat || p.price_achat || 0))), 0);
-  const margeMoyenne = produitsFiltres.length > 0
-    ? (produitsFiltres.reduce((s, p) => s + ((p.vendu || 0) * ((p.price || 0) - (p.priceAchat || p.price_achat || 0)) / ((p.priceAchat || p.price_achat || 1) || 1)), 0) / produitsFiltres.length) * 100
+  const margeMoyenne = produitsFiltres.length
+    ? (produitsFiltres.reduce((s, p) => s + ((p.vendu || 0) * ((p.price || 0) - (p.priceAchat || p.price_achat || 0)) / ((p.priceAchat || p.price_achat) || 1)), 0) / produitsFiltres.length) * 100
     : 0;
 
-  // --- Cartes stats ---
   const stats = [
     { label: "Stock total", value: totalStock, color: "blue" },
     { label: "Valeur stock", value: valeurStock.toLocaleString() + " F", color: "green" },
@@ -82,21 +81,21 @@ export function afficherInventaire() {
     statsContainer.appendChild(div);
   });
 
-  // --- Tableau ---
+  // --- Tableau inventaire ---
   produitsFiltres.forEach(p => {
     const prixAchat = p.priceAchat || p.price_achat || 0;
     const prixVente = p.price || 0;
-    const vendu = p.vendu || 0;
     const stock = p.stock || 0;
+    const vendu = p.vendu || 0;
     const profitRealise = vendu * (prixVente - prixAchat);
     const marge = prixAchat > 0 ? ((prixVente - prixAchat) / prixAchat * 100).toFixed(1) : 0;
 
-    let stockClass = stock === 0 ? "text-red-600 font-bold" : stock <= 5 ? "text-orange-500 font-semibold" : "text-green-600 font-semibold";
+    const stockClass = stock === 0 ? "text-red-600 font-bold" : stock <= 5 ? "text-orange-500 font-semibold" : "text-green-600 font-semibold";
     const profitClass = profitRealise >= 0 ? "text-green-600 font-semibold" : "text-red-600 font-semibold";
     const margeClass = marge >= 0 ? "text-green-600 font-semibold" : "text-red-600 font-semibold";
 
     const tr = document.createElement("tr");
-    tr.classList.add("hover:bg-gray-50", "transition");
+    tr.className = "hover:bg-gray-50 transition";
     tr.innerHTML = `
       <td class="p-3 font-medium text-gray-800">${p.name}</td>
       <td class="p-3 text-right">${prixAchat.toLocaleString()} F</td>
@@ -113,7 +112,6 @@ export function afficherInventaire() {
   const ctx = document.getElementById("chartInventaire")?.getContext("2d");
   if (ctx) {
     if (chartInventaireInstance) chartInventaireInstance.destroy();
-
     chartInventaireInstance = new Chart(ctx, {
       type: "bar",
       data: {
@@ -132,39 +130,19 @@ export function afficherInventaire() {
   }
 }
 
-// ---------- Search handlers for inventory and categories ----------
+// ---------- Setup inputs ----------
+export function setupInventaireInputs() {
+  const searchInput = document.getElementById("searchInventaire");
+  const filterStock = document.getElementById("filterStock");
+  const filterPeriode = document.getElementById("filterPeriode");
 
-export function setupSearchInputs() {
-  var inv = document.getElementById('searchInventaire'); if (inv) { inv.addEventListener('input', function () { var term = this.value.toLowerCase(); document.querySelectorAll('#inventaireListe tr').forEach(function (row) { var prodName = (row.cells[0] && row.cells[0].textContent || '').toLowerCase(); row.style.display = prodName.indexOf(term) !== -1 ? '' : 'none'; }); }); }
-  var cat = document.getElementById('searchCategorie'); if (cat) { cat.addEventListener('input', function () { var term = this.value.toLowerCase(); document.querySelectorAll('#listeCategories > div').forEach(function (div) { var catName = (div.textContent || '').toLowerCase(); div.style.display = catName.indexOf(term) !== -1 ? '' : 'none'; }); }); }
-}
-
-export function remplirSelectProduitsCredit() {
-  const select = document.getElementById('creditProduct');
-  if (!select) return;
-
-  // vider avant de recharger
-  select.innerHTML = '';
-
-  if (!appData.produits || appData.produits.length === 0) {
-    const opt = document.createElement('option');
-    opt.value = '';
-    opt.textContent = 'Aucun produit disponible';
-    select.appendChild(opt);
-    return;
-  }
-
-  appData.produits.forEach(prod => {
-    const opt = document.createElement('option');
-    opt.value = prod.id;
-    opt.textContent = `${prod.name} (${prod.stock} dispo - ${prod.price}F)`;
-    select.appendChild(opt);
+  [searchInput, filterStock, filterPeriode].forEach(el => {
+    if (el) el.addEventListener("input", afficherInventaire);
   });
 }
 
-
-
-
-
-
-
+// ---------- Initialisation ----------
+export function initInventaire() {
+  afficherInventaire();
+  setupInventaireInputs();
+}

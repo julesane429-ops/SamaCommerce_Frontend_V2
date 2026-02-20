@@ -1,6 +1,6 @@
 // inventaire.js
 import { appData } from "./state.js";
-import { Chart } from "chart.js";
+import { Chart } from "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.esm.min.js";
 
 let chartInventaireInstance = null;
 

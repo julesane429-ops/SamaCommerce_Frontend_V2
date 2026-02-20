@@ -1,18 +1,18 @@
-import { appData,chartVentesByDay, chartTopProduits, chartPaiements, chartStocksFaibles, creditChart, _lastSalesKey, _isRenderingSalesHistory, chartVentesJourInstance, deferredPrompt, installBtn, currentSection, chartCredits } from "./state.js";
-import { afficherRapports, updateStats, afficherStatsCredits  } from "./rapports.js";
+import { appData, chartVentesByDay, chartTopProduits, chartPaiements, chartStocksFaibles, creditChart, _lastSalesKey, _isRenderingSalesHistory, chartVentesJourInstance, deferredPrompt, installBtn, currentSection, chartCredits } from "./state.js";
+import { afficherRapports, updateStats, afficherStatsCredits } from "./rapports.js";
 import { afficherInventaire, setupSearchInputs, remplirSelectProduitsCredit } from "./inventaire.js";
 import { updateCharts, initCreditChart } from "./charts.js";
 import { getCurrentUserId, logout } from "./auth.js";
-import { selectEmoji, supprimerCategorie, ajouterCategorie,remplirSelectCategories, afficherFiltresCategories } from "./categories.js";
-import { renderCreditsHistory,marquerCreditPaye, confirmerRemboursement, remplirProduitsCredit } from "./credits.js";
+import { selectEmoji, supprimerCategorie, ajouterCategorie, remplirSelectCategories, afficherFiltresCategories } from "./categories.js";
+import { renderCreditsHistory, marquerCreditPaye, confirmerRemboursement, remplirProduitsCredit } from "./credits.js";
 import { loadAppDataLocal, saveAppDataLocal, enqueueOutbox, processOutboxOne, processOutboxAll, updateHeader, getExpirationDate } from "./index.js";
 import { showModal, hideModal, ouvrirModalEdit, showModalCredit, hideModalCredit, ouvrirModalRemboursement, hideModalRemboursement, showModalById, hideModalById, closePremiumModal, closeContactModal, closeGuide, fermerModal } from "./modal.js";
-import { showNotification, customConfirm,  } from "./notification.js";
+import { showNotification, customConfirm, } from "./notification.js";
 import { handleAddProductClick } from "./premium.js";
 import { supprimerProduit, mettreAJourProduit, ajouterProduit, filtrerProduits, modifierStock } from "./produits.js";
-import { afficherCategories, afficherProduits, afficherCategoriesVente,afficherProduitsCategorie, verifierStockFaible, afficherCredits } from "./ui.js";
+import { afficherCategories, afficherProduits, afficherCategoriesVente, afficherProduitsCategorie, verifierStockFaible, afficherCredits } from "./ui.js";
 import { showSection } from "./utils.js";
-import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier, afficherPanier, modifierQuantitePanier, finaliserVente, tryRenderSalesHistory, ouvrirModal, marquerRembourse, purgeSalesHistoryClones, filtrerVentesParPeriode, modifierVente  } from "./ventes.js";
+import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier, afficherPanier, modifierQuantitePanier, finaliserVente, tryRenderSalesHistory, ouvrirModal, marquerRembourse, purgeSalesHistoryClones, filtrerVentesParPeriode, modifierVente } from "./ventes.js";
 
 // api.js
 // URL de base de ton serveur API
@@ -27,37 +27,37 @@ window.syncFromServer = syncFromServer;
 
 
 export function authfetch(url, options = {}) {
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-          console.warn("Token manquant, rejet de la promesse");
-          return Promise.reject(new Error('Token manquant'));
-        }
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    console.warn("Token manquant, rejet de la promesse");
+    return Promise.reject(new Error('Token manquant'));
+  }
 
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          const now = Math.floor(Date.now() / 1000);
-          if (payload.exp && payload.exp < now) {
-            console.warn("⚠️ Token expiré");
-            localStorage.removeItem('authToken');
-            return Promise.reject(new Error('Token expiré'));
-          }
-        } catch (e) {
-          console.error("Erreur décodage token:", e);
-        }
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp && payload.exp < now) {
+      console.warn("⚠️ Token expiré");
+      localStorage.removeItem('authToken');
+      return Promise.reject(new Error('Token expiré'));
+    }
+  } catch (e) {
+    console.error("Erreur décodage token:", e);
+  }
 
-        const headers = {
-          ...(options.headers || {}),
-          'Authorization': 'Bearer ' + token
-        };
+  const headers = {
+    ...(options.headers || {}),
+    'Authorization': 'Bearer ' + token
+  };
 
-        return fetch(url, { ...options, headers }).then(res => {
-          if (res.status === 401) {
-            localStorage.removeItem('authToken');
-            return Promise.reject(new Error('401 Unauthorized'));
-          }
-          return res;
-        });
-      }
+  return fetch(url, { ...options, headers }).then(res => {
+    if (res.status === 401) {
+      localStorage.removeItem('authToken');
+      return Promise.reject(new Error('401 Unauthorized'));
+    }
+    return res;
+  });
+}
 export async function postSaleServer(sale) {
   try {
     // sale peut contenir : product_id, quantity, payment_method
@@ -123,7 +123,7 @@ export async function postProductServer(product) {
   }
 }
 
- // ---------- Sync with server (read only) ----------
+// ---------- Sync with server (read only) ----------
 export async function syncFromServer() {
   const syncBanner = document.getElementById('syncBanner');
   if (syncBanner) syncBanner.style.display = 'block';
@@ -193,6 +193,13 @@ export async function syncFromServer() {
         due_date: v.due_date ? new Date(v.due_date) : null,
         paid: v.paid === true || v.paid === "true" // si string "true" => bool
       }));
+
+      // 🔗 Rattacher les ventes à chaque produit
+      appData.produits.forEach(prod => {
+        prod.ventes = appData.ventes.filter(v =>
+          parseInt(v.product_id) === prod.id
+        );
+      });
 
       // ✅ filtre les crédits (tolère casse + accents + espaces)
       appData.credits = appData.ventes.filter(v => {

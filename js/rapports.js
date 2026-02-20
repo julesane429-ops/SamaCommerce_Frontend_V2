@@ -1,7 +1,8 @@
 // rapports.js
 import { appData } from "./state.js";
-import { updateCharts, chartEvolutionCA, chartCreditsStats } from "./charts.js";
+import { updateCharts, chartEvolutionCA, chartCreditsStats, genererJournal } from "./charts.js";
 import { tryRenderSalesHistory, filtrerVentesParPeriode } from "./ventes.js";
+import { genererJournal } from "./utils.js";
 
 
 export function updateStats() {
@@ -291,26 +292,5 @@ export function initRapportPDF() {
     });
 
     doc.save("rapport_financier.pdf");
-  });
-}
-
-function genererJournal(ventes) {
-  const container = document.getElementById("journalComptable");
-  if (!container) return;
-
-  container.innerHTML = "";
-
-  ventes.forEach(v => {
-    const montant = v.total || (v.price || 0) * (v.quantity || 0);
-    const statut = v.paid ? "Encaissement" : "Créance";
-
-    const div = document.createElement("div");
-    div.className = "flex justify-between border-b py-1";
-    div.innerHTML = `
-      <div>${new Date(v.date).toLocaleDateString()}</div>
-      <div>${statut}</div>
-      <div>${montant.toLocaleString()} F</div>
-    `;
-    container.appendChild(div);
   });
 }

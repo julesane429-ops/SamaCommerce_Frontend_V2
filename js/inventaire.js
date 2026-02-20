@@ -135,6 +135,17 @@ export function setupInventaireInputs() {
   const filterStock = document.getElementById("filterStock");
   const filterPeriode = document.getElementById("filterPeriode");
 
+  if (searchInput) {
+    searchInput.addEventListener("input", afficherInventaire);
+  }
+
+  if (filterStock) {
+    filterStock.addEventListener("change", afficherInventaire);
+  }
+
+  if (filterPeriode) {
+    filterPeriode.addEventListener("change", afficherInventaire);
+  }
 }
 
 // ---------- Initialisation ----------

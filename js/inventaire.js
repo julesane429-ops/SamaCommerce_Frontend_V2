@@ -18,12 +18,118 @@ import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier
 
 // ---------- Inventaire ----------
 
+let chartInventaireInstance = null;
+
 export function afficherInventaire() {
-  var tbody = document.getElementById('inventaireListe'); if (!tbody) return; tbody.innerHTML = ''; if (appData.produits.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500 py-4">Aucun produit dans l’inventaire</td></tr>';
+  const tbody = document.getElementById("inventaireListe");
+  const statsContainer = document.getElementById("inventaireStats");
+  if (!tbody || !statsContainer) return;
+
+  tbody.innerHTML = "";
+  statsContainer.innerHTML = "";
+
+  if (!appData.produits || appData.produits.length === 0) {
+    tbody.innerHTML =
+      '<tr><td colspan="7" class="text-center text-gray-400 py-6">Aucun produit dans l’inventaire</td></tr>';
     return;
   }
-  appData.produits.forEach(function (p) { var profitRealise = (p.vendu || 0) * ((p.price || 0) - (p.priceAchat || p.price_achat || 0)); var tr = document.createElement('tr'); tr.innerHTML = '<td class="p-2 border">' + p.name + '</td><td class="p-2 border">' + ((p.priceAchat || p.price_achat || 0).toLocaleString()) + ' F</td><td class="p-2 border">' + ((p.price || 0).toLocaleString()) + ' F</td><td class="p-2 border">' + (p.stock || 0) + '</td><td class="p-2 border">' + (p.vendu || 0) + '</td><td class="p-2 border">' + profitRealise.toLocaleString() + ' F</td>'; tbody.appendChild(tr); });
+
+  // --- Filtrer par période si nécessaire ---
+  let produitsFiltres = [...appData.produits];
+  const periode = document.getElementById("filterPeriode")?.value || "tout";
+
+  if (periode !== "tout") {
+    const now = new Date();
+    produitsFiltres = produitsFiltres.map(p => {
+      const ventes = p.ventes || []; // tu peux adapter selon structure appData
+      let ventesPeriode = ventes.filter(v => {
+        const d = new Date(v.date || v.created_at);
+        if (periode === "jour") {
+          return d.toDateString() === now.toDateString();
+        } else if (periode === "semaine") {
+          const weekStart = new Date(now);
+          weekStart.setDate(now.getDate() - now.getDay());
+          return d >= weekStart && d <= now;
+        } else if (periode === "mois") {
+          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        }
+      });
+      return { ...p, vendu: ventesPeriode.reduce((s, v) => s + (v.quantity || 0), 0) };
+    });
+  }
+
+  // --- Calculs globaux pour stats ---
+  const totalStock = produitsFiltres.reduce((s, p) => s + (p.stock || 0), 0);
+  const valeurStock = produitsFiltres.reduce((s, p) => s + (p.stock || 0) * (p.priceAchat || p.price_achat || 0), 0);
+  const profitTotal = produitsFiltres.reduce((s, p) => s + ((p.vendu || 0) * ((p.price || 0) - (p.priceAchat || p.price_achat || 0))), 0);
+  const margeMoyenne = produitsFiltres.length > 0
+    ? (produitsFiltres.reduce((s, p) => s + ((p.vendu || 0) * ((p.price || 0) - (p.priceAchat || p.price_achat || 0)) / ((p.priceAchat || p.price_achat || 1) || 1)), 0) / produitsFiltres.length) * 100
+    : 0;
+
+  // --- Cartes stats ---
+  const stats = [
+    { label: "Stock total", value: totalStock, color: "blue" },
+    { label: "Valeur stock", value: valeurStock.toLocaleString() + " F", color: "green" },
+    { label: "Profit total", value: profitTotal.toLocaleString() + " F", color: "purple" },
+    { label: "Marge moyenne", value: margeMoyenne.toFixed(1) + " %", color: "orange" }
+  ];
+
+  stats.forEach(stat => {
+    const div = document.createElement("div");
+    div.className = `bg-${stat.color}-50 rounded-2xl p-4 shadow flex flex-col items-center`;
+    div.innerHTML = `<div class="text-gray-600">${stat.label}</div>
+                     <div class="text-xl font-bold text-${stat.color}-600 mt-1">${stat.value}</div>`;
+    statsContainer.appendChild(div);
+  });
+
+  // --- Tableau ---
+  produitsFiltres.forEach(p => {
+    const prixAchat = p.priceAchat || p.price_achat || 0;
+    const prixVente = p.price || 0;
+    const vendu = p.vendu || 0;
+    const stock = p.stock || 0;
+    const profitRealise = vendu * (prixVente - prixAchat);
+    const marge = prixAchat > 0 ? ((prixVente - prixAchat) / prixAchat * 100).toFixed(1) : 0;
+
+    let stockClass = stock === 0 ? "text-red-600 font-bold" : stock <= 5 ? "text-orange-500 font-semibold" : "text-green-600 font-semibold";
+    const profitClass = profitRealise >= 0 ? "text-green-600 font-semibold" : "text-red-600 font-semibold";
+    const margeClass = marge >= 0 ? "text-green-600 font-semibold" : "text-red-600 font-semibold";
+
+    const tr = document.createElement("tr");
+    tr.classList.add("hover:bg-gray-50", "transition");
+    tr.innerHTML = `
+      <td class="p-3 font-medium text-gray-800">${p.name}</td>
+      <td class="p-3 text-right">${prixAchat.toLocaleString()} F</td>
+      <td class="p-3 text-right">${prixVente.toLocaleString()} F</td>
+      <td class="p-3 text-center ${stockClass}">${stock}</td>
+      <td class="p-3 text-center">${vendu}</td>
+      <td class="p-3 text-right ${profitClass}">${profitRealise.toLocaleString()} F</td>
+      <td class="p-3 text-center ${margeClass}">${marge} %</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // --- Graphique inventaire ---
+  const ctx = document.getElementById("chartInventaire")?.getContext("2d");
+  if (ctx) {
+    if (chartInventaireInstance) chartInventaireInstance.destroy();
+
+    chartInventaireInstance = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: produitsFiltres.map(p => p.name),
+        datasets: [
+          { label: "Stock", data: produitsFiltres.map(p => p.stock || 0), backgroundColor: "rgba(59,130,246,0.6)" },
+          { label: "Vendues", data: produitsFiltres.map(p => p.vendu || 0), backgroundColor: "rgba(16,185,129,0.6)" }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: "top" } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  }
 }
 
 // ---------- Search handlers for inventory and categories ----------

@@ -221,9 +221,10 @@ export function afficherCredits() {
   // --- Création / mise à jour du graphique ---
   const ctx = document.getElementById("chartCredits")?.getContext("2d");
   if (ctx) {
-    if (window.creditChart) {
-      window.creditChart.destroy();
-    }
+    if (window.creditChart && typeof window.creditChart.destroy === "function") {
+  window.creditChart.destroy();
+  window.creditChart = null;
+}
     window.creditChart = new Chart(ctx, {
       type: "line",
       data: {

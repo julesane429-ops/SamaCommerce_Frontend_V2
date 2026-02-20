@@ -161,13 +161,23 @@ export function genererJournal(ventes) {
     const montant = v.total || (v.price || 0) * (v.quantity || 0);
     const statut = v.paid ? "Encaissement" : "Créance";
 
+    // ✅ Gestion propre de la date
+    const rawDate = v.date || v.created_at || v.timestamp;
+    const dateObj = rawDate ? new Date(rawDate) : null;
+
+    const dateAffichee =
+      dateObj && !isNaN(dateObj)
+        ? dateObj.toLocaleDateString()
+        : "—";
+
     const div = document.createElement("div");
     div.className = "flex justify-between border-b py-1";
     div.innerHTML = `
-      <div>${new Date(v.date).toLocaleDateString()}</div>
+      <div>${dateAffichee}</div>
       <div>${statut}</div>
       <div>${montant.toLocaleString()} F</div>
     `;
+
     container.appendChild(div);
   });
 }

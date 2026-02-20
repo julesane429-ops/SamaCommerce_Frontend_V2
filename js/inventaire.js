@@ -26,25 +26,52 @@ export function afficherInventaire() {
   let produitsFiltres = appData.produits
     .filter(p => (p.name || "").toLowerCase().includes(termeRecherche))
     .map(p => {
-      let vendu = p.vendu || 0;
+  let ventesProduit = (appData.ventes || []).filter(v => v.product_id === p.id);
 
-      if (periode !== "tout" && p.ventes) {
-        const now = new Date();
-        const ventesPeriode = p.ventes.filter(v => {
-          const d = new Date(v.date || v.created_at);
-          if (periode === "jour") return d.toDateString() === now.toDateString();
-          if (periode === "semaine") {
-            const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay());
-            return d >= weekStart && d <= now;
-          }
-          if (periode === "mois") return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-          return true;
-        });
-        vendu = ventesPeriode.reduce((s, v) => s + (v.quantity || 0), 0);
+  // 🔥 filtre période
+  if (periode !== "tout") {
+    const now = new Date();
+
+    ventesProduit = ventesProduit.filter(v => {
+      const d = new Date(v.created_at || v.date);
+
+      if (periode === "jour") return d.toDateString() === now.toDateString();
+
+      if (periode === "semaine") {
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay());
+        return d >= weekStart && d <= now;
       }
 
-      return { ...p, vendu };
-    })
+      if (periode === "mois") {
+        return d.getMonth() === now.getMonth() &&
+               d.getFullYear() === now.getFullYear();
+      }
+
+      return true;
+    });
+  }
+
+  const vendu = ventesProduit.reduce((s, v) => s + (v.quantity || 0), 0);
+
+  // 🔥 calcul profit réel
+  const profit = ventesProduit.reduce((s, v) => {
+    let unitPrice;
+
+    if (v.custom_price && v.custom_price > 0) {
+      unitPrice = v.custom_price;
+    } else if (v.sale_type === "gros") {
+      unitPrice = v.price_wholesale || p.price;
+    } else {
+      unitPrice = v.price_retail || p.price;
+    }
+
+    return s + ((unitPrice - (p.priceAchat || p.price_achat || 0)) * (v.quantity || 0));
+  }, 0);
+
+  return { ...p, vendu, profit };
+})
+
     .filter(p => {
       if (filtreStock === "low") return p.stock <= 5 && p.stock > 0;
       if (filtreStock === "out") return p.stock === 0;
@@ -59,7 +86,7 @@ export function afficherInventaire() {
   // --- Statistiques mini-cartes ---
   const totalStock = produitsFiltres.reduce((s, p) => s + (p.stock || 0), 0);
   const valeurStock = produitsFiltres.reduce((s, p) => s + (p.stock || 0) * (p.priceAchat || p.price_achat || 0), 0);
-  const profitTotal = produitsFiltres.reduce((s, p) => s + ((p.vendu || 0) * ((p.price || 0) - (p.priceAchat || p.price_achat || 0))), 0);
+  const profitTotal = produitsFiltres.reduce((s, p) => s + (p.profit || 0), 0);
   const margeMoyenne = produitsFiltres.length
     ? (produitsFiltres.reduce((s, p) => s + ((p.vendu || 0) * ((p.price || 0) - (p.priceAchat || p.price_achat || 0)) / ((p.priceAchat || p.price_achat) || 1)), 0) / produitsFiltres.length) * 100
     : 0;
@@ -85,8 +112,11 @@ export function afficherInventaire() {
     const prixVente = p.price || 0;
     const stock = p.stock || 0;
     const vendu = p.vendu || 0;
-    const profitRealise = vendu * (prixVente - prixAchat);
-    const marge = prixAchat > 0 ? ((prixVente - prixAchat) / prixAchat * 100).toFixed(1) : 0;
+    const profitRealise = p.profit || 0;
+    const marge = prixAchat > 0 && vendu > 0
+  ? ((profitRealise / (prixAchat * vendu)) * 100).toFixed(1)
+  : 0;
+  const prixMoyen = vendu > 0 ? ( (profitRealise / vendu) + prixAchat ) : 0;
 
     const stockClass = stock === 0 ? "text-red-600 font-bold" : stock <= 5 ? "text-orange-500 font-semibold" : "text-green-600 font-semibold";
     const profitClass = profitRealise >= 0 ? "text-green-600 font-semibold" : "text-red-600 font-semibold";

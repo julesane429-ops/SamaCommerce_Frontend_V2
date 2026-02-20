@@ -193,9 +193,9 @@ export function chartEvolutionCA(ventes) {
   const ctx = document.getElementById("chartVentesJour");
   if (!ctx) return;
 
-  // 🔥 On détruit l'ancien graphique
   if (window.chartVentesJourInstance && typeof window.chartVentesJourInstance.destroy === "function") {
     window.chartVentesJourInstance.destroy();
+    window.chartVentesJourInstance = null;
   }
 
   const map = {};
@@ -206,25 +206,39 @@ export function chartEvolutionCA(ventes) {
     const dateObj = new Date(v.date || v.created_at || v.timestamp);
     if (isNaN(dateObj)) return;
 
+    // ✅ FORMAT ISO STABLE
     const date = dateObj.toISOString().slice(0, 10);
-    const montant = v.total || (v.price || 0) * (v.quantity || 0);
 
+    const montant = v.total || (v.price || 0) * (v.quantity || 0);
     map[date] = (map[date] || 0) + montant;
   });
+
+  // ✅ TRI DES DATES
+  const labels = Object.keys(map).sort();
+  const data = labels.map(d => map[d]);
 
   window.chartVentesJourInstance = new Chart(ctx.getContext("2d"), {
     type: "line",
     data: {
-      labels: Object.keys(map),
+      labels: labels,
       datasets: [{
         label: "CA encaissé",
-        data: Object.values(map),
-        borderWidth: 2
+        data: data,
+        borderWidth: 2,
+        tension: 0.3
       }]
     },
     options: {
       responsive: true,
-      maintainAspectRatio: false
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          ticks: {
+            autoSkip: true,
+            maxTicksLimit: 15 
+          }
+        }
+      }
     }
   });
 }

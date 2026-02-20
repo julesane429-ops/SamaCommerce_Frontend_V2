@@ -1,6 +1,6 @@
 // rapports.js
 import { appData } from "./state.js";
-import { updateCharts, chartEvolutionCA, chartCreditsStats} from "./charts.js";
+import { updateCharts, chartEvolutionCA} from "./charts.js";
 import { tryRenderSalesHistory, filtrerVentesParPeriode } from "./ventes.js";
 import { genererJournal } from "./utils.js";
 

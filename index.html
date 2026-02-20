@@ -330,7 +330,6 @@
                                     <th class="p-2 border">Montant</th>
                                     <th class="p-2 border">Paiement</th>
                                     <th class="p-2 border">Actions</th>
-                                    <th>Prix moyen</th>
                                 </tr>
                             </thead>
                             <tbody id="salesHistoryBody">
@@ -465,74 +464,71 @@
         </div>
 
 
-       <!-- Section Inventaire -->
-<div id="inventaireSection" class="hidden slide-in p-6">
+        <!-- Section Inventaire -->
+        <div id="inventaireSection" class="hidden slide-in p-6">
 
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-        <h2 class="text-3xl font-bold text-gray-800">
-            📦 Inventaire & Bénéfices
-        </h2>
+            <!-- Header -->
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                <h2 class="text-3xl font-bold text-gray-800">
+                    📦 Inventaire & Bénéfices
+                </h2>
 
-        <button id="btnPdfInventaire"
-            class="mt-4 md:mt-0 bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl shadow transition">
-            📄 Exporter en PDF
-        </button>
-    </div>
+                <button id="btnPdfInventaire"
+                    class="mt-4 md:mt-0 bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl shadow transition">
+                    📄 Exporter en PDF
+                </button>
+            </div>
 
-    <!-- Filtre période & recherche -->
-    <div class="bg-white rounded-2xl shadow p-4 mb-6 flex flex-col md:flex-row gap-4 md:items-center">
+            <!-- Filtre période & recherche -->
+            <div class="bg-white rounded-2xl shadow p-4 mb-6 flex flex-col md:flex-row gap-4 md:items-center">
 
-        <input type="text"
-            id="searchInventaire"
-            placeholder="🔍 Rechercher un produit..."
-            class="flex-1 p-3 border rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none">
+                <input type="text" id="searchInventaire" placeholder="🔍 Rechercher un produit..."
+                    class="flex-1 p-3 border rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none">
 
-        <select id="filterStock"
-            class="p-3 border rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none">
-            <option value="">Tous les stocks</option>
-            <option value="low">Stock faible (≤5)</option>
-            <option value="out">Rupture</option>
-        </select>
+                <select id="filterStock" class="p-3 border rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none">
+                    <option value="">Tous les stocks</option>
+                    <option value="low">Stock faible (≤5)</option>
+                    <option value="out">Rupture</option>
+                </select>
 
-        <select id="filterPeriode"
-            class="p-3 border rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none">
-            <option value="tout">Tout</option>
-            <option value="jour">Aujourd'hui</option>
-            <option value="semaine">Cette semaine</option>
-            <option value="mois">Ce mois</option>
-        </select>
-    </div>
+                <select id="filterPeriode"
+                    class="p-3 border rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none">
+                    <option value="tout">Tout</option>
+                    <option value="jour">Aujourd'hui</option>
+                    <option value="semaine">Cette semaine</option>
+                    <option value="mois">Ce mois</option>
+                </select>
+            </div>
 
-    <!-- Mini cartes statistiques -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="inventaireStats">
-        <!-- Cards injectées en JS -->
-    </div>
+            <!-- Mini cartes statistiques -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="inventaireStats">
+                <!-- Cards injectées en JS -->
+            </div>
 
-    <!-- Graphique inventaire -->
-    <div class="bg-white rounded-3xl shadow-lg p-4 mb-6">
-        <canvas id="chartInventaire" height="100"></canvas>
-    </div>
+            <!-- Graphique inventaire -->
+            <div class="bg-white rounded-3xl shadow-lg p-4 mb-6">
+                <canvas id="chartInventaire" height="100"></canvas>
+            </div>
 
-    <!-- Tableau inventaire -->
-    <div class="bg-white rounded-3xl shadow-lg overflow-x-auto">
-        <table class="w-full min-w-[700px] text-sm">
-            <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
-                <tr>
-                    <th class="p-3 text-left">Produit</th>
-                    <th class="p-3 text-right">Achat</th>
-                    <th class="p-3 text-right">Vente</th>
-                    <th class="p-3 text-center">Stock</th>
-                    <th class="p-3 text-center">Vendues</th>
-                    <th class="p-3 text-right">Bénéfice</th>
-                    <th class="p-3 text-center">Marge %</th>
-                </tr>
-            </thead>
-            <tbody id="inventaireListe" class="divide-y"></tbody>
-        </table>
-    </div>
+            <!-- Tableau inventaire -->
+            <div class="bg-white rounded-3xl shadow-lg overflow-x-auto">
+                <table class="w-full min-w-[700px] text-sm">
+                    <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
+                        <tr>
+                            <th class="p-3 text-left">Produit</th>
+                            <th class="p-3 text-right">Achat</th>
+                            <th class="p-3 text-right">Vente</th>
+                            <th class="p-3 text-center">Stock</th>
+                            <th class="p-3 text-center">Vendues</th>
+                            <th class="p-3 text-right">Bénéfice</th>
+                            <th class="p-3 text-center">Marge %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventaireListe" class="divide-y"></tbody>
+                </table>
+            </div>
 
-</div>
+        </div>
 
         <div id="creditsSection" class="hidden slide-in p-6 overflow-x-auto">
             <h2 class="text-2xl font-bold mb-6 text-center">📝 Ventes à Crédit</h2>
@@ -570,25 +566,12 @@
                     <select class="w-full p-4 border-2 rounded-2xl text-lg" id="categorieProduit">
                         <option value="">Choisir catégorie</option>
                     </select>
-                   <input class="w-full p-4 border-2 rounded-2xl text-lg" id="prixAchatProduit"
-  placeholder="Prix achat (F CFA)" type="number" />
-
-<input class="w-full p-4 border-2 rounded-2xl text-lg" id="prixDetailProduit"
-  placeholder="Prix détail (F CFA)" type="number" />
-
-<input class="w-full p-4 border-2 rounded-2xl text-lg" id="prixGrosProduit"
-  placeholder="Prix gros (optionnel)" type="number" />
-
-<input class="w-full p-4 border-2 rounded-2xl text-lg" id="stockProduit"
-  placeholder="Quantité en stock" type="number" />
-
-<select class="w-full p-4 border-2 rounded-2xl text-lg" id="unitProduit">
-  <option value="pièce">Pièce</option>
-  <option value="kg">Kg</option>
-  <option value="litre">Litre</option>
-  <option value="sachet">Sachet</option>
-</select>
-
+                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="prixAchatProduit"
+                        placeholder="Prix achat (F CFA)" type="number" />
+                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="prixProduit"
+                        placeholder="Prix vente (F CFA)" type="number" />
+                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="stockProduit"
+                        placeholder="Quantité en stock" type="number" />
                     <textarea class="w-full p-4 border-2 rounded-2xl text-lg h-20" id="descriptionProduit"
                         placeholder="Description (optionnel)"></textarea>
                     <div class="flex gap-3">
@@ -969,9 +952,9 @@
 
             </html>
         </template>
-<!-- Chart.js via CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-<script type="module" src="js/app.js"></script>
+        <!-- Chart.js via CDN -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+        <script type="module" src="js/app.js"></script>
 </body>
 
 </html>

@@ -120,15 +120,14 @@ export async function finaliserVenteCredit() {
   // Envoyer les ventes une par une
   for (const item of appData.panier) {
     const venteCredit = {
-  product_id: item.id,
-  quantity: item.quantite,
-  payment_method: "credit",
-  client_name: clientName,
-  client_phone: clientPhone,
-  due_date: dueDate,
-  sale_type: item.sale_type,
-  custom_price: item.custom_price
-};
+      product_id: item.id,
+      quantity: item.quantite,
+      payment_method: "credit", // ✅ Marqué comme crédit
+      client_name: clientName,
+      client_phone: clientPhone,
+      due_date: dueDate,
+      paid: false // ✅ Par défaut non payé
+    };
 
     const created = await postSaleServer(venteCredit);
     if (!created) {
@@ -160,94 +159,16 @@ export async function finaliserVenteCredit() {
   hideModalCredit();
 }
 
-export function ajouterAuPanier(produit) {
-  if (!appData) return;
-
-  const exist = appData.panier.find(i => i.id === produit.id);
-
-  if (exist) {
-    if (exist.quantite < produit.stock) {
-      exist.quantite++;
-    } else {
-      alert('❌ Stock insuffisant!');
-      return;
-    }
-  } else {
-    appData.panier.push({
-      ...produit,
-      quantite: 1,
-      sale_type: 'detail',     // 🔥 nouveau
-      custom_price: null       // 🔥 nouveau
-    });
-  }
-
-  afficherPanier();
-  saveAppDataLocal();
-}
+export function ajouterAuPanier(produit) { if (!appData) return; const exist = appData.panier.find(function (i) { return i.id === produit.id; }); if (exist) { if (exist.quantite < produit.stock) exist.quantite++; else { alert('❌ Stock insuffisant!'); return; } } else appData.panier.push(Object.assign({}, produit, { quantite: 1 })); afficherPanier(); saveAppDataLocal(); }
 
 export function afficherPanier() {
   const c = document.getElementById('panierItems'); const total = document.getElementById('totalPanier'); if (!c) return; if (!appData || !appData.panier || !appData.panier.length) { c.innerHTML = '<div class="text-gray-500 text-center py-8"><div class="text-4xl mb-2">🛒</div><div>Panier vide</div></div>'; if (total) total.textContent = '0 F'; return; }
   c.innerHTML = ''; var totalPrix = 0; appData.panier.forEach(function (item) {
-    const div = document.createElement('div'); div.className = 'flex justify-between items-center bg-gray-50 rounded-2xl p-3'; div.innerHTML = div.innerHTML = `
-  <div>
-    <div class="font-bold">${item.name}</div>
-
-    <div class="text-sm text-gray-600 mb-1">
-      ${(item.price || 0).toLocaleString()} F × ${item.quantite}
-    </div>
-
-    <select class="sale-type border rounded p-1 text-xs mb-1">
-      <option value="detail" ${item.sale_type === 'detail' ? 'selected' : ''}>Détail</option>
-      <option value="gros" ${item.sale_type === 'gros' ? 'selected' : ''}>Gros</option>
-    </select>
-
-    <input 
-      type="number" 
-      placeholder="Prix négocié"
-      value="${item.custom_price || ''}"
-      class="custom-price border rounded p-1 text-xs w-full"
-    />
-  </div>
-
-  <div class="flex items-center gap-2">
-    <button class="bg-red-500 text-white w-8 h-8 rounded-full text-sm font-bold">-</button>
-    <span class="font-bold text-lg w-8 text-center">${item.quantite}</span>
-    <button class="bg-green-500 text-white w-8 h-8 rounded-full text-sm font-bold">+</button>
-  </div>
-`;
-
+    const div = document.createElement('div'); div.className = 'flex justify-between items-center bg-gray-50 rounded-2xl p-3'; div.innerHTML = '<div><div class="font-bold">' + item.name + '</div><div class="text-sm text-gray-600">' + (item.price || 0).toLocaleString() + ' F × ' + item.quantite + '</div></div><div class="flex items-center gap-2"><button class="bg-red-500 text-white w-8 h-8 rounded-full text-sm font-bold">-</button><span class="font-bold text-lg w-8 text-center">' + item.quantite + '</span><button class="bg-green-500 text-white w-8 h-8 rounded-full text-sm font-bold">+</button></div>'; // wire buttons
     c.appendChild(div);
     // attach handlers to +/- buttons
     const btns = div.querySelectorAll('button'); if (btns && btns.length >= 2) { btns[0].addEventListener('click', function () { modifierQuantitePanier(item.id, -1); }); btns[1].addEventListener('click', function () { modifierQuantitePanier(item.id, 1); }); }
-    const select = div.querySelector('.sale-type');
-const input = div.querySelector('.custom-price');
-
-if (select) {
-  select.addEventListener('change', (e) => {
-    item.sale_type = e.target.value;
-    afficherPanier();
-  });
-}
-
-if (input) {
-  input.addEventListener('input', (e) => {
-    item.custom_price = e.target.value ? parseFloat(e.target.value) : null;
-    afficherPanier();
-  });
-}
-
-    let unitPrice;
-
-if (item.custom_price && item.custom_price > 0) {
-  unitPrice = item.custom_price;
-} else if (item.sale_type === 'gros') {
-  unitPrice = item.price_wholesale || item.price;
-} else {
-  unitPrice = item.price_retail || item.price;
-}
-
-totalPrix += unitPrice * item.quantite;
-
+    totalPrix += (item.price || 0) * item.quantite;
   }); if (total) total.textContent = totalPrix.toLocaleString() + ' F';
 }
 
@@ -267,14 +188,11 @@ export async function finaliserVente(paymentMethod) {
 
   // ✅ Envoi des ventes une par une au backend
   for (const item of appData.panier) {
-   const vente = {
-  product_id: item.id,
-  quantity: item.quantite,
-  payment_method: paymentMethod,
-  sale_type: item.sale_type,
-  custom_price: item.custom_price
-};
-
+    const vente = {
+      product_id: item.id,
+      quantity: item.quantite,
+      payment_method: paymentMethod
+    };
     const created = await postSaleServer(vente);
     if (!created) {
       showNotification('❌ Erreur lors de l\'enregistrement de la vente.', "error");

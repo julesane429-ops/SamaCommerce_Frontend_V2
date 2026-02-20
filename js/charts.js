@@ -228,26 +228,3 @@ export function chartEvolutionCA(ventes) {
     }
   });
 }
-
-export function chartCreditsStats(credits) {
-  const ctx = document.getElementById("chartCredits");
-  if (!ctx) return;
-
-  let payes = 0;
-  let impayes = 0;
-
-  credits.forEach(c => {
-    if (c.paid) payes += c.total;
-    else impayes += c.total;
-  });
-
-  new Chart(ctx, {
-    type: "doughnut",
-    data: {
-      labels: ["Payés", "Impayés"],
-      datasets: [{
-        data: [payes, impayes]
-      }]
-    }
-  });
-}

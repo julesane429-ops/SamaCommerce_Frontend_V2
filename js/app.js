@@ -3,7 +3,7 @@
 // ==========================
 import { appData } from "./state.js";
 
-import { afficherRapports, updateStats } from "./rapports.js";
+import { afficherRapports, updateStats, initRapportPDF } from "./rapports.js";
 import { afficherInventaire, setupSearchInputs } from "./inventaire.js";
 import { initCreditChart } from "./charts.js";
 import { authfetch, syncFromServer } from "./api.js";
@@ -254,5 +254,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (btnRap) {
     btnRap.addEventListener("click", generateRapportsPDF);
   }
+
+  initRapportPDF();
 
 });

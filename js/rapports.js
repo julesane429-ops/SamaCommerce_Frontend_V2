@@ -1,6 +1,6 @@
 // rapports.js
 import { appData } from "./state.js";
-import { updateCharts } from "./charts.js";
+import { updateCharts, chartEvolutionCA, chartCreditsStats, genererJournal } from "./charts.js";
 import { tryRenderSalesHistory, filtrerVentesParPeriode } from "./ventes.js";
 
 
@@ -28,117 +28,117 @@ export function afficherRapports() {
   const ventesFiltrees = filtrerVentesParPeriode(appData.ventes || [], periode);
 
   // ==========================
-// 📊 STATISTIQUES COMPTABLES
-// ==========================
+  // 📊 STATISTIQUES COMPTABLES
+  // ==========================
 
-let caEncaisse = 0;
-let caEnAttente = 0;
-let totalCredits = 0;
-let creditsPayes = 0;
+  let caEncaisse = 0;
+  let caEnAttente = 0;
+  let totalCredits = 0;
+  let creditsPayes = 0;
 
-ventesFiltrees.forEach(v => {
-  const montant = parseFloat(
-    v.total || (v.price || 0) * (v.quantity || 0)
-  ) || 0;
+  ventesFiltrees.forEach(v => {
+    const montant = parseFloat(
+      v.total || (v.price || 0) * (v.quantity || 0)
+    ) || 0;
 
-  if (v.paid) {
-    caEncaisse += montant;
-  }
+    if (v.paid) {
+      caEncaisse += montant;
+    }
 
-  if (v.payment_method === "credit" && !v.paid) {
-    caEnAttente += montant;
-  }
-});
+    if (v.payment_method === "credit" && !v.paid) {
+      caEnAttente += montant;
+    }
+  });
 
-// --- Stats crédits détaillés ---
-(appData.credits || []).forEach(c => {
-  const montant = parseFloat(c.total || 0) || 0;
-  totalCredits += montant;
-  if (c.paid) creditsPayes += montant;
-});
+  // --- Stats crédits détaillés ---
+  (appData.credits || []).forEach(c => {
+    const montant = parseFloat(c.total || 0) || 0;
+    totalCredits += montant;
+    if (c.paid) creditsPayes += montant;
+  });
 
-const creditsImpayes = totalCredits - creditsPayes;
-const tauxRecouvrement = totalCredits > 0
-  ? ((creditsPayes / totalCredits) * 100).toFixed(1)
-  : 0;
+  const creditsImpayes = totalCredits - creditsPayes;
+  const tauxRecouvrement = totalCredits > 0
+    ? ((creditsPayes / totalCredits) * 100).toFixed(1)
+    : 0;
 
-// ==========================
-// 💉 Injection dans le DOM
-// ==========================
+  // ==========================
+  // 💉 Injection dans le DOM
+  // ==========================
 
-document.getElementById("caEncaisse") &&
-  (document.getElementById("caEncaisse").textContent =
-    caEncaisse.toLocaleString() + " F");
+  document.getElementById("caEncaisse") &&
+    (document.getElementById("caEncaisse").textContent =
+      caEncaisse.toLocaleString() + " F");
 
-document.getElementById("caEnAttente") &&
-  (document.getElementById("caEnAttente").textContent =
-    caEnAttente.toLocaleString() + " F");
+  document.getElementById("caEnAttente") &&
+    (document.getElementById("caEnAttente").textContent =
+      caEnAttente.toLocaleString() + " F");
 
-document.getElementById("creditsEnCours") &&
-  (document.getElementById("creditsEnCours").textContent =
-    creditsImpayes.toLocaleString() + " F");
+  document.getElementById("creditsEnCours") &&
+    (document.getElementById("creditsEnCours").textContent =
+      creditsImpayes.toLocaleString() + " F");
 
-document.getElementById("tauxRecouvrement") &&
-  (document.getElementById("tauxRecouvrement").textContent =
-    tauxRecouvrement + " %");
-if (tauxRecouvrement < 50) {
-  document.getElementById("tauxRecouvrement").className = "text-xl font-bold text-red-600";
-} else if (tauxRecouvrement >= 50 && tauxRecouvrement < 80) {
-  document.getElementById("tauxRecouvrement").className = "text-xl font-bold text-orange-600";
-} else {
-  document.getElementById("tauxRecouvrement").className = "text-xl font-bold text-green-600";
-}
-// --- Calcul paiements filtrés (corrigé) ---
-const paiementsMap = {};
-
-ventesFiltrees.forEach(v => {
-  // ❌ On ignore les ventes non payées
-  if (!v.paid) return;
-
-  // 💰 Montant
-  const montant = parseFloat(
-    v.total || (v.price || 0) * (v.quantity || 0)
-  ) || 0;
-
-  // ✅ Méthode réelle de paiement
-  let method;
-
-  if (v.payment_method === "credit") {
-    // Si crédit remboursé → on prend la méthode de remboursement
-    method = v.repayment_method || "inconnu";
+  document.getElementById("tauxRecouvrement") &&
+    (document.getElementById("tauxRecouvrement").textContent =
+      tauxRecouvrement + " %");
+  if (tauxRecouvrement < 50) {
+    document.getElementById("tauxRecouvrement").className = "text-xl font-bold text-red-600";
+  } else if (tauxRecouvrement >= 50 && tauxRecouvrement < 80) {
+    document.getElementById("tauxRecouvrement").className = "text-xl font-bold text-orange-600";
   } else {
-    method = v.payment_method || "inconnu";
+    document.getElementById("tauxRecouvrement").className = "text-xl font-bold text-green-600";
   }
+  // --- Calcul paiements filtrés (corrigé) ---
+  const paiementsMap = {};
 
-  // ❌ On ignore les crédits non remboursés
-  if (!method || method === "credit") return;
+  ventesFiltrees.forEach(v => {
+    // ❌ On ignore les ventes non payées
+    if (!v.paid) return;
 
-  paiementsMap[method] = (paiementsMap[method] || 0) + montant;
-});
+    // 💰 Montant
+    const montant = parseFloat(
+      v.total || (v.price || 0) * (v.quantity || 0)
+    ) || 0;
 
-appData.stats.paiements = paiementsMap;
+    // ✅ Méthode réelle de paiement
+    let method;
+
+    if (v.payment_method === "credit") {
+      // Si crédit remboursé → on prend la méthode de remboursement
+      method = v.repayment_method || "inconnu";
+    } else {
+      method = v.payment_method || "inconnu";
+    }
+
+    // ❌ On ignore les crédits non remboursés
+    if (!method || method === "credit") return;
+
+    paiementsMap[method] = (paiementsMap[method] || 0) + montant;
+  });
+
+  appData.stats.paiements = paiementsMap;
 
   // --- Chiffre d’affaires ---
   const totalJour = filtrerVentesParPeriode(appData.ventes, 'jour')
     .reduce((s, v) => {
-  if (!v.paid) return s;
-  return s + (v.total || (v.price || 0) * (v.quantity || 0));
-}, 0);
+      if (!v.paid) return s;
+      return s + (v.total || (v.price || 0) * (v.quantity || 0));
+    }, 0);
   const totalSemaine = filtrerVentesParPeriode(appData.ventes, 'semaine')
     .reduce((s, v) => {
-  if (!v.paid) return s;
-  return s + (v.total || (v.price || 0) * (v.quantity || 0));
-}, 0);
+      if (!v.paid) return s;
+      return s + (v.total || (v.price || 0) * (v.quantity || 0));
+    }, 0);
   const totalMois = filtrerVentesParPeriode(appData.ventes, 'mois')
     .reduce((s, v) => {
-  if (!v.paid) return s;
-  return s + (v.total || (v.price || 0) * (v.quantity || 0));
-}, 0);
+      if (!v.paid) return s;
+      return s + (v.total || (v.price || 0) * (v.quantity || 0));
+    }, 0);
   const totalTout = filtrerVentesParPeriode(appData.ventes, 'tout')
     .reduce((s, v) => {
-  if (!v.paid) return s;
-  return s + (v.total || (v.price || 0) * (v.quantity || 0));
-}, 0);
+      if (!v.paid) return s;
+      return s + (v.total || (v.price || 0) * (v.quantity || 0));
+    }, 0);
 
   // --- Injection DOM ---
   document.getElementById('recettesJour').textContent = totalJour.toLocaleString() + ' F';
@@ -202,6 +202,11 @@ appData.stats.paiements = paiementsMap;
   // --- Historique des ventes --- 
   tryRenderSalesHistory(ventesFiltrees);
 
+  updateCharts(ventesFiltrees);
+  chartEvolutionCA(ventesFiltrees);
+  chartCreditsStats(appData.credits || []);
+  genererJournal(ventesFiltrees);
+
   // --- Crédits --- 
   if (appData?.credits?.length) {
     afficherStatsCredits();
@@ -247,5 +252,65 @@ export function afficherStatsCredits() {
       </td>
     `;
     container.appendChild(tr);
+  });
+}
+
+export function initRapportPDF() {
+  const btn = document.getElementById("btnPdfRapports");
+  if (!btn) return;
+
+  btn.addEventListener("click", () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const periode = document.getElementById("periodeRapports").value;
+
+    const caEncaisse = document.getElementById("caEncaisse").textContent;
+    const caEnAttente = document.getElementById("caEnAttente").textContent;
+    const credits = document.getElementById("creditsEnCours").textContent;
+    const taux = document.getElementById("tauxRecouvrement").textContent;
+
+    doc.setFontSize(18);
+    doc.text("RAPPORT FINANCIER", 20, 20);
+
+    doc.setFontSize(12);
+    doc.text("Période: " + periode, 20, 35);
+
+    doc.text("CA encaissé: " + caEncaisse, 20, 50);
+    doc.text("CA en attente: " + caEnAttente, 20, 60);
+    doc.text("Crédits en cours: " + credits, 20, 70);
+    doc.text("Taux recouvrement: " + taux, 20, 80);
+
+    let y = 100;
+    doc.text("Répartition paiements :", 20, y);
+    y += 10;
+
+    Object.entries(appData.stats.paiements || {}).forEach(([m, v]) => {
+      doc.text(`${m} : ${v.toLocaleString()} F`, 25, y);
+      y += 8;
+    });
+
+    doc.save("rapport_financier.pdf");
+  });
+}
+
+function genererJournal(ventes) {
+  const container = document.getElementById("journalComptable");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  ventes.forEach(v => {
+    const montant = v.total || (v.price || 0) * (v.quantity || 0);
+    const statut = v.paid ? "Encaissement" : "Créance";
+
+    const div = document.createElement("div");
+    div.className = "flex justify-between border-b py-1";
+    div.innerHTML = `
+      <div>${new Date(v.date).toLocaleDateString()}</div>
+      <div>${statut}</div>
+      <div>${montant.toLocaleString()} F</div>
+    `;
+    container.appendChild(div);
   });
 }

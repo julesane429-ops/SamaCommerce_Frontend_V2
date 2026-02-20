@@ -569,12 +569,25 @@
                     <select class="w-full p-4 border-2 rounded-2xl text-lg" id="categorieProduit">
                         <option value="">Choisir catégorie</option>
                     </select>
-                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="prixAchatProduit"
-                        placeholder="Prix achat (F CFA)" type="number" />
-                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="prixProduit"
-                        placeholder="Prix vente (F CFA)" type="number" />
-                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="stockProduit"
-                        placeholder="Quantité en stock" type="number" />
+                   <input class="w-full p-4 border-2 rounded-2xl text-lg" id="prixAchatProduit"
+  placeholder="Prix achat (F CFA)" type="number" />
+
+<input class="w-full p-4 border-2 rounded-2xl text-lg" id="prixDetailProduit"
+  placeholder="Prix détail (F CFA)" type="number" />
+
+<input class="w-full p-4 border-2 rounded-2xl text-lg" id="prixGrosProduit"
+  placeholder="Prix gros (optionnel)" type="number" />
+
+<input class="w-full p-4 border-2 rounded-2xl text-lg" id="stockProduit"
+  placeholder="Quantité en stock" type="number" />
+
+<select class="w-full p-4 border-2 rounded-2xl text-lg" id="unitProduit">
+  <option value="pièce">Pièce</option>
+  <option value="kg">Kg</option>
+  <option value="litre">Litre</option>
+  <option value="sachet">Sachet</option>
+</select>
+
                     <textarea class="w-full p-4 border-2 rounded-2xl text-lg h-20" id="descriptionProduit"
                         placeholder="Description (optionnel)"></textarea>
                     <div class="flex gap-3">

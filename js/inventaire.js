@@ -1,5 +1,6 @@
 // inventaire.js
 import { appData } from "./state.js";
+import { syncFromServer } from "./api.js"
 
 let chartInventaireInstance = null;
 
@@ -135,12 +136,16 @@ export function setupInventaireInputs() {
   const filterPeriode = document.getElementById("filterPeriode");
 
   [searchInput, filterStock, filterPeriode].forEach(el => {
-    if (el) el.addEventListener("input", afficherInventaire);
+    if (el) el.addEventListener("change", async () => {
+      await syncFromServer();
+      afficherInventaire();
+    });
   });
 }
 
 // ---------- Initialisation ----------
-export function initInventaire() {
+export async function initInventaire() {
+  await syncFromServer();
   afficherInventaire();
   setupInventaireInputs();
 }

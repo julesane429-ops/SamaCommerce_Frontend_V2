@@ -1,6 +1,6 @@
 // inventaire.js
 import { appData } from "./state.js";
-import { Chart } from "chart.js";
+import { Chart } from "charts.js";
 
 let chartInventaireInstance = null;
 

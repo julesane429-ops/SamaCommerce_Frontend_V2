@@ -270,6 +270,29 @@
                         📄 Télécharger PDF Chiffres
                     </button>
                 </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
+
+                    <div class="bg-green-50 p-4 rounded-2xl">
+                        <div class="text-sm text-gray-600">💰 CA encaissé</div>
+                        <div id="caEncaisse" class="text-xl font-bold text-green-600">0 F</div>
+                    </div>
+
+                    <div class="bg-yellow-50 p-4 rounded-2xl">
+                        <div class="text-sm text-gray-600">⏳ CA en attente</div>
+                        <div id="caEnAttente" class="text-xl font-bold text-yellow-600">0 F</div>
+                    </div>
+
+                    <div class="bg-red-50 p-4 rounded-2xl">
+                        <div class="text-sm text-gray-600">💳 Crédits en cours</div>
+                        <div id="creditsEnCours" class="text-xl font-bold text-red-600">0 F</div>
+                    </div>
+
+                    <div class="bg-blue-50 p-4 rounded-2xl">
+                        <div class="text-sm text-gray-600">📊 Taux recouvrement</div>
+                        <div id="tauxRecouvrement" class="text-xl font-bold text-blue-600">0 %</div>
+                    </div>
+
+                </div>
                 <div class="bg-white rounded-3xl p-6 shadow-lg">
                     <h3 class="text-lg font-bold mb-4">💳 Paiements</h3>
                     <div class="space-y-3" id="rapportsPaiements"></div>

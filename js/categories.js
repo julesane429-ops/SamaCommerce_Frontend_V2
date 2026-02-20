@@ -1,7 +1,7 @@
 import { appData,chartVentesByDay, chartTopProduits, chartPaiements, chartStocksFaibles, creditChart, _lastSalesKey, _isRenderingSalesHistory, chartVentesJourInstance, deferredPrompt, installBtn, currentSection, chartCredits } from "./state.js";
 import { afficherRapports, updateStats, afficherStatsCredits  } from "./rapports.js";
 import { afficherInventaire, setupSearchInputs, remplirSelectProduitsCredit } from "./inventaire.js";
-import { updateCharts, renderVentesChart, initCreditChart } from "./charts.js";
+import { updateCharts, initCreditChart } from "./charts.js";
 import { authfetch, postCategoryServer, postProductServer, syncFromServer } from "./api.js";
 import { getCurrentUserId, logout } from "./auth.js";
 import { renderCreditsHistory,marquerCreditPaye, confirmerRemboursement, remplirProduitsCredit } from "./credits.js";

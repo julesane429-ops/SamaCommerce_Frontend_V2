@@ -27,24 +27,118 @@ export function afficherRapports() {
   const periode = document.getElementById('periodeRapports')?.value || 'tout';
   const ventesFiltrees = filtrerVentesParPeriode(appData.ventes || [], periode);
 
-  // --- Calcul paiements filtrés ---
-  const paiementsMap = {};
-  ventesFiltrees.forEach(v => {
-    const method = v.payment_method || 'inconnu';
-    const montant = parseFloat(v.total || (v.price || 0) * (v.quantity || 0)) || 0;
-    paiementsMap[method] = (paiementsMap[method] || 0) + montant;
-  });
-  appData.stats.paiements = paiementsMap;
+  // ==========================
+// 📊 STATISTIQUES COMPTABLES
+// ==========================
+
+let caEncaisse = 0;
+let caEnAttente = 0;
+let totalCredits = 0;
+let creditsPayes = 0;
+
+ventesFiltrees.forEach(v => {
+  const montant = parseFloat(
+    v.total || (v.price || 0) * (v.quantity || 0)
+  ) || 0;
+
+  if (v.paid) {
+    caEncaisse += montant;
+  }
+
+  if (v.payment_method === "credit" && !v.paid) {
+    caEnAttente += montant;
+  }
+});
+
+// --- Stats crédits détaillés ---
+(appData.credits || []).forEach(c => {
+  const montant = parseFloat(c.total || 0) || 0;
+  totalCredits += montant;
+  if (c.paid) creditsPayes += montant;
+});
+
+const creditsImpayes = totalCredits - creditsPayes;
+const tauxRecouvrement = totalCredits > 0
+  ? ((creditsPayes / totalCredits) * 100).toFixed(1)
+  : 0;
+
+// ==========================
+// 💉 Injection dans le DOM
+// ==========================
+
+document.getElementById("caEncaisse") &&
+  (document.getElementById("caEncaisse").textContent =
+    caEncaisse.toLocaleString() + " F");
+
+document.getElementById("caEnAttente") &&
+  (document.getElementById("caEnAttente").textContent =
+    caEnAttente.toLocaleString() + " F");
+
+document.getElementById("creditsEnCours") &&
+  (document.getElementById("creditsEnCours").textContent =
+    creditsImpayes.toLocaleString() + " F");
+
+document.getElementById("tauxRecouvrement") &&
+  (document.getElementById("tauxRecouvrement").textContent =
+    tauxRecouvrement + " %");
+if (tauxRecouvrement < 50) {
+  document.getElementById("tauxRecouvrement").className = "text-xl font-bold text-red-600";
+} else if (tauxRecouvrement >= 50 && tauxRecouvrement < 80) {
+  document.getElementById("tauxRecouvrement").className = "text-xl font-bold text-orange-600";
+} else {
+  document.getElementById("tauxRecouvrement").className = "text-xl font-bold text-green-600";
+}
+// --- Calcul paiements filtrés (corrigé) ---
+const paiementsMap = {};
+
+ventesFiltrees.forEach(v => {
+  // ❌ On ignore les ventes non payées
+  if (!v.paid) return;
+
+  // 💰 Montant
+  const montant = parseFloat(
+    v.total || (v.price || 0) * (v.quantity || 0)
+  ) || 0;
+
+  // ✅ Méthode réelle de paiement
+  let method;
+
+  if (v.payment_method === "credit") {
+    // Si crédit remboursé → on prend la méthode de remboursement
+    method = v.repayment_method || "inconnu";
+  } else {
+    method = v.payment_method || "inconnu";
+  }
+
+  // ❌ On ignore les crédits non remboursés
+  if (!method || method === "credit") return;
+
+  paiementsMap[method] = (paiementsMap[method] || 0) + montant;
+});
+
+appData.stats.paiements = paiementsMap;
 
   // --- Chiffre d’affaires ---
   const totalJour = filtrerVentesParPeriode(appData.ventes, 'jour')
-    .reduce((s, v) => s + (v.total || (v.price || 0) * (v.quantity || 0)), 0);
+    .reduce((s, v) => {
+  if (!v.paid) return s;
+  return s + (v.total || (v.price || 0) * (v.quantity || 0));
+}, 0);
   const totalSemaine = filtrerVentesParPeriode(appData.ventes, 'semaine')
-    .reduce((s, v) => s + (v.total || (v.price || 0) * (v.quantity || 0)), 0);
+    .reduce((s, v) => {
+  if (!v.paid) return s;
+  return s + (v.total || (v.price || 0) * (v.quantity || 0));
+}, 0);
   const totalMois = filtrerVentesParPeriode(appData.ventes, 'mois')
-    .reduce((s, v) => s + (v.total || (v.price || 0) * (v.quantity || 0)), 0);
+    .reduce((s, v) => {
+  if (!v.paid) return s;
+  return s + (v.total || (v.price || 0) * (v.quantity || 0));
+}, 0);
   const totalTout = filtrerVentesParPeriode(appData.ventes, 'tout')
-    .reduce((s, v) => s + (v.total || (v.price || 0) * (v.quantity || 0)), 0);
+    .reduce((s, v) => {
+  if (!v.paid) return s;
+  return s + (v.total || (v.price || 0) * (v.quantity || 0));
+}, 0);
 
   // --- Injection DOM ---
   document.getElementById('recettesJour').textContent = totalJour.toLocaleString() + ' F';

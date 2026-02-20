@@ -144,3 +144,26 @@ export function initInventaire() {
   afficherInventaire();
   setupInventaireInputs();
 }
+
+export function remplirSelectProduitsCredit() {
+  const select = document.getElementById('creditProduct');
+  if (!select) return;
+
+  // vider avant de recharger
+  select.innerHTML = '';
+
+  if (!appData.produits || appData.produits.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = 'Aucun produit disponible';
+    select.appendChild(opt);
+    return;
+  }
+
+  appData.produits.forEach(prod => {
+    const opt = document.createElement('option');
+    opt.value = prod.id;
+    opt.textContent = `${prod.name} (${prod.stock} dispo - ${prod.price}F)`;
+    select.appendChild(opt);
+  });
+}

@@ -131,6 +131,8 @@ export async function syncFromServer() {
   if (!navigator.onLine) {
     console.warn('Mode hors ligne : données locales utilisées.');
     if (syncBanner) syncBanner.style.display = 'none';
+    afficherInventaire();
+
     return;
   }
 

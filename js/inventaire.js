@@ -149,11 +149,21 @@ export function setupInventaireInputs() {
 }
 
 // ---------- Initialisation ----------
-export async function initInventaire() {
-  await syncFromServer();
+export function initInventaire() {
+
+  // 1️⃣ Affiche immédiatement les données locales
   afficherInventaire();
+
+  // 2️⃣ Active immédiatement les filtres
   setupInventaireInputs();
+
+  // 3️⃣ Synchronisation en arrière-plan
+  syncFromServer().then(() => {
+    afficherInventaire(); // refresh après sync
+  });
+
 }
+
 
 export function remplirSelectProduitsCredit() {
   const select = document.getElementById('creditProduct');

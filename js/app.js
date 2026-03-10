@@ -4,7 +4,7 @@
 import { appData } from "./state.js";
 
 import { afficherRapports, updateStats, initRapportPDF } from "./rapports.js";
-import { afficherInventaire, setupSearchInputs } from "./inventaire.js";
+import { afficherInventaire, setupSearchInputs,initInventaire } from "./inventaire.js";
 import { initCreditChart } from "./charts.js";
 import { authfetch, syncFromServer } from "./api.js";
 import { renderCreditsHistory, remplirProduitsCredit } from "./credits.js";

@@ -221,7 +221,16 @@
 
         <!-- Section Rapports (CHIFFRES) -->
         <div class="hidden slide-in p-6" id="rapportsSection">
-            <h2 class="text-2xl font-bold mb-6 text-center">📈 Chiffres</h2>
+            <!-- Header -->
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                <h2 class="text-3xl font-bold text-gray-800">
+                    📈 Chiffres
+                </h2>
+
+                <button id="btnPdfRapports" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl shadow">
+                    📄 Télécharger PDF Chiffres
+                </button>
+            </div>
             <div class="mb-4 text-center">
                 <label for="periodeRapports" class="mr-2 font-bold">Période :</label>
                 <select id="periodeRapports" class="p-2 border rounded">
@@ -262,12 +271,6 @@
                     </div>
                 </div>
 
-                <div class="text-center mb-4">
-                    <button id="btnPdfRapports"
-                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl shadow">
-                        📄 Télécharger PDF Chiffres
-                    </button>
-                </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
 
                     <div class="bg-green-50 p-4 rounded-2xl">

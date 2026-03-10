@@ -97,6 +97,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     periodeRapports.addEventListener('change', afficherRapports);
   }
 
+    initInventaire();
+
   // ======================
   // 6️⃣ Enregistrement crédit (modal)
   // ======================

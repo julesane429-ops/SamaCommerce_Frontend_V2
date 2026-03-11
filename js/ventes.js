@@ -174,6 +174,122 @@ export function afficherPanier() {
 
 export function modifierQuantitePanier(id, delta) { if (!appData) return; const item = appData.panier.find(function (i) { return i.id === id; }); const produit = appData.produits.find(function (p) { return p.id === id; }); if (item) { item.quantite += delta; if (item.quantite <= 0) appData.panier = appData.panier.filter(function (i) { return i.id !== id; }); else if (produit && item.quantite > produit.stock) { item.quantite = produit.stock; alert('❌ Stock insuffisant!'); } afficherPanier(); saveAppDataLocal(); } }
 
+export function imprimerRecu(paymentMethod = "especes") {
+
+  if (!appData.panier.length) {
+    showNotification("❌ Aucun article dans le panier.", "error");
+    return;
+  }
+
+  let total = 0;
+
+  let lignes = appData.panier.map(item => {
+
+    const prix = item.price || 0;
+    const qte = item.quantite || 0;
+    const sousTotal = prix * qte;
+
+    total += sousTotal;
+
+    return `
+      <tr>
+        <td>${item.name}</td>
+        <td>${qte}</td>
+        <td>${sousTotal.toLocaleString()} F</td>
+      </tr>
+    `;
+
+  }).join("");
+
+  const contenu = `
+  <html>
+  <head>
+    <title>Reçu</title>
+
+    <style>
+
+      body{
+        font-family: monospace;
+        width:300px;
+        margin:auto;
+      }
+
+      h2{
+        text-align:center;
+      }
+
+      table{
+        width:100%;
+        font-size:12px;
+      }
+
+      td{
+        padding:3px 0;
+      }
+
+      .total{
+        font-size:16px;
+        font-weight:bold;
+        text-align:right;
+        margin-top:10px;
+      }
+
+      .center{
+        text-align:center;
+      }
+
+    </style>
+
+  </head>
+
+  <body>
+
+  <h2>🧾 REÇU</h2>
+
+  <div class="center">
+  ${new Date().toLocaleString()}
+  </div>
+
+  <hr>
+
+  <table>
+
+  ${lignes}
+
+  </table>
+
+  <hr>
+
+  <div class="total">
+  TOTAL : ${total.toLocaleString()} F
+  </div>
+
+  <div class="center">
+  Paiement : ${paymentMethod}
+  </div>
+
+  <br>
+
+  <div class="center">
+  Merci pour votre achat 🙏
+  </div>
+
+  </body>
+  </html>
+  `;
+
+  const win = window.open("", "PRINT", "height=600,width=400");
+
+  win.document.write(contenu);
+  win.document.close();
+
+  win.focus();
+  win.print();
+
+  win.close();
+
+}
+
 export async function finaliserVente(paymentMethod) {
   if (paymentMethod === "credit") {
     // ⚡ On ne passe plus ici, on ouvre le formulaire Crédit
@@ -202,6 +318,8 @@ export async function finaliserVente(paymentMethod) {
 
   showNotification('✅ Vente enregistrée.', "success");
 
+  imprimerRecu(paymentMethod);
+  
   // 🔄 Vider le panier local
   appData.panier = [];
   saveAppDataLocal();

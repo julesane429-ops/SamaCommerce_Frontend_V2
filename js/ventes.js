@@ -290,6 +290,8 @@ export function imprimerRecu(paymentMethod = "especes") {
 
 }
 
+window.imprimerRecu = imprimerRecu;
+
 export async function finaliserVente(paymentMethod) {
   if (paymentMethod === "credit") {
     // ⚡ On ne passe plus ici, on ouvre le formulaire Crédit
@@ -319,7 +321,7 @@ export async function finaliserVente(paymentMethod) {
   showNotification('✅ Vente enregistrée.', "success");
 
   imprimerRecu(paymentMethod);
-  
+
   // 🔄 Vider le panier local
   appData.panier = [];
   saveAppDataLocal();

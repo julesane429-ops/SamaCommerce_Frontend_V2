@@ -352,6 +352,8 @@ export async function finaliserVente(paymentMethod) {
 
   imprimerRecu(paymentMethod);
 
+  document.getElementById("btnPrintReceipt")?.classList.add("hidden");
+
   // 🔄 Vider le panier local
   appData.panier = [];
   saveAppDataLocal();

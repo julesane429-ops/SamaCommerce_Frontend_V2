@@ -51,41 +51,131 @@ export function showSection(section) {
 window.showSection = showSection;
 
 export function generateInventairePDF() {
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
+    const today = new Date().toLocaleString("fr-FR");
+
+    // ===== TITRE =====
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text("Inventaire & Bénéfices", 20, 20);
+    doc.setFontSize(20);
+    doc.text("Rapport Inventaire & Bénéfices", 105, 20, { align: "center" });
 
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
-    doc.text(`Date: ${new Date().toLocaleString("fr-FR")}`, 20, 35);
+    doc.text(`Généré le : ${today}`, 105, 28, { align: "center" });
 
-    let startY = 50;
 
+    // ===== STATISTIQUES =====
     const rows = document.querySelectorAll("#inventaireListe tr");
 
-    rows.forEach((row, i) => {
+    let totalStock = 0;
+    let totalProfit = 0;
 
-        if (startY > 270) {
-            doc.addPage();
-            startY = 20;
-        }
-
+    rows.forEach(row => {
         const cols = row.querySelectorAll("td");
 
         if (cols.length >= 6) {
-            doc.text(
-                `${i + 1}. ${cols[0].innerText} | Achat: ${cols[1].innerText} | Vente: ${cols[2].innerText} | Stock: ${cols[3].innerText} | Vendues: ${cols[4].innerText} | Bénéfice: ${cols[5].innerText}`,
-                20,
-                startY
-            );
-            startY += 10;
+
+            const stock = parseInt(cols[3].innerText) || 0;
+            const profit = parseInt(cols[5].innerText.replace(/[^\d-]/g, "")) || 0;
+
+            totalStock += stock;
+            totalProfit += profit;
         }
     });
 
-    doc.save(`inventaire_${new Date().toISOString().split("T")[0]}.pdf`);
+    doc.setFontSize(12);
+    doc.text(`Stock total : ${totalStock}`, 20, 40);
+    doc.text(`Profit total : ${totalProfit.toLocaleString()} F`, 20, 48);
+
+
+    // ===== TABLEAU =====
+    const tableData = [];
+
+    rows.forEach(row => {
+
+        const cols = row.querySelectorAll("td");
+
+        if (cols.length >= 7) {
+
+            tableData.push([
+                cols[0].innerText,
+                cols[1].innerText,
+                cols[2].innerText,
+                cols[3].innerText,
+                cols[4].innerText,
+                cols[5].innerText,
+                cols[6].innerText
+            ]);
+        }
+    });
+
+    doc.autoTable({
+
+        startY: 60,
+
+        head: [[
+            "Produit",
+            "Prix Achat",
+            "Prix Vente",
+            "Stock",
+            "Vendues",
+            "Bénéfice",
+            "Marge %"
+        ]],
+
+        body: tableData,
+
+        theme: "striped",
+
+        headStyles: {
+            fillColor: [79, 70, 229]
+        },
+
+        styles: {
+            fontSize: 10
+        }
+    });
+
+
+    // ===== GRAPHIQUE =====
+    const canvas = document.getElementById("chartInventaire");
+
+    if (canvas) {
+
+        const chartImage = canvas.toDataURL("image/png", 1.0);
+
+        doc.addPage();
+
+        doc.setFontSize(16);
+        doc.text("Graphique Inventaire", 105, 20, { align: "center" });
+
+        doc.addImage(chartImage, "PNG", 15, 40, 180, 100);
+    }
+
+
+    // ===== PIED DE PAGE =====
+    const pages = doc.getNumberOfPages();
+
+    for (let i = 1; i <= pages; i++) {
+
+        doc.setPage(i);
+
+        doc.setFontSize(10);
+
+        doc.text(
+            `Page ${i} / ${pages}`,
+            105,
+            290,
+            { align: "center" }
+        );
+    }
+
+
+    // ===== EXPORT =====
+    doc.save(`rapport_inventaire_${new Date().toISOString().split("T")[0]}.pdf`);
 }
 
 export function generateRapportsPDF() {

@@ -50,6 +50,53 @@ export function showSection(section) {
 
 window.showSection = showSection;
 
+
+export function genererGraphiquesPDF(data) {
+
+    const top = [...data]
+        .sort((a,b)=>b.vendu-a.vendu)
+        .slice(0,5);
+
+    const ctxTop = document.getElementById("chartTopProduits").getContext("2d");
+
+    new Chart(ctxTop,{
+        type:"bar",
+        data:{
+            labels:top.map(p=>p.produit),
+            datasets:[{
+                label:"Produits vendus",
+                data:top.map(p=>p.vendu),
+                backgroundColor:"rgba(16,185,129,0.7)"
+            }]
+        },
+        options:{responsive:false}
+    });
+
+
+    const rupture = data.filter(p=>p.stock===0).length;
+    const faible = data.filter(p=>p.stock>0 && p.stock<=5).length;
+    const normal = data.filter(p=>p.stock>5).length;
+
+    const ctxStock = document.getElementById("chartStockAlert").getContext("2d");
+
+    new Chart(ctxStock,{
+        type:"pie",
+        data:{
+            labels:["Rupture","Stock faible","Stock normal"],
+            datasets:[{
+                data:[rupture,faible,normal],
+                backgroundColor:[
+                    "#ef4444",
+                    "#f59e0b",
+                    "#10b981"
+                ]
+            }]
+        },
+        options:{responsive:false}
+    });
+
+}
+
 export function generateInventairePDF() {
 
     const { jsPDF } = window.jspdf;
@@ -61,198 +108,163 @@ export function generateInventairePDF() {
 
     const data = [];
 
-    rows.forEach(row => {
+    rows.forEach(row=>{
 
-        const cols = row.querySelectorAll("td");
+        const cols=row.querySelectorAll("td");
 
-        if (cols.length >= 7) {
+        if(cols.length>=7){
 
             data.push({
-                produit: cols[0].innerText,
-                achat: cols[1].innerText,
-                vente: cols[2].innerText,
-                stock: parseInt(cols[3].innerText) || 0,
-                vendu: parseInt(cols[4].innerText) || 0,
-                profit: cols[5].innerText,
-                profitNum: parseInt(cols[5].innerText.replace(/[^\d-]/g, "")) || 0,
-                marge: cols[6].innerText
+
+                produit:cols[0].innerText,
+                achat:cols[1].innerText,
+                vente:cols[2].innerText,
+                stock:parseInt(cols[3].innerText)||0,
+                vendu:parseInt(cols[4].innerText)||0,
+                profit:cols[5].innerText,
+                profitNum:parseInt(cols[5].innerText.replace(/[^\d-]/g,""))||0,
+                marge:cols[6].innerText
+
             });
         }
+
     });
 
 
-    // ===== STATISTIQUES =====
+    // ====================
+    // STATISTIQUES
+    // ====================
 
-    const totalStock = data.reduce((s, p) => s + p.stock, 0);
-    const totalVendu = data.reduce((s, p) => s + p.vendu, 0);
-    const totalProfit = data.reduce((s, p) => s + p.profitNum, 0);
-
-    const ruptures = data.filter(p => p.stock === 0);
-    const stockFaible = data.filter(p => p.stock > 0 && p.stock <= 5);
-
-    const topProduits = [...data]
-        .sort((a, b) => b.vendu - a.vendu)
-        .slice(0, 5);
+    const totalStock=data.reduce((s,p)=>s+p.stock,0);
+    const totalVendu=data.reduce((s,p)=>s+p.vendu,0);
+    const totalProfit=data.reduce((s,p)=>s+p.profitNum,0);
+    const valeurStock=data.reduce((s,p)=>s+(p.stock*parseInt(p.achat)),0);
 
 
-    // ==============================
-    // PAGE 1 — COUVERTURE
-    // ==============================
+    // ====================
+    // PAGE COUVERTURE
+    // ====================
 
     doc.setFontSize(28);
-    doc.setFont("helvetica", "bold");
-    doc.text("RAPPORT INVENTAIRE", 105, 80, { align: "center" });
+    doc.text("RAPPORT INVENTAIRE",105,80,{align:"center"});
 
     doc.setFontSize(18);
-    doc.text("& BÉNÉFICES", 105, 95, { align: "center" });
+    doc.text("Analyse des ventes",105,95,{align:"center"});
 
     doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Généré le ${date}`, 105, 120, { align: "center" });
-
-    doc.setFontSize(11);
-    doc.text("Système de gestion des ventes", 105, 135, { align: "center" });
+    doc.text(`Date : ${date}`,105,120,{align:"center"});
 
 
-    // ==============================
-    // PAGE 2 — STATISTIQUES
-    // ==============================
+    // ====================
+    // PAGE STATISTIQUES
+    // ====================
 
     doc.addPage();
 
     doc.setFontSize(20);
-    doc.setFont("helvetica", "bold");
-    doc.text("Statistiques générales", 20, 20);
+    doc.text("Indicateurs clés",20,20);
 
     doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
 
-    doc.text(`Produits en inventaire : ${data.length}`, 20, 40);
-    doc.text(`Stock total : ${totalStock}`, 20, 50);
-    doc.text(`Produits vendus : ${totalVendu}`, 20, 60);
-    doc.text(`Profit total : ${totalProfit.toLocaleString()} F`, 20, 70);
-    doc.text(`Produits en rupture : ${ruptures.length}`, 20, 80);
-    doc.text(`Produits stock faible : ${stockFaible.length}`, 20, 90);
+    doc.text(`Produits : ${data.length}`,20,40);
+    doc.text(`Stock total : ${totalStock}`,20,50);
+    doc.text(`Articles vendus : ${totalVendu}`,20,60);
+    doc.text(`Profit total : ${totalProfit.toLocaleString()} F`,20,70);
+    doc.text(`Valeur du stock : ${valeurStock.toLocaleString()} F`,20,80);
 
 
-    // ==============================
+    // ====================
     // TOP PRODUITS
-    // ==============================
+    // ====================
 
-    const topTable = topProduits.map(p => [
-        p.produit,
-        p.vendu,
-        p.stock
-    ]);
+    const top=[...data].sort((a,b)=>b.vendu-a.vendu).slice(0,10);
 
     doc.autoTable({
-        startY: 110,
-        head: [["Produit", "Vendues", "Stock restant"]],
-        body: topTable,
-        headStyles: { fillColor: [16, 185, 129] }
+
+        startY:100,
+
+        head:[["Produit","Vendues","Stock"]],
+
+        body:top.map(p=>[
+
+            p.produit,
+            p.vendu,
+            p.stock
+
+        ]),
+
+        headStyles:{fillColor:[16,185,129]}
+
     });
 
 
-    // ==============================
-    // PRODUITS EN RUPTURE
-    // ==============================
-
-    if (ruptures.length > 0) {
-
-        doc.addPage();
-
-        doc.setFontSize(18);
-        doc.setFont("helvetica", "bold");
-        doc.text("Produits en rupture", 20, 20);
-
-        const ruptureTable = ruptures.map(p => [
-            p.produit,
-            p.vendu
-        ]);
-
-        doc.autoTable({
-            startY: 35,
-            head: [["Produit", "Vendues"]],
-            body: ruptureTable,
-            headStyles: { fillColor: [239, 68, 68] }
-        });
-    }
-
-
-    // ==============================
+    // ====================
     // INVENTAIRE COMPLET
-    // ==============================
+    // ====================
 
     doc.addPage();
 
-    doc.setFontSize(18);
-    doc.setFont("helvetica", "bold");
-    doc.text("Inventaire complet", 20, 20);
-
-    const fullTable = data.map(p => [
-        p.produit,
-        p.achat,
-        p.vente,
-        p.stock,
-        p.vendu,
-        p.profit,
-        p.marge
-    ]);
+    doc.text("Inventaire détaillé",20,20);
 
     doc.autoTable({
 
-        startY: 30,
+        startY:30,
 
-        head: [[
+        head:[[
             "Produit",
             "Achat",
             "Vente",
             "Stock",
             "Vendues",
-            "Bénéfice",
-            "Marge %"
+            "Profit",
+            "Marge"
         ]],
 
-        body: fullTable,
+        body:data.map(p=>[
 
-        theme: "striped",
+            p.produit,
+            p.achat,
+            p.vente,
+            p.stock,
+            p.vendu,
+            p.profit,
+            p.marge
 
-        headStyles: {
-            fillColor: [79, 70, 229]
-        },
+        ]),
 
-        styles: {
-            fontSize: 9
-        }
+        theme:"striped",
+
+        styles:{fontSize:9}
+
     });
 
 
-    // ==============================
-    // GRAPHIQUE
-    // ==============================
+    // ====================
+    // GRAPHIQUE INVENTAIRE
+    // ====================
 
-    const canvas = document.getElementById("chartInventaire");
+    const canvas1=document.getElementById("chartInventaire");
 
-    if (canvas) {
+    if(canvas1){
 
-        const chartImage = canvas.toDataURL("image/png", 1.0);
+        const img=canvas1.toDataURL("image/png");
 
         doc.addPage();
 
-        doc.setFontSize(18);
-        doc.text("Graphique inventaire", 105, 20, { align: "center" });
+        doc.text("Graphique inventaire",105,20,{align:"center"});
 
-        doc.addImage(chartImage, "PNG", 15, 40, 180, 100);
+        doc.addImage(img,"PNG",15,40,180,100);
+
     }
 
 
-    // ==============================
+    // ====================
     // PAGINATION
-    // ==============================
+    // ====================
 
-    const pages = doc.getNumberOfPages();
+    const pages=doc.getNumberOfPages();
 
-    for (let i = 1; i <= pages; i++) {
+    for(let i=1;i<=pages;i++){
 
         doc.setPage(i);
 
@@ -262,16 +274,12 @@ export function generateInventairePDF() {
             `Page ${i} / ${pages}`,
             105,
             290,
-            { align: "center" }
+            {align:"center"}
         );
     }
 
-
-    // ==============================
-    // EXPORT
-    // ==============================
-
     doc.save(`rapport_inventaire_${new Date().toISOString().split("T")[0]}.pdf`);
+
 }
 
 export function generateRapportsPDF() {

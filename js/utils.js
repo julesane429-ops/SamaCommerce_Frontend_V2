@@ -287,21 +287,34 @@ export function generateRapportsPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
+    const today = new Date().toLocaleString("fr-FR");
+
+    // =========================
+    // PAGE COUVERTURE
+    // =========================
+
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text("Rapport des Chiffres", 20, 20);
+    doc.setFontSize(26);
+    doc.text("RAPPORT FINANCIER", 105, 90, { align: "center" });
+
+    doc.setFontSize(16);
+    doc.text("Analyse des ventes", 105, 105, { align: "center" });
 
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
-    doc.text(`Date: ${new Date().toLocaleString("fr-FR")}`, 20, 35);
+    doc.text(`Généré le ${today}`, 105, 120, { align: "center" });
 
-    let y = 50;
+    // =========================
+    // PAGE RESUME
+    // =========================
 
-    // 🔹 Résumé
+    doc.addPage();
+
+    doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
-    doc.text("Résumé :", 20, y);
-    y += 10;
+    doc.text("Résumé financier", 20, 20);
 
+    doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
 
     const jour = document.getElementById("recettesJour")?.innerText || "0";
@@ -309,40 +322,155 @@ export function generateRapportsPDF() {
     const mois = document.getElementById("recettesMois")?.innerText || "0";
     const tout = document.getElementById("recettesTout")?.innerText || "0";
 
-    doc.text(`Aujourd'hui : ${jour}`, 30, y); y += 10;
-    doc.text(`Cette semaine : ${semaine}`, 30, y); y += 10;
-    doc.text(`Ce mois : ${mois}`, 30, y); y += 10;
-    doc.text(`Total général : ${tout}`, 30, y); y += 15;
+    const encaissé = document.getElementById("caEncaisse")?.innerText || "0";
+    const attente = document.getElementById("caEnAttente")?.innerText || "0";
+    const credits = document.getElementById("creditsEnCours")?.innerText || "0";
+    const taux = document.getElementById("tauxRecouvrement")?.innerText || "0";
 
-    // 🔹 Historique ventes
-    doc.setFont("helvetica", "bold");
-    doc.text("Historique des ventes :", 20, y);
-    y += 10;
+    doc.text(`Aujourd'hui : ${jour}`, 20, 40);
+    doc.text(`Cette semaine : ${semaine}`, 20, 50);
+    doc.text(`Ce mois : ${mois}`, 20, 60);
+    doc.text(`Total général : ${tout}`, 20, 70);
 
-    doc.setFont("helvetica", "normal");
+    doc.text(`CA encaissé : ${encaissé}`, 20, 90);
+    doc.text(`CA en attente : ${attente}`, 20, 100);
+    doc.text(`Crédits en cours : ${credits}`, 20, 110);
+    doc.text(`Taux recouvrement : ${taux}`, 20, 120);
+
+
+    // =========================
+    // PAIEMENTS
+    // =========================
+
+    const paiements = Object.entries(window.appData?.stats?.paiements || {})
+        .map(([m, v]) => [m, v.toLocaleString() + " F"]);
+
+    if (paiements.length) {
+
+        doc.autoTable({
+            startY: 140,
+            head: [["Méthode de paiement", "Montant"]],
+            body: paiements,
+            headStyles: { fillColor: [16,185,129] }
+        });
+
+    }
+
+
+    // =========================
+    // HISTORIQUE VENTES
+    // =========================
 
     const rows = document.querySelectorAll("#salesHistoryBody tr");
 
-    rows.forEach((row, i) => {
+    const ventes = [];
 
-        if (y > 270) {
-            doc.addPage();
-            y = 20;
-        }
+    rows.forEach(row => {
 
         const cols = row.querySelectorAll("td");
 
         if (cols.length >= 5) {
-            doc.text(
-                `${i + 1}. ${cols[0].innerText} | ${cols[1].innerText} | Qté: ${cols[2].innerText} | ${cols[3].innerText} | ${cols[4].innerText}`,
-                20,
-                y
-            );
-            y += 8;
+
+            ventes.push([
+                cols[0].innerText,
+                cols[1].innerText,
+                cols[2].innerText,
+                cols[3].innerText,
+                cols[4].innerText
+            ]);
+
         }
+
     });
 
+    doc.addPage();
+
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("Historique des ventes", 20, 20);
+
+    doc.autoTable({
+
+        startY: 30,
+
+        head: [[
+            "Date",
+            "Produit",
+            "Qté",
+            "Montant",
+            "Paiement"
+        ]],
+
+        body: ventes,
+
+        theme: "striped",
+
+        headStyles: {
+            fillColor: [79,70,229]
+        },
+
+        styles: {
+            fontSize: 9
+        }
+
+    });
+
+
+    // =========================
+    // GRAPHIQUES
+    // =========================
+
+    const charts = [
+        "chartVentesByDay",
+        "chartTopProduits",
+        "chartPaiements",
+        "chartStocksFaibles",
+        "chartVentesJour"
+    ];
+
+    charts.forEach(id => {
+
+        const canvas = document.getElementById(id);
+
+        if (canvas) {
+
+            const img = canvas.toDataURL("image/png", 1.0);
+
+            doc.addPage();
+
+            doc.setFontSize(16);
+            doc.text(`Graphique : ${id}`, 105, 20, { align: "center" });
+
+            doc.addImage(img, "PNG", 15, 40, 180, 100);
+
+        }
+
+    });
+
+
+    // =========================
+    // PAGINATION
+    // =========================
+
+    const pages = doc.getNumberOfPages();
+
+    for (let i = 1; i <= pages; i++) {
+
+        doc.setPage(i);
+
+        doc.setFontSize(10);
+
+        doc.text(
+            `Page ${i} / ${pages}`,
+            105,
+            290,
+            { align: "center" }
+        );
+
+    }
+
     doc.save(`rapport_chiffres_${new Date().toISOString().split("T")[0]}.pdf`);
+
 }
 
 export function genererJournal(ventes) {

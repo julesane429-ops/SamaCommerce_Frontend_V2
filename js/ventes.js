@@ -313,6 +313,8 @@ export function imprimerRecu(paymentMethod = "especes") {
 
   win.close();
 
+  document.getElementById("btnPrintReceipt")?.classList.add("hidden");
+
 }
 
 
@@ -346,6 +348,7 @@ export async function finaliserVente(paymentMethod) {
 
   showNotification('✅ Vente enregistrée.', "success");
 
+  document.getElementById("btnPrintReceipt")?.classList.remove("hidden");
   imprimerRecu(paymentMethod);
 
   // 🔄 Vider le panier local

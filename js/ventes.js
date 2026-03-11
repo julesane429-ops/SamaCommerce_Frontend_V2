@@ -348,9 +348,9 @@ export async function finaliserVente(paymentMethod) {
 
   showNotification('✅ Vente enregistrée.', "success");
 
-  imprimerRecu(paymentMethod);
-
   document.getElementById("btnPrintReceipt")?.classList.remove("hidden");
+
+  imprimerRecu(paymentMethod);
 
   // 🔄 Vider le panier local
   appData.panier = [];

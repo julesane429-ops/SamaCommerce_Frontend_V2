@@ -174,12 +174,29 @@ export function afficherPanier() {
 
 export function modifierQuantitePanier(id, delta) { if (!appData) return; const item = appData.panier.find(function (i) { return i.id === id; }); const produit = appData.produits.find(function (p) { return p.id === id; }); if (item) { item.quantite += delta; if (item.quantite <= 0) appData.panier = appData.panier.filter(function (i) { return i.id !== id; }); else if (produit && item.quantite > produit.stock) { item.quantite = produit.stock; alert('❌ Stock insuffisant!'); } afficherPanier(); saveAppDataLocal(); } }
 
+function genererNumeroRecu() {
+
+  const date = new Date();
+
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+
+  let compteur = localStorage.getItem("compteurRecu") || 0;
+  compteur++;
+
+  localStorage.setItem("compteurRecu", compteur);
+
+  return `RC-${y}${m}${d}-${String(compteur).padStart(4,"0")}`;
+
+}
+
 export function imprimerRecu(paymentMethod = "especes") {
 
-  if (!appData.panier.length) {
-    showNotification("❌ Aucun article dans le panier.", "error");
-    return;
-  }
+  if (!appData.panier.length) return;
+
+  const numeroRecu = genererNumeroRecu();
+  const date = new Date().toLocaleString("fr-FR");
 
   let total = 0;
 
@@ -194,8 +211,8 @@ export function imprimerRecu(paymentMethod = "especes") {
     return `
       <tr>
         <td>${item.name}</td>
-        <td>${qte}</td>
-        <td>${sousTotal.toLocaleString()} F</td>
+        <td style="text-align:center">${qte}</td>
+        <td style="text-align:right">${sousTotal.toLocaleString()} F</td>
       </tr>
     `;
 
@@ -204,41 +221,47 @@ export function imprimerRecu(paymentMethod = "especes") {
   const contenu = `
   <html>
   <head>
-    <title>Reçu</title>
+  <title>Reçu</title>
 
-    <style>
+  <style>
 
-      body{
-        font-family: monospace;
-        width:300px;
-        margin:auto;
-      }
+  body{
+    font-family: monospace;
+    width:300px;
+    margin:auto;
+  }
 
-      h2{
-        text-align:center;
-      }
+  h2{
+    text-align:center;
+    margin-bottom:5px;
+  }
 
-      table{
-        width:100%;
-        font-size:12px;
-      }
+  .center{
+    text-align:center;
+  }
 
-      td{
-        padding:3px 0;
-      }
+  table{
+    width:100%;
+    font-size:12px;
+    margin-top:10px;
+  }
 
-      .total{
-        font-size:16px;
-        font-weight:bold;
-        text-align:right;
-        margin-top:10px;
-      }
+  td{
+    padding:3px 0;
+  }
 
-      .center{
-        text-align:center;
-      }
+  .total{
+    font-weight:bold;
+    font-size:16px;
+    text-align:right;
+    margin-top:10px;
+  }
 
-    </style>
+  hr{
+    border-top:1px dashed black;
+  }
+
+  </style>
 
   </head>
 
@@ -247,15 +270,17 @@ export function imprimerRecu(paymentMethod = "especes") {
   <h2>🧾 REÇU</h2>
 
   <div class="center">
-  ${new Date().toLocaleString()}
+  Reçu N° : ${numeroRecu}
+  </div>
+
+  <div class="center">
+  ${date}
   </div>
 
   <hr>
 
   <table>
-
   ${lignes}
-
   </table>
 
   <hr>
@@ -289,6 +314,7 @@ export function imprimerRecu(paymentMethod = "especes") {
   win.close();
 
 }
+
 
 window.imprimerRecu = imprimerRecu;
 

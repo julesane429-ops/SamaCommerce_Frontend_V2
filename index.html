@@ -2,968 +2,1666 @@
 <html lang="fr">
 
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sama Commerce - Gestion Complète</title>
-    <meta name="api-base" content="https://samacommerce-backend-v2.onrender.com">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Sama Commerce</title>
+  <meta name="api-base" content="https://samacommerce-backend-v2.onrender.com">
 
-    <link rel="stylesheet" href="css/global.css">
-    <link rel="stylesheet" href="css/animations.css">
-    <link rel="stylesheet" href="css/categories.css">
-    <link rel="stylesheet" href="css/tables.css">
-    <link rel="stylesheet" href="css/emoji.css">
-    <link rel="stylesheet" href="css/toats.css">
-    <link rel="stylesheet" href="css/confirm.css">
-    <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/categories.css">
+  <link rel="stylesheet" href="css/tables.css">
+  <link rel="stylesheet" href="css/emoji.css">
+  <link rel="stylesheet" href="css/toats.css">
+  <link rel="stylesheet" href="css/confirm.css">
+  <link rel="stylesheet" href="css/responsive.css">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
-    <!-- PWA meta -->
-    <link rel="manifest" href="./pwa/manifest.json">
-    <meta name="theme-color" content="#6D28D9">
-    <!-- iOS support -->
-    <link rel="apple-touch-icon" href="/pwa/icons/apple-touch-icon.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="mobile-web-app-capable" content="yes">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+  <link rel="manifest" href="./pwa/manifest.json">
+  <meta name="theme-color" content="#7C3AED">
+  <link rel="apple-touch-icon" href="/pwa/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <style>
+    :root {
+      --clr-primary: #7C3AED;
+      --clr-primary-light: #A78BFA;
+      --clr-primary-dark: #5B21B6;
+      --clr-accent: #EC4899;
+      --clr-accent-light: #F9A8D4;
+      --clr-green: #10B981;
+      --clr-blue: #3B82F6;
+      --clr-orange: #F59E0B;
+      --clr-teal: #14B8A6;
+      --clr-surface: #FFFFFF;
+      --clr-bg: #F5F3FF;
+      --clr-text: #1E1B4B;
+      --clr-text-muted: #6B7280;
+      --nav-h: 72px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --header-h: 130px;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--clr-bg);
+      color: var(--clr-text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    /* ───── SYNC BANNER ───── */
+    #syncBanner {
+      background: linear-gradient(90deg, var(--clr-blue), #6366F1);
+      color: #fff;
+      text-align: center;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .3px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    /* ───── APP SHELL ───── */
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+    }
+
+    /* ───── TOP HEADER ───── */
+    .top-header {
+      background: linear-gradient(135deg, var(--clr-primary-dark) 0%, var(--clr-primary) 50%, var(--clr-accent) 100%);
+      padding: 20px 20px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .top-header::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 180px; height: 180px;
+      background: rgba(255,255,255,.08);
+      border-radius: 50%;
+    }
+    .top-header::after {
+      content: '';
+      position: absolute;
+      bottom: -30px; left: 10%;
+      width: 120px; height: 120px;
+      background: rgba(255,255,255,.05);
+      border-radius: 50%;
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    #backBtn {
+      background: rgba(255,255,255,.2);
+      border: none;
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(8px);
+      flex-shrink: 0;
+      transition: background .2s;
+    }
+    #backBtn:active { background: rgba(255,255,255,.35); }
+
+    .header-title-block { flex: 1; text-align: center; }
+
+    #appHeader {
+      font-family: 'Sora', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -.3px;
+    }
+
+    .header-subtitle {
+      font-size: 12px;
+      color: rgba(255,255,255,.75);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    .header-avatar {
+      width: 40px; height: 40px;
+      background: rgba(255,255,255,.2);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      backdrop-filter: blur(8px);
+      flex-shrink: 0;
+    }
+
+    /* ─── Today card floating over header ─── */
+    .today-float {
+      margin: -24px 16px 0;
+      background: var(--clr-surface);
+      border-radius: 20px;
+      padding: 16px 20px;
+      box-shadow: 0 8px 32px rgba(124,58,237,.15);
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .today-stat {
+      text-align: center;
+      padding: 10px 6px;
+      border-radius: 14px;
+    }
+    .today-stat.green  { background: #ECFDF5; }
+    .today-stat.blue   { background: #EFF6FF; }
+    .today-stat.orange { background: #FFFBEB; }
+
+    .today-stat .value {
+      font-family: 'Sora', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .today-stat.green .value  { color: var(--clr-green); }
+    .today-stat.blue .value   { color: var(--clr-blue); }
+    .today-stat.orange .value { color: var(--clr-orange); }
+
+    .today-stat .label {
+      font-size: 10px;
+      font-weight: 600;
+      margin-top: 4px;
+      opacity: .7;
+    }
+
+    /* ───── MAIN CONTENT ───── */
+    .page-content {
+      flex: 1;
+      padding: 16px 16px calc(var(--nav-h) + var(--safe-bottom) + 16px);
+      overflow-y: auto;
+    }
+
+    /* ───── SECTION PAGES ───── */
+    .app-page {
+      display: none;
+      animation: fadeSlideUp .28s ease both;
+    }
+    .app-page.active { display: block; }
+
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ───── BOTTOM NAV ───── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: calc(var(--nav-h) + var(--safe-bottom));
+      padding-bottom: var(--safe-bottom);
+      background: var(--clr-surface);
+      border-top: 1px solid rgba(124,58,237,.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      box-shadow: 0 -8px 32px rgba(0,0,0,.07);
+      z-index: 200;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 8px 14px;
+      border-radius: 16px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      transition: all .2s;
+      position: relative;
+    }
+
+    .nav-item .nav-icon {
+      font-size: 22px;
+      transition: transform .2s;
+    }
+
+    .nav-item .nav-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--clr-text-muted);
+      transition: color .2s;
+    }
+
+    .nav-item.active .nav-label { color: var(--clr-primary); }
+    .nav-item.active .nav-icon { transform: scale(1.15); }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%; transform: translateX(-50%);
+      width: 36px; height: 3px;
+      background: var(--clr-primary);
+      border-radius: 0 0 4px 4px;
+    }
+
+    /* ─── FAB center nav button (Vendre) ─── */
+    .nav-fab {
+      background: linear-gradient(135deg, var(--clr-primary), var(--clr-accent));
+      border: none;
+      width: 56px; height: 56px;
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      box-shadow: 0 6px 20px rgba(124,58,237,.4);
+      cursor: pointer;
+      transition: transform .2s, box-shadow .2s;
+      margin-top: -16px;
+      flex-shrink: 0;
+    }
+    .nav-fab:active { transform: scale(.93); box-shadow: 0 3px 10px rgba(124,58,237,.3); }
+
+    /* ───── CARDS ───── */
+    .card {
+      background: var(--clr-surface);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 2px 16px rgba(0,0,0,.06);
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--clr-text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    /* ───── ACTION GRID (home) ───── */
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .action-btn {
+      border: none;
+      border-radius: 20px;
+      padding: 20px 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform .18s, box-shadow .18s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.1);
+    }
+    .action-btn:active { transform: scale(.96); }
+
+    .action-btn .btn-icon { font-size: 36px; }
+    .action-btn .btn-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .action-btn .btn-sub { font-size: 11px; color: rgba(255,255,255,.8); }
+
+    .btn-green  { background: linear-gradient(135deg, #34D399, #059669); }
+    .btn-blue   { background: linear-gradient(135deg, #60A5FA, #2563EB); }
+    .btn-purple { background: linear-gradient(135deg, #A78BFA, #7C3AED); }
+    .btn-orange { background: linear-gradient(135deg, #FCD34D, #D97706); }
+    .btn-teal   { background: linear-gradient(135deg, #2DD4BF, #0D9488); }
+    .btn-pink   { background: linear-gradient(135deg, #F472B6, #DB2777); }
+
+    /* ───── ALERT STOCK ───── */
+    .alert-stock {
+      background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+      border: 1.5px solid #F59E0B;
+      border-radius: 18px;
+      padding: 16px 18px;
+      margin-bottom: 14px;
+    }
+    .alert-stock .alert-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: #92400E;
+      margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .alert-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 10px;
+      background: rgba(255,255,255,.6);
+      border-radius: 10px;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #78350F;
+    }
+    .alert-badge {
+      background: #F59E0B;
+      color: #fff;
+      border-radius: 8px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* ───── GUIDE ───── */
+    #userGuide {
+      background: linear-gradient(135deg, #EDE9FE, #FCE7F3);
+      border: 1.5px solid var(--clr-primary-light);
+      border-radius: 20px;
+      padding: 18px 16px;
+      margin-bottom: 14px;
+    }
+    .guide-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--clr-primary-dark);
+      margin-bottom: 10px;
+    }
+    .guide-list {
+      list-style: none;
+      counter-reset: guide;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .guide-list li {
+      counter-increment: guide;
+      font-size: 13px;
+      color: #4C1D95;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      line-height: 1.4;
+    }
+    .guide-list li::before {
+      content: counter(guide);
+      background: var(--clr-primary);
+      color: #fff;
+      font-weight: 700;
+      font-size: 11px;
+      min-width: 20px; height: 20px;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    #btnCloseGuide {
+      background: rgba(124,58,237,.12);
+      border: none;
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--clr-primary-dark);
+      flex-shrink: 0;
+    }
+
+    /* ───── PAGE HEADERS ───── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      padding-top: 4px;
+    }
+    .page-header h2 {
+      font-family: 'Sora', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--clr-text);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--clr-primary), var(--clr-accent));
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 14px;
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(124,58,237,.3);
+      transition: transform .15s;
+    }
+    .btn-primary:active { transform: scale(.96); }
+
+    /* ───── VENTE SECTION ───── */
+    .panier-empty {
+      text-align: center;
+      padding: 30px 0;
+      color: var(--clr-text-muted);
+    }
+    .panier-empty .empty-icon { font-size: 44px; margin-bottom: 8px; }
+    .panier-empty p { font-size: 14px; font-weight: 500; }
+
+    .total-bar {
+      background: linear-gradient(135deg, #EDE9FE, #FCE7F3);
+      border-radius: 16px;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .total-bar .label { font-size: 14px; font-weight: 600; color: var(--clr-primary-dark); }
+    .total-bar .amount {
+      font-family: 'Sora', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--clr-primary);
+    }
+
+    .btn-encaisser {
+      width: 100%;
+      background: linear-gradient(135deg, var(--clr-green), #059669);
+      color: #fff;
+      border: none;
+      padding: 16px;
+      border-radius: 16px;
+      font-family: 'Sora', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(16,185,129,.3);
+      transition: transform .15s;
+      letter-spacing: .3px;
+    }
+    .btn-encaisser:active { transform: scale(.97); }
+
+    /* ───── PRODUIT CARD ───── */
+    .produit-card {
+      background: var(--clr-surface);
+      border-radius: 18px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.06);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .produit-emoji {
+      font-size: 32px;
+      width: 50px; height: 50px;
+      background: var(--clr-bg);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .produit-info { flex: 1; min-width: 0; }
+    .produit-nom {
+      font-family: 'Sora', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .produit-prix { font-size: 13px; color: var(--clr-green); font-weight: 600; }
+    .produit-stock {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-weight: 700;
+    }
+    .stock-ok    { background: #ECFDF5; color: #065F46; }
+    .stock-low   { background: #FEF3C7; color: #92400E; }
+    .stock-empty { background: #FEE2E2; color: #991B1B; }
+
+    /* ───── FILTER CHIPS ───── */
+    .chips-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: none;
+      margin-bottom: 14px;
+    }
+    .chips-row::-webkit-scrollbar { display: none; }
+    .chip {
+      border: none;
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all .2s;
+      background: var(--clr-surface);
+      color: var(--clr-text-muted);
+      box-shadow: 0 1px 6px rgba(0,0,0,.07);
+    }
+    .chip.active {
+      background: var(--clr-primary);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(124,58,237,.3);
+    }
+
+    /* ───── RAPPORTS RÉSUMÉ ───── */
+    .stat-grid-2x2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .stat-tile {
+      border-radius: 18px;
+      padding: 16px 14px;
+      text-align: center;
+    }
+    .stat-tile .t-val {
+      font-family: 'Sora', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .stat-tile .t-label { font-size: 11px; font-weight: 600; margin-top: 5px; opacity: .8; }
+    .tile-green  { background: #ECFDF5; } .tile-green  .t-val { color: var(--clr-green); }
+    .tile-blue   { background: #EFF6FF; } .tile-blue   .t-val { color: var(--clr-blue); }
+    .tile-yellow { background: #FFFBEB; } .tile-yellow .t-val { color: var(--clr-orange); }
+    .tile-purple { background: #EDE9FE; } .tile-purple .t-val { color: var(--clr-primary); }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .metric-card {
+      background: var(--clr-surface);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.05);
+    }
+    .metric-card .m-label { font-size: 11px; color: var(--clr-text-muted); font-weight: 600; margin-bottom: 6px; }
+    .metric-card .m-val   { font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 800; }
+
+    /* ───── INVENTAIRE ───── */
+    .inv-table-wrap { overflow-x: auto; border-radius: 16px; }
+    .inv-table { width: 100%; min-width: 580px; border-collapse: collapse; font-size: 13px; }
+    .inv-table thead th {
+      background: var(--clr-bg);
+      padding: 12px 10px;
+      text-align: left;
+      font-family: 'Sora', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--clr-text-muted);
+    }
+    .inv-table tbody td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #F3F4F6;
+    }
+    .inv-table tbody tr:last-child td { border-bottom: none; }
+
+    /* ───── CRÉDITS ───── */
+    .credits-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .cred-tile {
+      background: var(--clr-surface);
+      border-radius: 16px;
+      padding: 14px 10px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,.05);
+    }
+    .cred-tile .cv { font-family: 'Sora', sans-serif; font-size: 16px; font-weight: 800; }
+    .cred-tile .cl { font-size: 10px; font-weight: 600; color: var(--clr-text-muted); margin-top: 4px; }
+
+    /* ───── FORM STYLES ───── */
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 700; color: var(--clr-text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 13px 16px;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 14px;
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--clr-bg);
+      color: var(--clr-text);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--clr-primary);
+      box-shadow: 0 0 0 3px rgba(124,58,237,.1);
+      background: #fff;
+    }
+
+    /* ───── SEARCH BAR ───── */
+    .search-bar {
+      background: var(--clr-surface);
+      border: 1.5px solid #E5E7EB;
+      border-radius: 14px;
+      padding: 12px 16px;
+      width: 100%;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      margin-bottom: 14px;
+      transition: border-color .2s;
+    }
+    .search-bar:focus { border-color: var(--clr-primary); box-shadow: 0 0 0 3px rgba(124,58,237,.1); }
+
+    /* ───── MODALS ───── */
+    #modalOverlay {
+      background: rgba(15,10,40,.6);
+      backdrop-filter: blur(6px);
+    }
+
+    .modal-box {
+      background: var(--clr-surface);
+      border-radius: 28px;
+      padding: 28px 24px;
+      width: calc(100% - 32px);
+      max-width: 420px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.2);
+      animation: modalIn .25s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(.88) translateY(24px); }
+      to   { opacity: 1; transform: scale(1)  translateY(0); }
+    }
+
+    .modal-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 22px;
+      color: var(--clr-text);
+    }
+
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-cancel {
+      flex: 1;
+      background: #F3F4F6;
+      color: #6B7280;
+      border: none;
+      padding: 14px;
+      border-radius: 14px;
+      font-family: 'Sora', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-confirm {
+      flex: 1;
+      background: linear-gradient(135deg, var(--clr-primary), var(--clr-accent));
+      color: #fff;
+      border: none;
+      padding: 14px;
+      border-radius: 14px;
+      font-family: 'Sora', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(124,58,237,.3);
+    }
+
+    /* Paiement buttons */
+    .pay-btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 16px;
+      font-family: 'Sora', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      margin-bottom: 10px;
+      transition: transform .15s, box-shadow .15s;
+      box-shadow: 0 4px 16px rgba(0,0,0,.12);
+    }
+    .pay-btn:active { transform: scale(.97); }
+    .pay-especes { background: linear-gradient(135deg, #34D399, #059669); }
+    .pay-wave    { background: linear-gradient(135deg, #60A5FA, #2563EB); }
+    .pay-orange  { background: linear-gradient(135deg, #FBBF24, #D97706); }
+    .pay-credit  { background: linear-gradient(135deg, #A78BFA, #7C3AED); }
+
+    /* ───── PREMIUM MODAL ───── */
+    .premium-card {
+      background: linear-gradient(135deg, #EDE9FE, #FCE7F3);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .premium-card h2 {
+      font-family: 'Sora', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--clr-primary-dark);
+      margin-bottom: 8px;
+    }
+    .premium-card p { font-size: 13px; color: #4C1D95; line-height: 1.5; }
+
+    /* ───── TOP BUTTONS (logout / install) ───── */
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .btn-logout {
+      background: #FEE2E2;
+      color: #DC2626;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-install {
+      background: #ECFDF5;
+      color: var(--clr-green);
+      border: none;
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* ───── MISC ───── */
+    .pulse { animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .6; } }
+
+    .chart-wrap { border-radius: 16px; overflow: hidden; margin-bottom: 14px; padding: 4px 0; }
+
+    table.history-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 480px; }
+    table.history-table thead th { background: var(--clr-bg); padding: 10px 8px; text-align: left; font-weight: 700; color: var(--clr-text-muted); font-size: 11px; text-transform: uppercase; }
+    table.history-table tbody td { padding: 10px 8px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; }
+
+    .section-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--clr-text);
+      margin-bottom: 12px;
+      margin-top: 4px;
+    }
+
+    /* Period select */
+    .period-select {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .period-select label { font-size: 13px; font-weight: 700; color: var(--clr-text-muted); white-space: nowrap; }
+    .period-select select {
+      padding: 9px 14px;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 12px;
+      font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--clr-surface);
+      outline: none;
+      flex: 1;
+    }
+
+    /* Emoji grid */
+    .emoji-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+      max-height: 220px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+    .emoji-btn {
+      font-size: 24px;
+      background: var(--clr-bg);
+      border: none;
+      border-radius: 12px;
+      padding: 8px;
+      cursor: pointer;
+      aspect-ratio: 1;
+      transition: background .15s;
+    }
+    .emoji-btn:hover { background: #EDE9FE; }
+
+    /* More page */
+    .more-list { display: flex; flex-direction: column; gap: 12px; }
+    .more-item {
+      background: var(--clr-surface);
+      border-radius: 18px;
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,.05);
+      border: none;
+      width: 100%;
+      text-align: left;
+      transition: transform .15s;
+    }
+    .more-item:active { transform: scale(.98); }
+    .more-icon {
+      font-size: 28px;
+      width: 52px; height: 52px;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .more-item-text h3 { font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700; }
+    .more-item-text p  { font-size: 12px; color: var(--clr-text-muted); margin-top: 2px; }
+    .more-chevron { margin-left: auto; font-size: 18px; color: var(--clr-text-muted); }
+  </style>
 </head>
 
-<body class="bg-gradient-to-br from-purple-50 to-pink-50">
-    <div id="syncBanner" style="display:none;" class="bg-blue-500 text-white text-center py-2 text-sm">
-        🔄 Synchronisation en cours...
+<body>
+  <div id="syncBanner" style="display:none;">🔄 Synchronisation en cours…</div>
+
+  <div class="app-shell">
+
+    <!-- ═══════════ TOP HEADER ═══════════ -->
+    <div class="top-header">
+      <div class="header-inner">
+        <button id="backBtn" style="display:none;">←</button>
+        <div class="header-title-block">
+          <div id="appHeader" style="font-family:'Sora',sans-serif;font-size:20px;font-weight:800;color:#fff;">🏪 Sama Commerce</div>
+          <div class="header-subtitle">Ventes aujourd'hui : <span class="pulse" id="ventesToday">0</span></div>
+        </div>
+        <div class="header-avatar">💰</div>
+      </div>
     </div>
 
-    <div class="app-container">
-        <!-- En-tête -->
-        <div class="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6">
-            <div class="flex items-center justify-between">
-                <button class="text-3xl" id="backBtn" style="display: none;">←</button>
-                <div class="text-center flex-1">
-                    <h1 id="appHeader" class="text-2xl font-bold">🏪 Ma Boutique</h1>
-                    <div class="text-sm opacity-90">Ventes aujourd'hui: <span class="pulse" id="ventesToday">0</span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-3">
-                    <div class="text-3xl pulse">💰</div>
-                </div>
-            </div>
+    <!-- Floating today card -->
+    <div class="today-float" id="todayFloatCard">
+      <div class="today-stat green">
+        <div class="value pulse" id="chiffreAffaires">0 F</div>
+        <div class="label">Encaissé</div>
+      </div>
+      <div class="today-stat blue">
+        <div class="value" id="articlesVendus">0</div>
+        <div class="label">Vendus</div>
+      </div>
+      <div class="today-stat orange">
+        <div class="value" id="stockTotal">0</div>
+        <div class="label">En stock</div>
+      </div>
+    </div>
+
+    <!-- ═══════════ MAIN CONTENT ═══════════ -->
+    <div class="page-content">
+
+      <!-- ── PAGE: ACCUEIL ── -->
+      <div class="app-page active" id="page-accueil">
+        <div class="top-actions" style="margin-top:14px;">
+          <button class="btn-logout" onclick="logout()">🔓 Déconnexion</button>
+          <button id="installBtn" class="btn-install hidden">📲 Installer</button>
         </div>
 
-        <!-- Menu Principal -->
-        <div class="p-6 space-y-6" id="menuSection">
-            <button onclick="logout()" class="bg-red-600 px-3 py-1 rounded text-white text-sm">🔓 Déconnexion</button>
-            <button id="installBtn" class="hidden bg-green-600 px-3 py-1 rounded text-white text-sm"> 📲
-                Installer</button>
-
-            <div id="userGuide"
-                class="bg-violet-100 border border-violet-300 text-violet-800 p-4 rounded-lg mb-4 flex justify-between items-start">
-                <div>
-                    <h2 class="font-bold text-lg mb-1">👋 Bienvenue !</h2>
-                    <p class="text-sm">
-                    <ol class="text-left list-decimal list-inside space-y-1">
-                        <li>➕ Commencez par aller dans la section Catégories pour organiser vos produits. Cliquer sur le
-                            bouton "+ Ajouter" pour créer une catégorie</li>
-                        <li>Ensuite, aller à la section Stock pour gérer vos produits</li>
-                        <li>Vous pouvez commencer à vendre en allant dans la section Vendre</li>
-                        <li>Pour voir vos chiffres, allez dans la section Chiffres</li>
-                        <li>Consultez la section Inventaire pour suivre vos bénéfices</li>
-                        <li>Utilisez la section Crédits pour gérer les ventes à crédit</li>
-                        <li>N’oubliez pas de vérifier les alertes de stock faible sur la page d’accueil</li>
-                        <li>L'application est gratuite et vous pouvez ajouter jusqu'à 5 produits, pour plus, envisagez
-                            la version Pro.</li>
-                    </ol>
-                    </p>
-                </div>
-                <button id="btnCloseGuide" class="ml-4 text-violet-700 hover:text-violet-900 font-bold">✕</button>
-            </div>
-
-            <!-- Résumé du jour -->
-            <div class="bg-white rounded-3xl p-6 shadow-lg">
-                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                    <span class="text-2xl mr-2">📊</span> Aujourd'hui
-                </h3>
-                <div class="grid grid-cols-3 gap-4">
-                    <div class="text-center bg-green-50 rounded-2xl p-4">
-                        <div class="text-2xl font-bold text-green-600" id="chiffreAffaires">0 F</div>
-                        <div class="text-xs text-green-700">Argent reçu</div>
-                    </div>
-                    <div class="text-center bg-blue-50 rounded-2xl p-4">
-                        <div class="text-2xl font-bold text-blue-600" id="articlesVendus">0</div>
-                        <div class="text-xs text-blue-700">Articles vendus</div>
-                    </div>
-                    <div class="text-center bg-orange-50 rounded-2xl p-4">
-                        <div class="text-2xl font-bold text-orange-600" id="stockTotal">0</div>
-                        <div class="text-xs text-orange-700">En stock</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Actions principales -->
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-
-                <button
-                    class="big-button bg-gradient-to-br from-green-400 to-green-600 text-white p-8 rounded-3xl text-center shadow-lg"
-                    data-section="vente">
-                    <div class="text-6xl mb-3">💳</div>
-                    <div class="font-bold text-xl">VENDRE</div>
-                    <div class="text-sm opacity-90">Vendre un article</div>
-                </button>
-
-                <button
-                    class="big-button bg-gradient-to-br from-blue-400 to-blue-600 text-white p-8 rounded-3xl text-center shadow-lg"
-                    data-section="stock">
-                    <div class="text-6xl mb-3">📦</div>
-                    <div class="font-bold text-xl">STOCK</div>
-                    <div class="text-sm opacity-90">Gérer produits</div>
-                </button>
-
-                <button
-                    class="big-button bg-gradient-to-br from-purple-400 to-purple-600 text-white p-8 rounded-3xl text-center shadow-lg"
-                    data-section="categories">
-                    <div class="text-6xl mb-3">🏷️</div>
-                    <div class="font-bold text-xl">CATÉGORIES</div>
-                    <div class="text-sm opacity-90">Organiser</div>
-                </button>
-
-                <button
-                    class="big-button bg-gradient-to-br from-orange-400 to-orange-600 text-white p-8 rounded-3xl text-center shadow-lg"
-                    data-section="rapports">
-                    <div class="text-6xl mb-3">📈</div>
-                    <div class="font-bold text-xl">CHIFFRES</div>
-                    <div class="text-sm opacity-90">Voir gains</div>
-                </button>
-
-                <button
-                    class="big-button bg-gradient-to-br from-teal-400 to-teal-600 text-white p-8 rounded-3xl text-center shadow-lg"
-                    data-section="inventaire">
-                    <div class="text-6xl mb-3">📋</div>
-                    <div class="font-bold text-xl">INVENTAIRE</div>
-                    <div class="text-sm opacity-90">Voir bénéfices</div>
-                </button>
-
-                <button
-                    class="big-button bg-gradient-to-br from-purple-400 to-purple-600 text-white p-8 rounded-3xl text-center shadow-lg"
-                    data-section="credits">
-                    <div class="text-6xl mb-3">📝</div>
-                    <div class="font-bold text-xl">CRÉDITS</div>
-                    <div class="text-sm opacity-90">Gérer dettes clients</div>
-                </button>
-
-            </div>
-
-            <!-- Alertes stock faible -->
-            <div class="bg-gradient-to-r from-red-100 to-orange-100 rounded-3xl p-6 shadow-lg" id="alertesStock"
-                style="display: none;">
-                <h3 class="text-lg font-bold mb-4 flex items-center text-red-700"><span class="text-2xl mr-2">⚠️</span>
-                    Presque fini</h3>
-                <div class="space-y-2" id="produitsStockFaible"></div>
-            </div>
+        <!-- Guide utilisateur -->
+        <div id="userGuide" style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="flex:1;">
+            <div class="guide-title">👋 Bienvenue !</div>
+            <ol class="guide-list">
+              <li>Allez dans <strong>Catégories</strong> pour organiser vos produits</li>
+              <li>Allez dans <strong>Stock</strong> pour gérer vos produits</li>
+              <li>Appuyez sur <strong>Vendre</strong> pour commencer à vendre</li>
+              <li>Consultez <strong>Chiffres</strong> pour voir vos gains</li>
+              <li>L'<strong>Inventaire</strong> affiche vos bénéfices en détail</li>
+              <li>Utilisez <strong>Crédits</strong> pour gérer les dettes clients</li>
+              <li>Les alertes de stock faible apparaissent ici</li>
+              <li>Gratuit jusqu'à 5 produits — version Pro pour plus</li>
+            </ol>
+          </div>
+          <button id="btnCloseGuide">✕</button>
         </div>
 
-        <!-- Section Vente -->
-        <div class="hidden slide-in p-6" id="venteSection">
-            <h2 class="text-2xl font-bold mb-6 text-center">💳 Vendre</h2>
-
-            <!-- Panier -->
-            <div class="bg-white rounded-3xl p-6 shadow-lg mb-6">
-                <h3 class="text-lg font-bold mb-4 flex items-center"><span class="text-2xl mr-2">🛒</span> Panier</h3>
-                <div class="space-y-3 mb-4 min-h-[100px]" id="panierItems">
-                    <div class="text-gray-500 text-center py-8">
-                        <div class="text-4xl mb-2">🛒</div>
-                        <div>Panier vide</div>
-                    </div>
-                </div>
-                <div class="border-t pt-4">
-                    <div class="flex justify-between items-center text-2xl font-bold mb-4"><span>TOTAL:</span><span
-                            class="text-green-600" id="totalPanier">0 F</span></div>
-                    <button
-                        class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg"
-                        onclick="showModal('paiement')">💰 ENCAISSER</button>
-                    <button id="btnPrintReceipt" onclick="imprimerRecu()"
-                        class="hidden w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold">
-                        🧾 Imprimer reçu
-                    </button>
-                </div>
-            </div>
-
-            <!-- Sélection par catégorie -->
-            <div class="space-y-4">
-                <h3 class="text-lg font-bold">Choisir produits</h3>
-                <div class="grid grid-cols-2 gap-3" id="categoriesVente"></div>
-            </div>
+        <!-- Alertes stock faible -->
+        <div id="alertesStock" class="alert-stock" style="display:none;">
+          <div class="alert-title">⚠️ Stock presque épuisé</div>
+          <div id="produitsStockFaible"></div>
         </div>
 
-        <!-- Section Stock -->
-        <div class="hidden slide-in p-6" id="stockSection">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold">📦 Mon Stock</h2>
-                <button class="bg-blue-600 text-white px-4 py-2 rounded-2xl text-sm font-bold"
-                    onclick="handleAddProductClick()">+ AJOUTER</button>
+        <!-- Actions rapides -->
+        <div class="section-title" style="margin-top:6px;">Actions rapides</div>
+        <div class="action-grid">
+          <button class="action-btn btn-green big-button" data-section="vente">
+            <div class="btn-icon">💳</div>
+            <div class="btn-title">VENDRE</div>
+            <div class="btn-sub">Vendre un article</div>
+          </button>
+          <button class="action-btn btn-blue big-button" data-section="stock">
+            <div class="btn-icon">📦</div>
+            <div class="btn-title">STOCK</div>
+            <div class="btn-sub">Gérer produits</div>
+          </button>
+          <button class="action-btn btn-purple big-button" data-section="categories">
+            <div class="btn-icon">🏷️</div>
+            <div class="btn-title">CATÉGORIES</div>
+            <div class="btn-sub">Organiser</div>
+          </button>
+          <button class="action-btn btn-orange big-button" data-section="rapports">
+            <div class="btn-icon">📈</div>
+            <div class="btn-title">CHIFFRES</div>
+            <div class="btn-sub">Voir gains</div>
+          </button>
+          <button class="action-btn btn-teal big-button" data-section="inventaire">
+            <div class="btn-icon">📋</div>
+            <div class="btn-title">INVENTAIRE</div>
+            <div class="btn-sub">Voir bénéfices</div>
+          </button>
+          <button class="action-btn btn-pink big-button" data-section="credits">
+            <div class="btn-icon">📝</div>
+            <div class="btn-title">CRÉDITS</div>
+            <div class="btn-sub">Gérer dettes</div>
+          </button>
+        </div>
+      </div>
 
-            </div>
-
-            <div class="flex gap-2 mb-6 overflow-x-auto pb-2" id="filtreCategories"><button
-                    class="filtre-btn bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap"
-                    onclick="filtrerProduits('tous')">Tous</button></div>
-            <div class="space-y-4" id="listeProduits"></div>
+      <!-- ── PAGE: VENDRE ── -->
+      <div class="app-page" id="page-vente">
+        <div class="page-header">
+          <h2>💳 Vendre</h2>
         </div>
 
-        <!-- Section Catégories -->
-        <div class="hidden slide-in p-6" id="categoriesSection">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold">🏷️ Catégories</h2><button
-                    class="bg-purple-600 text-white px-4 py-2 rounded-2xl text-sm font-bold"
-                    onclick="showModal('ajoutCategorie')">+ AJOUTER</button>
+        <!-- Panier -->
+        <div class="card">
+          <div class="card-title">🛒 Panier</div>
+          <div id="panierItems" style="min-height:90px;">
+            <div class="panier-empty">
+              <div class="empty-icon">🛒</div>
+              <p>Votre panier est vide</p>
             </div>
-            <input type="text" id="searchCategorie" placeholder="🔍 Rechercher une catégorie..."
-                class="w-full p-2 border rounded mb-4">
-            <div class="space-y-4" id="listeCategories"></div>
+          </div>
         </div>
 
-        <!-- Section Rapports (CHIFFRES) -->
-        <div class="hidden slide-in p-6" id="rapportsSection">
-            <!-- Header -->
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                <h2 class="text-3xl font-bold text-gray-800">
-                    📈 Chiffres
-                </h2>
-
-                <button id="btnPdfRapports" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl shadow">
-                    📄 Télécharger PDF Chiffres
-                </button>
-            </div>
-            <div class="mb-4 text-center">
-                <label for="periodeRapports" class="mr-2 font-bold">Période :</label>
-                <select id="periodeRapports" class="p-2 border rounded">
-                    <option value="jour">Aujourd'hui</option>
-                    <option value="semaine">Cette semaine</option>
-                    <option value="mois">Ce mois</option>
-                    <option value="tout">Tout</option>
-                </select>
-            </div>
-
-            <div class="space-y-6">
-                <div class="bg-white rounded-3xl p-6 shadow-lg">
-                    <h3 class="text-lg font-bold mb-4">💰 Résumé</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <!-- Aujourd'hui -->
-                        <div class="bg-green-50 rounded-2xl p-4 text-center">
-                            <div class="text-3xl font-bold text-green-600" id="recettesJour">0 F</div>
-                            <div class="text-sm text-green-700">Aujourd'hui</div>
-                        </div>
-
-                        <!-- Cette semaine -->
-                        <div class="bg-blue-50 rounded-2xl p-4 text-center">
-                            <div class="text-3xl font-bold text-blue-600" id="recettesSemaine">0 F</div>
-                            <div class="text-sm text-blue-700">Cette semaine</div>
-                        </div>
-
-                        <!-- Ce mois -->
-                        <div class="bg-yellow-50 rounded-2xl p-4 text-center">
-                            <div class="text-3xl font-bold text-yellow-600" id="recettesMois">0 F</div>
-                            <div class="text-sm text-yellow-700">Ce mois</div>
-                        </div>
-
-                        <!-- Tout -->
-                        <div class="bg-purple-50 rounded-2xl p-4 text-center">
-                            <div class="text-3xl font-bold text-purple-600" id="recettesTout">0 F</div>
-                            <div class="text-sm text-purple-700">Tout</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
-
-                    <div class="bg-green-50 p-4 rounded-2xl">
-                        <div class="text-sm text-gray-600">💰 CA encaissé</div>
-                        <div id="caEncaisse" class="text-xl font-bold text-green-600">0 F</div>
-                    </div>
-
-                    <div class="bg-yellow-50 p-4 rounded-2xl">
-                        <div class="text-sm text-gray-600">⏳ CA en attente</div>
-                        <div id="caEnAttente" class="text-xl font-bold text-yellow-600">0 F</div>
-                    </div>
-
-                    <div class="bg-red-50 p-4 rounded-2xl">
-                        <div class="text-sm text-gray-600">💳 Crédits en cours</div>
-                        <div id="creditsEnCours" class="text-xl font-bold text-red-600">0 F</div>
-                    </div>
-
-                    <div class="bg-blue-50 p-4 rounded-2xl">
-                        <div class="text-sm text-gray-600">📊 Taux recouvrement</div>
-                        <div id="tauxRecouvrement" class="text-xl font-bold text-blue-600">0 %</div>
-                    </div>
-
-                </div>
-                <div class="bg-white rounded-3xl p-6 shadow-lg mt-6">
-                    <h3 class="text-lg font-bold mb-4">🧾 Journal comptable</h3>
-                    <div id="journalComptable" class="space-y-2"></div>
-                </div>
-                <div class="bg-white rounded-3xl p-6 shadow-lg">
-                    <h3 class="text-lg font-bold mb-4">💳 Paiements</h3>
-                    <div class="space-y-3" id="rapportsPaiements"></div>
-                </div>
-
-                <div class="bg-white rounded-3xl p-6 shadow-lg">
-                    <h3 class="text-lg font-bold mb-4">🔥 Produits Populaires</h3>
-                    <div class="space-y-3" id="produitsPopulaires"></div>
-                </div>
-
-                <!-- Graphiques -->
-                <div class="bg-white rounded-3xl p-6 shadow-lg">
-                    <h3 class="text-lg font-bold mb-4">📊 Graphiques</h3>
-
-                    <div class="chart-container"><canvas id="chartVentesByDay"></canvas></div>
-                    <div class="chart-container"><canvas id="chartTopProduits"></canvas></div>
-                    <div class="chart-container"><canvas id="chartPaiements"></canvas></div>
-                    <div class="chart-container"><canvas id="chartStocksFaibles"></canvas></div>
-                    <div style="height: 350px;">
-                        <canvas id="chartVentesJour"></canvas>
-                    </div>
-
-                    <div id="salesHistory" class="bg-white rounded-3xl p-6 shadow-lg mt-6 overflow-x-auto">
-                        <h3 class="text-lg font-bold mb-4">📜 Historique des ventes</h3>
-                        <table class="w-full table-sm" class="overflow-x-auto">
-                            <thead class="bg-gray-100">
-                                <tr>
-                                    <th class="p-2 border">Date</th>
-                                    <th class="p-2 border">Produit</th>
-                                    <th class="p-2 border">Qté</th>
-                                    <th class="p-2 border">Montant</th>
-                                    <th class="p-2 border">Paiement</th>
-                                    <th class="p-2 border">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="salesHistoryBody">
-                                <!-- Les lignes seront ajoutées en JS -->
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Bloc suivi des crédits -->
-                    <div id="creditsStats" class="bg-white rounded-3xl p-4 shadow-lg mt-6">
-                        <canvas id="chartCredits" class="mt-4" height="150"></canvas>
-                    </div>
-
-
-                </div>
-
-            </div>
+        <div class="total-bar">
+          <span class="label">TOTAL</span>
+          <span class="amount" id="totalPanier">0 F</span>
         </div>
 
-        <!-- Section Ventes à Crédit -->
-        <div class="hidden slide-in p-6" id="creditsSection">
-            <h2 class="text-2xl font-bold mb-6 text-center">💳 Ventes à Crédit</h2>
+        <button class="btn-encaisser" onclick="showModal('paiement')">💰 ENCAISSER</button>
+        <button id="btnPrintReceipt" onclick="imprimerRecu()" style="display:none;width:100%;margin-top:10px;padding:14px;background:#EFF6FF;color:var(--clr-blue);border:none;border-radius:14px;font-family:'Sora',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">🧾 Imprimer le reçu</button>
 
-            <!-- Formulaire enregistrement crédit -->
-            <div class="bg-white rounded-3xl p-8 shadow-xl mb-8 border border-gray-100">
-                <h3 class="text-xl font-bold mb-6 flex items-center gap-2 text-purple-700">
-                    <span class="text-2xl">➕</span> Nouvelle vente à crédit
-                </h3>
+        <!-- Choisir produits -->
+        <div class="section-title" style="margin-top:18px;">Choisir produits</div>
+        <div id="categoriesVente" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+      </div>
 
-                <form id="creditForm" class="space-y-5">
-                    <!-- Client -->
-                    <div>
-                        <label class="block text-sm font-semibold mb-1 text-gray-700">👤 Client</label>
-                        <input type="text" id="creditClient" placeholder="Nom du client"
-                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-500 transition">
-                    </div>
-
-                    <!-- Téléphone -->
-                    <div>
-                        <label class="block text-sm font-semibold mb-1 text-gray-700">📞 Téléphone</label>
-                        <input type="tel" id="creditPhone" placeholder="Téléphone du client"
-                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-500 transition">
-                    </div>
-
-                    <!-- Produit -->
-                    <div>
-                        <label class="block text-sm font-semibold mb-1 text-gray-700">📦 Produit</label>
-                        <select id="creditProduct"
-                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-500 transition bg-white">
-                        </select>
-                    </div>
-
-                    <!-- Quantité -->
-                    <div>
-                        <label class="block text-sm font-semibold mb-1 text-gray-700">🔢 Quantité</label>
-                        <input type="number" id="creditQuantity" min="1" value="1"
-                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-500 transition">
-                    </div>
-
-                    <!-- Échéance -->
-                    <div>
-                        <label class="block text-sm font-semibold mb-1 text-gray-700">📅 Échéance</label>
-                        <input type="date" id="creditDueDate"
-                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-500 transition">
-                    </div>
-
-                    <!-- Bouton -->
-                    <button type="submit"
-                        class="w-full bg-gradient-to-r from-purple-600 to-purple-800 text-white py-3 rounded-xl font-semibold text-lg shadow-md hover:scale-[1.02] hover:shadow-lg transition">
-                        💾 Enregistrer à crédit
-                    </button>
-                </form>
-            </div>
-
-
-
-            <!-- Résumé crédits -->
-            <div id="creditsResume"
-                class="mb-4 bg-purple-50 rounded-xl p-4 flex flex-col md:flex-row justify-around gap-3 text-center">
-                <div>
-                    <div class="text-lg font-bold text-purple-700" id="creditsTotalEncours">0 F</div>
-                    <div class="text-sm text-gray-600">Total en cours</div>
-                </div>
-                <div>
-                    <div class="text-lg font-bold text-green-700" id="creditsTotalRembourses">0 F</div>
-                    <div class="text-sm text-gray-600">Total remboursé</div>
-                </div>
-                <div>
-                    <div class="text-lg font-bold text-red-700" id="creditsTotalImpaye">0 F</div>
-                    <div class="text-sm text-gray-600">Impayés restants</div>
-                </div>
-            </div>
-
-            <!-- Graphique crédits -->
-            <div class="bg-white rounded-3xl p-4 shadow-lg mb-6">
-                <canvas id="chartCredits" height="100"></canvas>
-            </div>
-
-            <!-- Montant total dû -->
-            <p id="creditsStatus" class="text-center mb-4 text-sm text-gray-600">Chargement…</p>
-            <p id="creditsMontant" class="text-center mb-4 text-sm font-semibold text-gray-800">Montant total dû : 0 F
-            </p>
-
-
-
-            <!-- Liste crédits -->
-            <div class="bg-white rounded-3xl p-6 shadow-lg">
-                <h3 class="text-lg font-bold mb-2">📜 Historique des crédits</h3>
-                <p id="creditsResume" class="text-sm text-center text-gray-600 mb-4"></p> <!-- ✅ compteur ici -->
-
-                <div class="overflow-x-auto">
-                    <table class="w-full table-sm">
-                        <thead class="bg-gray-100">
-                            <tr>
-                                <th class="p-2 border">Date</th>
-                                <th class="p-2 border">Client</th>
-                                <th class="p-2 border">Produit</th>
-                                <th class="p-2 border">Qté</th>
-                                <th class="p-2 border">Montant</th>
-                                <th class="p-2 border">Échéance</th>
-                                <th class="p-2 border">Statut</th>
-                                <th class="p-2 border">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="creditsHistoryBody">
-                            <!-- Rempli par JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
+      <!-- ── PAGE: STOCK ── -->
+      <div class="app-page" id="page-stock">
+        <div class="page-header">
+          <h2>📦 Mon Stock</h2>
+          <button class="btn-primary" onclick="handleAddProductClick()">+ Ajouter</button>
         </div>
 
-
-        <!-- Section Inventaire -->
-        <div id="inventaireSection" class="hidden slide-in p-6">
-
-            <!-- Header -->
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                <h2 class="text-3xl font-bold text-gray-800">
-                    📦 Inventaire & Bénéfices
-                </h2>
-
-                <button id="btnPdfInventaire"
-                    class="mt-4 md:mt-0 bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl shadow transition">
-                    📄 Exporter en PDF
-                </button>
-            </div>
-
-            <!-- Filtre période & recherche -->
-            <div class="bg-white rounded-2xl shadow p-4 mb-6 flex flex-col md:flex-row gap-4 md:items-center">
-
-                <input type="text" id="searchInventaire" placeholder="🔍 Rechercher un produit..."
-                    class="flex-1 p-3 border rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none">
-
-                <select id="filterStock" class="p-3 border rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none">
-                    <option value="">Tous les stocks</option>
-                    <option value="low">Stock faible (≤5)</option>
-                    <option value="out">Rupture</option>
-                </select>
-
-                <select id="filterPeriode"
-                    class="p-3 border rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none">
-                    <option value="tout">Tout</option>
-                    <option value="jour">Aujourd'hui</option>
-                    <option value="semaine">Cette semaine</option>
-                    <option value="mois">Ce mois</option>
-                </select>
-            </div>
-
-            <!-- Mini cartes statistiques -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="inventaireStats">
-                <!-- Cards injectées en JS -->
-            </div>
-
-            <!-- Graphique inventaire -->
-            <div class="bg-white rounded-3xl shadow-lg p-4 mb-6">
-                <canvas id="chartInventaire" height="100"></canvas>
-                <canvas id="chartTopProduits" style="display:none"></canvas>
-                <canvas id="chartStockAlert" style="display:none"></canvas>
-            </div>
-
-            <!-- Tableau inventaire -->
-            <div class="bg-white rounded-3xl shadow-lg overflow-x-auto">
-                <table class="w-full min-w-[700px] text-sm">
-                    <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
-                        <tr>
-                            <th class="p-3 text-left">Produit</th>
-                            <th class="p-3 text-right">Achat</th>
-                            <th class="p-3 text-right">Vente</th>
-                            <th class="p-3 text-center">Stock</th>
-                            <th class="p-3 text-center">Vendues</th>
-                            <th class="p-3 text-right">Bénéfice</th>
-                            <th class="p-3 text-center">Marge %</th>
-                        </tr>
-                    </thead>
-                    <tbody id="inventaireListe" class="divide-y"></tbody>
-                </table>
-            </div>
-
+        <div class="chips-row" id="filtreCategories">
+          <button class="chip active filtre-btn" onclick="filtrerProduits('tous')">Tous</button>
         </div>
 
-        <div id="creditsSection" class="hidden slide-in p-6 overflow-x-auto">
-            <h2 class="text-2xl font-bold mb-6 text-center">📝 Ventes à Crédit</h2>
+        <div id="listeProduits"></div>
+      </div>
 
-            <div class="bg-white rounded-3xl p-4 shadow-lg overflow-x-auto">
-                <table class="w-full table-sm min-w-[700px]">
-                    <thead class="bg-gray-100">
-                        <tr>
-                            <th class="p-2 border">Client</th>
-                            <th class="p-2 border">Téléphone</th>
-                            <th class="p-2 border">Produit</th>
-                            <th class="p-2 border">Montant dû</th>
-                            <th class="p-2 border">Échéance</th>
-                            <th class="p-2 border">Statut</th>
-                            <th class="p-2 border">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="creditsListe">
-                        <!-- Lignes ajoutées en JS -->
-                    </tbody>
-                </table>
-            </div>
+      <!-- ── PAGE: RAPPORTS ── -->
+      <div class="app-page" id="page-rapports">
+        <div class="page-header">
+          <h2>📈 Chiffres</h2>
+          <button id="btnPdfRapports" style="background:#FEE2E2;color:#DC2626;border:none;padding:9px 14px;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;">📄 PDF</button>
         </div>
 
-        <!-- Modales -->
-        <div class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4"
-            id="modalOverlay">
-
-            <!-- Modal Ajout Produit -->
-            <div class="bg-white rounded-3xl p-6 w-full max-w-sm hidden fade-in" id="modalAjoutProduit">
-                <h3 class="text-2xl font-bold mb-6 text-center">📦 Nouveau Produit</h3>
-                <div class="space-y-4">
-                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="nomProduit" placeholder="Nom du produit"
-                        type="text" />
-                    <select class="w-full p-4 border-2 rounded-2xl text-lg" id="categorieProduit">
-                        <option value="">Choisir catégorie</option>
-                    </select>
-                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="prixAchatProduit"
-                        placeholder="Prix achat (F CFA)" type="number" />
-                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="prixProduit"
-                        placeholder="Prix vente (F CFA)" type="number" />
-                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="stockProduit"
-                        placeholder="Quantité en stock" type="number" />
-                    <textarea class="w-full p-4 border-2 rounded-2xl text-lg h-20" id="descriptionProduit"
-                        placeholder="Description (optionnel)"></textarea>
-                    <div class="flex gap-3">
-                        <button class="flex-1 bg-gray-300 text-gray-700 py-4 rounded-2xl font-bold"
-                            onclick="hideModal()">Annuler</button>
-                        <button class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold"
-                            onclick="ajouterProduit()">Ajouter</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal Éditer Produit -->
-            <div class="bg-white rounded-3xl p-6 w-full max-w-sm hidden fade-in" id="modalEditProduit">
-                <h3 class="text-2xl font-bold mb-6 text-center">✏️ Modifier Produit</h3>
-                <div class="space-y-4">
-                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="editNomProduit"
-                        placeholder="Nom du produit" type="text" />
-                    <select class="w-full p-4 border-2 rounded-2xl text-lg" id="editCategorieProduit">
-                        <option value="">Choisir catégorie</option>
-                    </select>
-                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="editPrixAchatProduit"
-                        placeholder="Prix achat (F CFA)" type="number" />
-                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="editPrixProduit"
-                        placeholder="Prix vente (F CFA)" type="number" />
-                    <input class="w-full p-4 border-2 rounded-2xl text-lg" id="editStockProduit"
-                        placeholder="Quantité en stock" type="number" />
-                    <textarea class="w-full p-4 border-2 rounded-2xl text-lg h-20" id="editDescriptionProduit"
-                        placeholder="Description (optionnel)"></textarea>
-                    <div class="flex gap-3">
-                        <button class="flex-1 bg-gray-300 text-gray-700 py-4 rounded-2xl font-bold"
-                            onclick="hideModal()">Annuler</button>
-                        <button class="flex-1 bg-green-600 text-white py-4 rounded-2xl font-bold"
-                            onclick="mettreAJourProduit()">Mettre à jour</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal Ajout Catégorie -->
-            <div id="modalAjoutCategorie"
-                class="hidden fade-in bg-white/95 backdrop-blur-xl rounded-3xl p-8 w-full max-w-2xl shadow-2xl border border-gray-200">
-
-                <!-- Titre -->
-                <h3
-                    class="text-2xl font-extrabold mb-6 text-center text-purple-700 flex items-center justify-center gap-2">
-                    🏷️ Nouvelle Catégorie
-                </h3>
-
-                <!-- Contenu -->
-                <div class="space-y-5">
-
-                    <!-- Champ de saisie -->
-                    <input id="nomCategorie" type="text" placeholder="Nom de la catégorie"
-                        class="w-full p-4 border-2 border-gray-200 rounded-2xl text-lg focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition bg-white/90 shadow-sm" />
-
-                    <!-- Palette Emoji -->
-                    <div class="emoji-grid max-h-72 overflow-y-auto pr-1">
-
-                        <!-- 👕 Mode -->
-                        <button class="emoji-btn" onclick="selectEmoji('👕')">👕</button>
-                        <button class="emoji-btn" onclick="selectEmoji('👖')">👖</button>
-                        <button class="emoji-btn" onclick="selectEmoji('👗')">👗</button>
-                        <button class="emoji-btn" onclick="selectEmoji('👔')">👔</button>
-                        <button class="emoji-btn" onclick="selectEmoji('👟')">👟</button>
-                        <button class="emoji-btn" onclick="selectEmoji('👠')">👠</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🎩')">🎩</button>
-                        <button class="emoji-btn" onclick="selectEmoji('👜')">👜</button>
-                        <button class="emoji-btn" onclick="selectEmoji('💍')">💍</button>
-                        <button class="emoji-btn" onclick="selectEmoji('⌚')">⌚</button>
-
-                        <!-- 💄 Beauté / Cosmétiques -->
-                        <button class="emoji-btn" onclick="selectEmoji('💄')">💄</button>
-                        <button class="emoji-btn" onclick="selectEmoji('💅')">💅</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🧴')">🧴</button>
-                        <button class="emoji-btn" onclick="selectEmoji('💇‍♀️')">💇‍♀️</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🪞')">🪞</button>
-
-                        <!-- 🍔 Nourriture -->
-                        <button class="emoji-btn" onclick="selectEmoji('🍎')">🍎</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🍌')">🍌</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🍇')">🍇</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🥦')">🥦</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🍞')">🍞</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🥩')">🥩</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🍔')">🍔</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🍕')">🍕</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🍟')">🍟</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🍩')">🍩</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🥤')">🥤</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🍷')">🍷</button>
-
-                        <!-- 📱 Électronique -->
-                        <button class="emoji-btn" onclick="selectEmoji('📱')">📱</button>
-                        <button class="emoji-btn" onclick="selectEmoji('💻')">💻</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🖥️')">🖥️</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🎧')">🎧</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🎮')">🎮</button>
-                        <button class="emoji-btn" onclick="selectEmoji('📷')">📷</button>
-                        <button class="emoji-btn" onclick="selectEmoji('📺')">📺</button>
-                        <button class="emoji-btn" onclick="selectEmoji('⌨️')">⌨️</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🖱️')">🖱️</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🔋')">🔋</button>
-
-                        <!-- 🛋️ Maison -->
-                        <button class="emoji-btn" onclick="selectEmoji('🛋️')">🛋️</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🛏️')">🛏️</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🚪')">🚪</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🪑')">🪑</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🪟')">🪟</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🪞')">🪞</button>
-
-                        <!-- ⚽ Sport -->
-                        <button class="emoji-btn" onclick="selectEmoji('⚽')">⚽</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🏀')">🏀</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🏈')">🏈</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🎾')">🎾</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🏓')">🏓</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🥊')">🥊</button>
-                        <button class="emoji-btn" onclick="selectEmoji('⛸️')">⛸️</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🚴‍♂️')">🚴‍♂️</button>
-
-                        <!-- 🧸 Jouets -->
-                        <button class="emoji-btn" onclick="selectEmoji('🧸')">🧸</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🚂')">🚂</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🪀')">🪀</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🎲')">🎲</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🎯')">🎯</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🪁')">🪁</button>
-
-                        <!-- 🔧 Outils -->
-                        <button class="emoji-btn" onclick="selectEmoji('🔧')">🔧</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🪚')">🪚</button>
-                        <button class="emoji-btn" onclick="selectEmoji('⚒️')">⚒️</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🔨')">🔨</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🪛')">🪛</button>
-                        <button class="emoji-btn" onclick="selectEmoji('🧰')">🧰</button>
-
-                    </div>
-
-                    <!-- Input caché -->
-                    <input id="emojiCategorie" type="hidden" value="🏷️" />
-
-                    <!-- Boutons -->
-                    <div class="flex gap-4">
-                        <button onclick="hideModal()"
-                            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-4 rounded-2xl font-semibold shadow-md transition">
-                            Annuler
-                        </button>
-                        <button onclick="ajouterCategorie()"
-                            class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-4 rounded-2xl font-semibold shadow-md transition">
-                            Ajouter
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal Méthodes de Paiement -->
-            <div class="bg-white rounded-3xl p-6 w-full max-w-sm hidden fade-in" id="modalPaiement">
-                <h3 class="text-2xl font-bold mb-6 text-center">💳 Choisir Paiement</h3>
-                <div class="space-y-4">
-                    <button
-                        class="w-full bg-green-500 text-white p-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3"
-                        onclick="finaliserVente('especes')">
-                        <span class="text-2xl">💵</span> Espèces
-                    </button>
-                    <button
-                        class="w-full bg-blue-500 text-white p-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3"
-                        onclick="finaliserVente('wave')">
-                        <span class="text-2xl">📱</span> Wave
-                    </button>
-                    <button
-                        class="w-full bg-orange-500 text-white p-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3"
-                        onclick="finaliserVente('orange')">
-                        <span class="text-2xl">📞</span> Orange Money
-                    </button>
-
-                    <!-- ✅ Nouveau bouton Crédit -->
-                    <button
-                        class="w-full bg-purple-500 text-white p-4 rounded-2xl text-lg font-bold flex items-center justify-center gap-3"
-                        onclick="showModalCredit()">
-                        <span class="text-2xl">📝</span> Crédit
-                    </button>
-
-
-                    <button class="w-full bg-gray-300 text-gray-700 p-4 rounded-2xl text-lg font-bold"
-                        onclick="hideModal()">Annuler</button>
-                </div>
-            </div>
-
-            <!-- ✅ Modal Vente à Crédit -->
-            <div class="bg-white rounded-3xl p-6 w-full max-w-sm hidden fade-in" id="modalCredit">
-                <h3 class="text-2xl font-bold mb-6 text-center">📝 Vente à Crédit</h3>
-
-                <div class="space-y-4">
-                    <input type="text" id="creditClientName" placeholder="👤 Nom du client"
-                        class="w-full p-3 border rounded-lg">
-                    <input type="tel" id="creditClientPhone" placeholder="📞 Téléphone du client"
-                        class="w-full p-3 border rounded-lg">
-
-                    <!-- ✅ Champ date corrigé -->
-                    <input type="date" id="creditDueDate" class="w-full p-3 border rounded-lg">
-                </div>
-
-                <div class="mt-6 space-y-3">
-                    <button class="w-full bg-purple-600 text-white p-3 rounded-2xl font-bold"
-                        onclick="finaliserVenteCredit()">
-                        ✅ Enregistrer à Crédit
-                    </button>
-                    <button class="w-full bg-gray-300 text-gray-700 p-3 rounded-2xl font-bold"
-                        onclick="hideModalCredit()">
-                        ❌ Annuler
-                    </button>
-                </div>
-            </div>
-
-            <!-- Modal Méthodes de modification vente -->
-            <div id="modalModifierVente" class="fixed inset-0 bg-black/50 hidden items-center justify-center">
-                <div class="bg-white rounded-xl p-6 w-96 shadow-lg">
-                    <h2 class="text-lg font-bold mb-4">✏️ Modifier la vente</h2>
-
-                    <form id="formModifierVente" class="space-y-3">
-                        <input type="hidden" id="venteId">
-
-                        <div>
-                            <label class="block text-sm">Quantité</label>
-                            <input type="number" id="venteQuantite" class="w-full border rounded p-2" required>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm">Méthode de paiement</label>
-                            <select id="ventePaiement" class="w-full border rounded p-2">
-                                <option value="especes">Espèces</option>
-                                <option value="wave">Wave</option>
-                                <option value="orange">Orange Money</option>
-                            </select>
-                        </div>
-
-                        <div class="flex justify-end gap-2">
-                            <button type="button" onclick="fermerModal()"
-                                class="px-3 py-2 bg-gray-300 rounded">Annuler</button>
-                            <button type="submit" class="px-3 py-2 bg-blue-600 text-white rounded">Enregistrer</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
+        <div class="period-select">
+          <label for="periodeRapports">Période :</label>
+          <select id="periodeRapports">
+            <option value="jour">Aujourd'hui</option>
+            <option value="semaine">Cette semaine</option>
+            <option value="mois">Ce mois</option>
+            <option value="tout">Tout</option>
+          </select>
         </div>
 
-        <!-- ✅ Modal Remboursement Crédit -->
-        <div id="modalRemboursement"
-            class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
-            <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
-                <h3 class="text-xl font-bold mb-4 text-center">💰 Remboursement Crédit</h3>
-                <input type="hidden" id="remboursementVenteId">
-
-                <div class="space-y-3">
-                    <button
-                        class="w-full bg-green-500 text-white p-3 rounded-xl font-bold flex items-center justify-center gap-3"
-                        onclick="confirmerRemboursement('especes')">💵 Espèces</button>
-
-                    <button
-                        class="w-full bg-blue-500 text-white p-3 rounded-xl font-bold flex items-center justify-center gap-3"
-                        onclick="confirmerRemboursement('wave')">📱 Wave</button>
-
-                    <button
-                        class="w-full bg-orange-500 text-white p-3 rounded-xl font-bold flex items-center justify-center gap-3"
-                        onclick="confirmerRemboursement('orange')">📞 Orange Money</button>
-
-                    <button class="w-full bg-gray-400 text-white p-3 rounded-xl font-bold"
-                        onclick="hideModalRemboursement()">❌ Annuler</button>
-                </div>
-            </div>
+        <!-- Résumé 4 tiles -->
+        <div class="stat-grid-2x2">
+          <div class="stat-tile tile-green">
+            <div class="t-val" id="recettesJour">0 F</div>
+            <div class="t-label">Aujourd'hui</div>
+          </div>
+          <div class="stat-tile tile-blue">
+            <div class="t-val" id="recettesSemaine">0 F</div>
+            <div class="t-label">Cette semaine</div>
+          </div>
+          <div class="stat-tile tile-yellow">
+            <div class="t-val" id="recettesMois">0 F</div>
+            <div class="t-label">Ce mois</div>
+          </div>
+          <div class="stat-tile tile-purple">
+            <div class="t-val" id="recettesTout">0 F</div>
+            <div class="t-label">Tout</div>
+          </div>
         </div>
 
-        <!-- Modal Upsell Premium -->
-        <div id="premiumModal"
-            class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <div class="bg-white rounded-2xl shadow-lg p-6 max-w-sm w-full text-center">
-                <h2 class="text-xl font-bold mb-4">🚀 Passez en Premium</h2>
-                <p class="text-gray-600 mb-4">
-                    Votre plan <strong>Free</strong> vous permet d’ajouter jusqu’à <strong>5 produits</strong>.<br>
-                    Pour débloquer un nombre illimité de produits, contactez un administrateur.
-                </p>
-                <div class="bg-gray-100 p-3 rounded-xl mb-4">
-                    <p class="text-sm text-gray-800">
-                        📞 Appelez ou envoyez un message à :<br>
-                        <strong>+221 78 157 10 09 ou +221 77 348 57 91</strong>
-                    </p>
-                </div>
-                <button onclick="hideModalById('premiumModal'); showModalById('contactModal')"
-                    class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold">
-                    OK
-                </button>
-
-            </div>
+        <!-- Métriques -->
+        <div class="metric-row">
+          <div class="metric-card">
+            <div class="m-label">💰 CA encaissé</div>
+            <div class="m-val" id="caEncaisse" style="color:var(--clr-green);">0 F</div>
+          </div>
+          <div class="metric-card">
+            <div class="m-label">⏳ En attente</div>
+            <div class="m-val" id="caEnAttente" style="color:var(--clr-orange);">0 F</div>
+          </div>
+          <div class="metric-card">
+            <div class="m-label">💳 Crédits</div>
+            <div class="m-val" id="creditsEnCours" style="color:#EF4444;">0 F</div>
+          </div>
+          <div class="metric-card">
+            <div class="m-label">📊 Recouvrement</div>
+            <div class="m-val" id="tauxRecouvrement" style="color:var(--clr-blue);">0 %</div>
+          </div>
         </div>
 
-        <!-- Modal Upgrade Premium -->
-        <div id="contactModal"
-            class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <div class="bg-white rounded-2xl shadow-lg p-6 max-w-sm w-full text-center">
-                <h2 class="text-xl font-bold mb-4">🚀 Passer en Premium</h2>
-                <p class="text-gray-600 mb-4">
-                    Remplissez vos informations pour compléter votre demande de passage en <strong>Premium</strong>.
-                </p>
-
-                <form id="upgradeForm" class="space-y-3">
-                    <!-- Numéro de téléphone -->
-                    <input type="tel" id="phone" placeholder="Numéro de téléphone (WhatsApp de préférence)"
-                        class="w-full border rounded-lg px-3 py-2" required>
-
-                    <!-- Méthode de paiement -->
-                    <select id="payment_method" class="w-full border rounded-lg px-3 py-2" required>
-                        <option value="">-- Choisissez un moyen de paiement --</option>
-                        <option value="wave">Wave</option>
-                        <option value="orange">Orange Money</option>
-                        <option value="cash">Espèces</option>
-                    </select>
-
-                    <!-- Montant fixe -->
-                    <input type="number" id="amount" value="5000" readonly
-                        class="w-full border rounded-lg px-3 py-2 bg-gray-100 cursor-not-allowed" />
-
-                    <!-- Date d’expiration calculée -->
-                    <input type="hidden" id="expiration">
-                    <input type="text" id="expiration_display" readonly
-                        class="w-full border rounded-lg px-3 py-2 bg-gray-100 cursor-not-allowed" />
-
-                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold w-full">
-                        Envoyer
-                    </button>
-                </form>
-
-                <!-- Message contact -->
-                <div class="mt-4 text-sm text-gray-700">
-                    📞 Pour valider votre abonnement, contactez un administrateur :
-                    <br><strong>+221 78 157 10 09</strong> ou <strong>+221 77 348 57 91</strong>
-                    <br>(appel, WhatsApp ou SMS)
-                </div>
-
-                <button onclick="hideModalById('contactModal')" class="mt-3 text-gray-500 hover:text-gray-800">
-                    Annuler
-                </button>
-            </div>
+        <!-- Journal comptable -->
+        <div class="card">
+          <div class="card-title">🧾 Journal comptable</div>
+          <div id="journalComptable"></div>
         </div>
 
-        <div id="rapportLoading" style="display:none;"> </div>
+        <!-- Paiements -->
+        <div class="card">
+          <div class="card-title">💳 Paiements</div>
+          <div id="rapportsPaiements"></div>
+        </div>
 
-        <template id="offline-page">
-            <!DOCTYPE html>
-            <html lang="fr">
+        <!-- Produits populaires -->
+        <div class="card">
+          <div class="card-title">🔥 Produits Populaires</div>
+          <div id="produitsPopulaires"></div>
+        </div>
 
-            <head>
-                <meta charset="UTF-8">
-                <title>Hors ligne</title>
-                <style>
-                    body {
-                        font-family: sans-serif;
-                        text-align: center;
-                        padding: 50px;
-                        background: #f9f9f9;
-                    }
+        <!-- Graphiques -->
+        <div class="card">
+          <div class="card-title">📊 Graphiques</div>
+          <div class="chart-wrap"><canvas id="chartVentesByDay"></canvas></div>
+          <div class="chart-wrap"><canvas id="chartTopProduits"></canvas></div>
+          <div class="chart-wrap"><canvas id="chartPaiements"></canvas></div>
+          <div class="chart-wrap"><canvas id="chartStocksFaibles"></canvas></div>
+          <div style="height:300px;"><canvas id="chartVentesJour"></canvas></div>
+        </div>
 
-                    h2 {
-                        color: #6D28D9;
-                    }
+        <!-- Historique ventes -->
+        <div class="card" id="salesHistory">
+          <div class="card-title">📜 Historique des ventes</div>
+          <div class="inv-table-wrap">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Date</th><th>Produit</th><th>Qté</th><th>Montant</th><th>Paiement</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="salesHistoryBody"></tbody>
+            </table>
+          </div>
+        </div>
 
-                    p {
-                        color: #444;
-                    }
-                </style>
-            </head>
+        <div id="creditsStats" class="card">
+          <canvas id="chartCredits" height="150"></canvas>
+        </div>
+      </div>
 
-            <body>
-                <h2>⚠️ Vous êtes hors connexion</h2>
-                <p>Pas d’inquiétude, vos données locales restent accessibles.<br>
-                    Vérifiez votre connexion Internet pour continuer.</p>
-            </body>
+      <!-- ── PAGE: PLUS (Catégories / Inventaire / Crédits) ── -->
+      <div class="app-page" id="page-plus">
+        <div class="page-header" style="margin-top:14px;">
+          <h2>✨ Plus</h2>
+        </div>
+        <div class="more-list">
+          <button class="more-item big-button" data-section="categories">
+            <div class="more-icon" style="background:#EDE9FE;">🏷️</div>
+            <div class="more-item-text">
+              <h3>Catégories</h3>
+              <p>Organiser vos produits</p>
+            </div>
+            <span class="more-chevron">›</span>
+          </button>
+          <button class="more-item big-button" data-section="inventaire">
+            <div class="more-icon" style="background:#ECFDF5;">📋</div>
+            <div class="more-item-text">
+              <h3>Inventaire</h3>
+              <p>Suivre vos bénéfices</p>
+            </div>
+            <span class="more-chevron">›</span>
+          </button>
+          <button class="more-item big-button" data-section="credits">
+            <div class="more-icon" style="background:#F5F3FF;">📝</div>
+            <div class="more-item-text">
+              <h3>Crédits</h3>
+              <p>Gérer les dettes clients</p>
+            </div>
+            <span class="more-chevron">›</span>
+          </button>
+        </div>
+      </div>
 
-            </html>
-        </template>
-        <!-- Chart.js via CDN -->
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-        <script type="module" src="js/app.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+      <!-- ── PAGE: CATÉGORIES (section interne) ── -->
+      <div class="app-page" id="page-categories">
+        <div class="page-header" style="margin-top:4px;">
+          <h2>🏷️ Catégories</h2>
+          <button class="btn-primary" onclick="showModal('ajoutCategorie')">+ Ajouter</button>
+        </div>
+        <input type="text" id="searchCategorie" class="search-bar" placeholder="🔍 Rechercher une catégorie…">
+        <div id="listeCategories"></div>
+      </div>
+
+      <!-- ── PAGE: INVENTAIRE ── -->
+      <div class="app-page" id="page-inventaire">
+        <div class="page-header" style="margin-top:4px;">
+          <h2>📦 Inventaire</h2>
+          <button id="btnPdfInventaire" style="background:#FEE2E2;color:#DC2626;border:none;padding:9px 14px;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;">📄 PDF</button>
+        </div>
+
+        <div class="card" style="display:flex;flex-direction:column;gap:10px;padding:14px;">
+          <input type="text" id="searchInventaire" class="search-bar" style="margin:0;" placeholder="🔍 Rechercher un produit…">
+          <div style="display:flex;gap:8px;">
+            <select id="filterStock" style="flex:1;padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:12px;font-size:13px;background:#fff;outline:none;">
+              <option value="">Tous les stocks</option>
+              <option value="low">Stock faible (≤5)</option>
+              <option value="out">Rupture</option>
+            </select>
+            <select id="filterPeriode" style="flex:1;padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:12px;font-size:13px;background:#fff;outline:none;">
+              <option value="tout">Tout</option>
+              <option value="jour">Aujourd'hui</option>
+              <option value="semaine">Cette semaine</option>
+              <option value="mois">Ce mois</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="inventaireStats" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;"></div>
+
+        <div class="card chart-wrap">
+          <canvas id="chartInventaire" height="100"></canvas>
+          <canvas id="chartTopProduits" style="display:none;"></canvas>
+          <canvas id="chartStockAlert" style="display:none;"></canvas>
+        </div>
+
+        <div class="card inv-table-wrap">
+          <table class="inv-table">
+            <thead>
+              <tr>
+                <th>Produit</th><th>Achat</th><th>Vente</th>
+                <th style="text-align:center;">Stock</th>
+                <th style="text-align:center;">Vendues</th>
+                <th>Bénéfice</th>
+                <th style="text-align:center;">Marge</th>
+              </tr>
+            </thead>
+            <tbody id="inventaireListe" class="divide-y"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── PAGE: CRÉDITS ── -->
+      <div class="app-page" id="page-credits">
+        <div class="page-header" style="margin-top:4px;">
+          <h2>📝 Crédits</h2>
+        </div>
+
+        <!-- Résumé -->
+        <div class="credits-summary">
+          <div class="cred-tile">
+            <div class="cv" id="creditsTotalEncours" style="color:var(--clr-primary);">0 F</div>
+            <div class="cl">En cours</div>
+          </div>
+          <div class="cred-tile">
+            <div class="cv" id="creditsTotalRembourses" style="color:var(--clr-green);">0 F</div>
+            <div class="cl">Remboursé</div>
+          </div>
+          <div class="cred-tile">
+            <div class="cv" id="creditsTotalImpaye" style="color:#EF4444;">0 F</div>
+            <div class="cl">Impayés</div>
+          </div>
+        </div>
+
+        <p id="creditsStatus" style="text-align:center;font-size:13px;color:var(--clr-text-muted);margin-bottom:6px;">Chargement…</p>
+        <p id="creditsMontant" style="text-align:center;font-size:14px;font-weight:700;margin-bottom:14px;"></p>
+
+        <!-- Graphique -->
+        <div class="card"><canvas id="chartCreditsPage" height="100"></canvas></div>
+
+        <!-- Formulaire nouveau crédit -->
+        <div class="card">
+          <div class="card-title">➕ Nouvelle vente à crédit</div>
+          <form id="creditForm">
+            <div class="form-group">
+              <label>👤 Client</label>
+              <input type="text" id="creditClient" placeholder="Nom du client">
+            </div>
+            <div class="form-group">
+              <label>📞 Téléphone</label>
+              <input type="tel" id="creditPhone" placeholder="Téléphone">
+            </div>
+            <div class="form-group">
+              <label>📦 Produit</label>
+              <select id="creditProduct"></select>
+            </div>
+            <div class="form-group">
+              <label>🔢 Quantité</label>
+              <input type="number" id="creditQuantity" min="1" value="1">
+            </div>
+            <div class="form-group">
+              <label>📅 Échéance</label>
+              <input type="date" id="creditDueDate">
+            </div>
+            <button type="submit" class="btn-encaisser" style="background:linear-gradient(135deg,var(--clr-primary),var(--clr-accent));">
+              💾 Enregistrer à crédit
+            </button>
+          </form>
+        </div>
+
+        <!-- Historique -->
+        <div class="card">
+          <div class="card-title">📜 Historique des crédits</div>
+          <p id="creditsResume" style="font-size:13px;color:var(--clr-text-muted);margin-bottom:12px;text-align:center;"></p>
+          <div class="inv-table-wrap">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Date</th><th>Client</th><th>Produit</th>
+                  <th>Qté</th><th>Montant</th><th>Échéance</th>
+                  <th>Statut</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="creditsHistoryBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tableau crédits legacy (pour compatibilité JS) -->
+        <div style="display:none;">
+          <table><tbody id="creditsListe"></tbody></table>
+          <table><tbody id="creditsListeLegacy"></tbody></table>
+        </div>
+      </div>
+
+    </div><!-- end page-content -->
+
+    <!-- ═══════════ BOTTOM NAV ═══════════ -->
+    <nav class="bottom-nav" id="bottomNav">
+      <button class="nav-item active" data-nav="accueil">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">Accueil</span>
+      </button>
+      <button class="nav-item" data-nav="stock">
+        <span class="nav-icon">📦</span>
+        <span class="nav-label">Stock</span>
+      </button>
+      <!-- FAB Vendre -->
+      <button class="nav-fab" data-nav="vente" id="navFabVendre">
+        💳
+      </button>
+      <button class="nav-item" data-nav="rapports">
+        <span class="nav-icon">📈</span>
+        <span class="nav-label">Chiffres</span>
+      </button>
+      <button class="nav-item" data-nav="plus">
+        <span class="nav-icon">☰</span>
+        <span class="nav-label">Plus</span>
+      </button>
+    </nav>
+
+  </div><!-- end app-shell -->
+
+
+  <!-- ═══════════ MODALES ═══════════ -->
+  <div class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4" id="modalOverlay" style="backdrop-filter:blur(5px);">
+
+    <!-- Modal Ajout Produit -->
+    <div class="modal-box hidden fade-in" id="modalAjoutProduit">
+      <div class="modal-title">📦 Nouveau Produit</div>
+      <div class="form-group"><label>Nom</label><input class="w-full" id="nomProduit" placeholder="Nom du produit" type="text"/></div>
+      <div class="form-group"><label>Catégorie</label><select id="categorieProduit"><option value="">Choisir catégorie</option></select></div>
+      <div class="form-group"><label>Prix achat (F CFA)</label><input id="prixAchatProduit" placeholder="Prix achat" type="number"/></div>
+      <div class="form-group"><label>Prix vente (F CFA)</label><input id="prixProduit" placeholder="Prix vente" type="number"/></div>
+      <div class="form-group"><label>Quantité en stock</label><input id="stockProduit" placeholder="Stock" type="number"/></div>
+      <div class="form-group"><label>Description</label><textarea id="descriptionProduit" placeholder="Description (optionnel)" style="height:72px;"></textarea></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="hideModal()">Annuler</button>
+        <button class="btn-confirm" onclick="ajouterProduit()">Ajouter</button>
+      </div>
+    </div>
+
+    <!-- Modal Éditer Produit -->
+    <div class="modal-box hidden fade-in" id="modalEditProduit">
+      <div class="modal-title">✏️ Modifier Produit</div>
+      <div class="form-group"><label>Nom</label><input id="editNomProduit" placeholder="Nom du produit" type="text"/></div>
+      <div class="form-group"><label>Catégorie</label><select id="editCategorieProduit"><option value="">Choisir catégorie</option></select></div>
+      <div class="form-group"><label>Prix achat (F CFA)</label><input id="editPrixAchatProduit" placeholder="Prix achat" type="number"/></div>
+      <div class="form-group"><label>Prix vente (F CFA)</label><input id="editPrixProduit" placeholder="Prix vente" type="number"/></div>
+      <div class="form-group"><label>Stock</label><input id="editStockProduit" placeholder="Quantité en stock" type="number"/></div>
+      <div class="form-group"><label>Description</label><textarea id="editDescriptionProduit" placeholder="Description (optionnel)" style="height:72px;"></textarea></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="hideModal()">Annuler</button>
+        <button class="btn-confirm" onclick="mettreAJourProduit()">Mettre à jour</button>
+      </div>
+    </div>
+
+    <!-- Modal Ajout Catégorie -->
+    <div id="modalAjoutCategorie" class="modal-box hidden fade-in">
+      <div class="modal-title">🏷️ Nouvelle Catégorie</div>
+      <div class="form-group">
+        <label>Nom</label>
+        <input id="nomCategorie" type="text" placeholder="Nom de la catégorie"/>
+      </div>
+      <div class="form-group"><label>Choisir un emoji</label></div>
+      <div class="emoji-grid">
+        <button class="emoji-btn" onclick="selectEmoji('👕')">👕</button>
+        <button class="emoji-btn" onclick="selectEmoji('👖')">👖</button>
+        <button class="emoji-btn" onclick="selectEmoji('👗')">👗</button>
+        <button class="emoji-btn" onclick="selectEmoji('👔')">👔</button>
+        <button class="emoji-btn" onclick="selectEmoji('👟')">👟</button>
+        <button class="emoji-btn" onclick="selectEmoji('👠')">👠</button>
+        <button class="emoji-btn" onclick="selectEmoji('🎩')">🎩</button>
+        <button class="emoji-btn" onclick="selectEmoji('👜')">👜</button>
+        <button class="emoji-btn" onclick="selectEmoji('💍')">💍</button>
+        <button class="emoji-btn" onclick="selectEmoji('⌚')">⌚</button>
+        <button class="emoji-btn" onclick="selectEmoji('💄')">💄</button>
+        <button class="emoji-btn" onclick="selectEmoji('💅')">💅</button>
+        <button class="emoji-btn" onclick="selectEmoji('🧴')">🧴</button>
+        <button class="emoji-btn" onclick="selectEmoji('🪞')">🪞</button>
+        <button class="emoji-btn" onclick="selectEmoji('🍎')">🍎</button>
+        <button class="emoji-btn" onclick="selectEmoji('🍌')">🍌</button>
+        <button class="emoji-btn" onclick="selectEmoji('🥦')">🥦</button>
+        <button class="emoji-btn" onclick="selectEmoji('🍞')">🍞</button>
+        <button class="emoji-btn" onclick="selectEmoji('🥩')">🥩</button>
+        <button class="emoji-btn" onclick="selectEmoji('🍔')">🍔</button>
+        <button class="emoji-btn" onclick="selectEmoji('🥤')">🥤</button>
+        <button class="emoji-btn" onclick="selectEmoji('📱')">📱</button>
+        <button class="emoji-btn" onclick="selectEmoji('💻')">💻</button>
+        <button class="emoji-btn" onclick="selectEmoji('🎧')">🎧</button>
+        <button class="emoji-btn" onclick="selectEmoji('🎮')">🎮</button>
+        <button class="emoji-btn" onclick="selectEmoji('📺')">📺</button>
+        <button class="emoji-btn" onclick="selectEmoji('🔋')">🔋</button>
+        <button class="emoji-btn" onclick="selectEmoji('🛋️')">🛋️</button>
+        <button class="emoji-btn" onclick="selectEmoji('🛏️')">🛏️</button>
+        <button class="emoji-btn" onclick="selectEmoji('🪑')">🪑</button>
+        <button class="emoji-btn" onclick="selectEmoji('⚽')">⚽</button>
+        <button class="emoji-btn" onclick="selectEmoji('🏀')">🏀</button>
+        <button class="emoji-btn" onclick="selectEmoji('🥊')">🥊</button>
+        <button class="emoji-btn" onclick="selectEmoji('🧸')">🧸</button>
+        <button class="emoji-btn" onclick="selectEmoji('🎲')">🎲</button>
+        <button class="emoji-btn" onclick="selectEmoji('🔧')">🔧</button>
+        <button class="emoji-btn" onclick="selectEmoji('🧰')">🧰</button>
+      </div>
+      <input id="emojiCategorie" type="hidden" value="🏷️"/>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="hideModal()">Annuler</button>
+        <button class="btn-confirm" onclick="ajouterCategorie()">Ajouter</button>
+      </div>
+    </div>
+
+    <!-- Modal Paiement -->
+    <div class="modal-box hidden fade-in" id="modalPaiement">
+      <div class="modal-title">💳 Mode de paiement</div>
+      <button class="pay-btn pay-especes" onclick="finaliserVente('especes')"><span>💵</span> Espèces</button>
+      <button class="pay-btn pay-wave"    onclick="finaliserVente('wave')"><span>📱</span> Wave</button>
+      <button class="pay-btn pay-orange"  onclick="finaliserVente('orange')"><span>📞</span> Orange Money</button>
+      <button class="pay-btn pay-credit"  onclick="showModalCredit()"><span>📝</span> Crédit</button>
+      <button onclick="hideModal()" style="width:100%;padding:14px;background:#F3F4F6;border:none;border-radius:14px;font-family:'Sora',sans-serif;font-weight:700;font-size:14px;cursor:pointer;color:#6B7280;">Annuler</button>
+    </div>
+
+    <!-- Modal Crédit vente -->
+    <div class="modal-box hidden fade-in" id="modalCredit">
+      <div class="modal-title">📝 Vente à Crédit</div>
+      <div class="form-group"><label>👤 Nom du client</label><input type="text" id="creditClientName" placeholder="Nom du client"/></div>
+      <div class="form-group"><label>📞 Téléphone</label><input type="tel" id="creditClientPhone" placeholder="Téléphone"/></div>
+      <div class="form-group"><label>📅 Échéance</label><input type="date" id="creditDueDateModal"/></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="hideModalCredit()">Annuler</button>
+        <button class="btn-confirm" onclick="finaliserVenteCredit()">✅ Enregistrer</button>
+      </div>
+    </div>
+
+    <!-- Modal Modifier Vente -->
+    <div id="modalModifierVente" class="modal-box hidden fade-in">
+      <div class="modal-title">✏️ Modifier la vente</div>
+      <form id="formModifierVente">
+        <input type="hidden" id="venteId">
+        <div class="form-group"><label>Quantité</label><input type="number" id="venteQuantite" required></div>
+        <div class="form-group">
+          <label>Méthode de paiement</label>
+          <select id="ventePaiement">
+            <option value="especes">Espèces</option>
+            <option value="wave">Wave</option>
+            <option value="orange">Orange Money</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="fermerModal()">Annuler</button>
+          <button type="submit" class="btn-confirm">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+
+  </div><!-- end modalOverlay -->
+
+  <!-- Modal Remboursement -->
+  <div id="modalRemboursement" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center" style="backdrop-filter:blur(5px);">
+    <div class="modal-box" style="max-width:360px;">
+      <div class="modal-title">💰 Remboursement</div>
+      <input type="hidden" id="remboursementVenteId">
+      <button class="pay-btn pay-especes" onclick="confirmerRemboursement('especes')">💵 Espèces</button>
+      <button class="pay-btn pay-wave"    onclick="confirmerRemboursement('wave')">📱 Wave</button>
+      <button class="pay-btn pay-orange"  onclick="confirmerRemboursement('orange')">📞 Orange Money</button>
+      <button class="btn-cancel" style="width:100%;" onclick="hideModalRemboursement()">❌ Annuler</button>
+    </div>
+  </div>
+
+  <!-- Modal Premium -->
+  <div id="premiumModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50" style="backdrop-filter:blur(5px);">
+    <div class="modal-box" style="max-width:380px;">
+      <div class="premium-card">
+        <h2>🚀 Passez en Premium</h2>
+        <p>Votre plan <strong>Free</strong> permet jusqu'à <strong>5 produits</strong>. Contactez-nous pour débloquer un nombre illimité.</p>
+      </div>
+      <div style="background:#F9FAFB;border-radius:16px;padding:16px;text-align:center;font-size:14px;margin-bottom:16px;">
+        📞 <strong>+221 78 157 10 09</strong> ou <strong>+221 77 348 57 91</strong>
+      </div>
+      <button class="btn-confirm" style="width:100%;" onclick="hideModalById('premiumModal'); showModalById('contactModal')">Passer en Premium</button>
+    </div>
+  </div>
+
+  <!-- Modal Contact / Upgrade -->
+  <div id="contactModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50" style="backdrop-filter:blur(5px);">
+    <div class="modal-box" style="max-width:420px;">
+      <div class="modal-title">🚀 Passer en Premium</div>
+      <form id="upgradeForm">
+        <div class="form-group"><label>Téléphone (WhatsApp)</label><input type="tel" id="phone" placeholder="Numéro WhatsApp" required></div>
+        <div class="form-group">
+          <label>Moyen de paiement</label>
+          <select id="payment_method" required>
+            <option value="">-- Choisir --</option>
+            <option value="wave">Wave</option>
+            <option value="orange">Orange Money</option>
+            <option value="cash">Espèces</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Montant</label><input type="number" id="amount" value="5000" readonly></div>
+        <input type="hidden" id="expiration">
+        <div class="form-group"><label>Expiration</label><input type="text" id="expiration_display" readonly></div>
+        <button type="submit" class="btn-confirm" style="width:100%;">Envoyer</button>
+      </form>
+      <div style="text-align:center;font-size:13px;color:var(--clr-text-muted);margin-top:14px;">
+        📞 <strong>+221 78 157 10 09</strong> · <strong>+221 77 348 57 91</strong>
+      </div>
+      <button onclick="hideModalById('contactModal')" style="display:block;margin:12px auto 0;background:none;border:none;color:var(--clr-text-muted);cursor:pointer;font-size:14px;">Annuler</button>
+    </div>
+  </div>
+
+  <div id="rapportLoading" style="display:none;"></div>
+
+  <template id="offline-page">
+    <!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Hors ligne</title>
+    <style>body{font-family:sans-serif;text-align:center;padding:50px;background:#f9f9f9;}h2{color:#6D28D9;}p{color:#444;}</style>
+    </head><body><h2>⚠️ Vous êtes hors connexion</h2><p>Pas d'inquiétude, vos données locales restent accessibles.</p></body></html>
+  </template>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- ═══ NAVIGATION ROUTER ═══ -->
+  <script>
+    // ── Page mapping: nav-key → page id + section id (for JS compatibility) ──
+    const NAV_MAP = {
+      accueil:    { page: 'page-accueil',    section: 'menuSection' },
+      vente:      { page: 'page-vente',      section: 'venteSection' },
+      stock:      { page: 'page-stock',      section: 'stockSection' },
+      rapports:   { page: 'page-rapports',   section: 'rapportsSection' },
+      plus:       { page: 'page-plus',       section: null },
+      categories: { page: 'page-categories', section: 'categoriesSection' },
+      inventaire: { page: 'page-inventaire', section: 'inventaireSection' },
+      credits:    { page: 'page-credits',    section: 'creditsSection' },
+    };
+
+    // The big-button data-section values the existing JS uses
+    const SECTION_TO_NAV = {
+      vente:      'vente',
+      stock:      'stock',
+      rapports:   'rapports',
+      categories: 'categories',
+      inventaire: 'inventaire',
+      credits:    'credits',
+    };
+
+    let currentNav = 'accueil';
+    let navHistory = [];
+
+    // Pages that are accessible from bottom nav
+    const BOTTOM_NAV_PAGES = ['accueil','vente','stock','rapports','plus'];
+
+    function navigateTo(key, pushHistory = true) {
+      if (!NAV_MAP[key]) return;
+      if (pushHistory && currentNav !== key) navHistory.push(currentNav);
+      currentNav = key;
+
+      // Hide all pages
+      document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
+      // Show target page
+      const pageEl = document.getElementById(NAV_MAP[key].page);
+      if (pageEl) pageEl.classList.add('active');
+
+      // Sync hidden sections for JS compatibility
+      document.querySelectorAll('[id$="Section"]').forEach(s => s.classList.add('hidden'));
+      if (NAV_MAP[key].section) {
+        const sec = document.getElementById(NAV_MAP[key].section);
+        if (sec) sec.classList.remove('hidden');
+      }
+
+      // Update bottom nav active state
+      document.querySelectorAll('.nav-item[data-nav]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.nav === key);
+      });
+
+      // Back button: show if not a primary nav page
+      const backBtn = document.getElementById('backBtn');
+      const isPrimary = BOTTOM_NAV_PAGES.includes(key);
+      backBtn.style.display = isPrimary ? 'none' : 'flex';
+
+      // Today float: only show on accueil & vente
+      const floatCard = document.getElementById('todayFloatCard');
+      if (floatCard) floatCard.style.display = ['accueil','vente'].includes(key) ? 'grid' : 'none';
+
+      // Scroll top
+      document.querySelector('.page-content').scrollTop = 0;
+
+      // Dispatch custom event so app.js can react (equivalent to old showSection)
+      window.dispatchEvent(new CustomEvent('pageChange', { detail: { key, section: NAV_MAP[key].section } }));
+    }
+
+    // Back button
+    document.getElementById('backBtn').addEventListener('click', () => {
+      if (navHistory.length > 0) {
+        const prev = navHistory.pop();
+        navigateTo(prev, false);
+      } else {
+        navigateTo('accueil', false);
+      }
+    });
+
+    // Bottom nav clicks
+    document.querySelectorAll('.nav-item[data-nav], .nav-fab[data-nav]').forEach(btn => {
+      btn.addEventListener('click', () => navigateTo(btn.dataset.nav));
+    });
+
+    // Big buttons (existing JS compatibility)
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('[data-section]');
+      if (btn) {
+        const sec = btn.dataset.section;
+        if (SECTION_TO_NAV[sec]) navigateTo(SECTION_TO_NAV[sec]);
+      }
+    });
+
+    // Expose showSection globally for app.js compatibility
+    window.showSection = function(sectionId) {
+      const entry = Object.entries(NAV_MAP).find(([,v]) => v.section === sectionId);
+      if (entry) navigateTo(entry[0]);
+    };
+
+    // Init
+    navigateTo('accueil', false);
+  </script>
+
+  <script type="module" src="js/app.js"></script>
 </body>
-
 </html>

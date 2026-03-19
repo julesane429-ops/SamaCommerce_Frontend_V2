@@ -1,0 +1,173 @@
+/* ═══════════════════════════════════════════════════
+   SALE SUCCESS ANIMATION — sale-success.css
+═══════════════════════════════════════════════════ */
+
+#sale-success-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9997;
+  background: linear-gradient(145deg, #059669 0%, #10B981 50%, #34D399 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  pointer-events: none;
+
+  /* État initial : caché */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .25s ease, visibility .25s ease;
+}
+
+#sale-success-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* ── Cercles concentriques pulsants ── */
+.ss-rings {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.ss-ring {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,.12);
+  animation: ssRingPulse 1.4s ease-out infinite;
+}
+.ss-ring-1 { width: 140px; height: 140px; animation-delay: 0s; }
+.ss-ring-2 { width: 110px; height: 110px; animation-delay: .15s; }
+.ss-ring-3 { width:  82px; height:  82px; animation-delay: .3s; background: rgba(255,255,255,.18); }
+
+/* ── Icône centrale ── */
+.ss-icon-wrap {
+  width: 72px;
+  height: 72px;
+  background: rgba(255,255,255,.22);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  animation: ssIconIn .5s cubic-bezier(.34,1.56,.64,1) both;
+  animation-delay: .05s;
+}
+
+.ss-check {
+  font-size: 34px;
+  line-height: 1;
+  animation: ssCheckIn .4s cubic-bezier(.34,1.56,.64,1) both;
+  animation-delay: .12s;
+}
+
+/* ── Montant ── */
+.ss-amount {
+  font-family: 'Sora', sans-serif;
+  font-size: 42px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -1px;
+  line-height: 1;
+  text-align: center;
+  animation: ssSlideUp .45s cubic-bezier(.34,1.4,.64,1) both;
+  animation-delay: .18s;
+  opacity: 0;
+}
+
+/* ── Label "Vente enregistrée" ── */
+.ss-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: rgba(255,255,255,.85);
+  margin-top: 8px;
+  animation: ssSlideUp .4s ease both;
+  animation-delay: .28s;
+  opacity: 0;
+}
+
+/* ── Méthode de paiement ── */
+.ss-method {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  background: rgba(255,255,255,.18);
+  padding: 9px 20px;
+  border-radius: 999px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  animation: ssSlideUp .4s ease both;
+  animation-delay: .36s;
+  opacity: 0;
+}
+
+/* ── Barre de durée en bas ── */
+.ss-timer-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background: rgba(255,255,255,.5);
+  border-radius: 0;
+  animation: ssTimer 1.8s linear forwards;
+}
+
+/* ── Décoration coins ── */
+.ss-deco {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,.07);
+  pointer-events: none;
+}
+.ss-deco-1 { width: 260px; height: 260px; top: -80px; right: -60px; }
+.ss-deco-2 { width: 180px; height: 180px; bottom: -50px; left: -40px; }
+
+/* ════ KEYFRAMES ════ */
+
+@keyframes ssRingPulse {
+  0%   { transform: scale(1);    opacity: .8; }
+  60%  { transform: scale(1.18); opacity: .2; }
+  100% { transform: scale(1.18); opacity: 0;  }
+}
+
+@keyframes ssIconIn {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+@keyframes ssCheckIn {
+  from { transform: scale(0) rotate(-20deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0deg);   opacity: 1; }
+}
+
+@keyframes ssSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ssTimer {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+/* ── Sortie ── */
+#sale-success-overlay.hiding {
+  animation: ssOverlayOut .3s ease both;
+}
+
+@keyframes ssOverlayOut {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(1.04); }
+}

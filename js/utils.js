@@ -15,7 +15,7 @@ import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier
 export function showSection(section) {
   const sections = [
     'menu','vente','stock','categories','rapports','inventaire','credits',
-    'clients','fournisseurs','commandes','livraisons'   // ← NOUVEAU
+    'clients','fournisseurs','commandes','livraisons', 'profil'
   ];
  
   sections.forEach(function (s) {
@@ -52,7 +52,7 @@ export function showSection(section) {
   }
  
   // ── Nouvelles sections ── dispatch event pour les modules autonomes
-  else if (['clients','fournisseurs','commandes','livraisons'].includes(section)) {
+  else if (['clients','fournisseurs','commandes','livraisons', 'profil'].includes(section)) {
     window.dispatchEvent(new CustomEvent('pageChange', { detail: { key: section } }));
   }
  

@@ -49,6 +49,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ======================
   await syncFromServer();
   window.hideSplash?.();
+  window.scNotifications?.check();
   updateStats();
   verifierStockFaible();
   afficherCategoriesVente();

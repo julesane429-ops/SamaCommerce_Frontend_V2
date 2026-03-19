@@ -1,39 +1,38 @@
 /* ═══════════════════════════════════════════════════
-   SWIPE TO DELETE — swipe-delete.css
+   SWIPE TO DELETE — swipe-delete.css v2
+   Approche sans rewrapping DOM — compatible ui.js
 ═══════════════════════════════════════════════════ */
 
-/* ── Wrapper qui encapsule chaque item swipeable ── */
-.swipe-wrapper {
+/* ── La carte reçoit position:relative et overflow:hidden ── */
+.swipeable {
   position: relative;
   overflow: hidden;
-  border-radius: 18px;
-  margin-bottom: 10px;
-  /* Retire le margin-bottom de l'enfant direct pour éviter le double */
-}
-.swipe-wrapper > * {
-  margin-bottom: 0 !important;
-  border-radius: 0 !important;
+  transition: transform .22s cubic-bezier(.25,.46,.45,.94);
+  will-change: transform;
 }
 
-/* ── Fond rouge révélé derrière ── */
+/* ── Backdrop rouge injecté à l'intérieur de la carte ── */
 .swipe-backdrop {
   position: absolute;
   top: 0; right: 0; bottom: 0;
-  width: 90px;
+  width: 88px;
   background: linear-gradient(135deg, #EF4444, #DC2626);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  border-radius: 0 18px 18px 0;
   cursor: pointer;
+  /* Toujours visible derrière mais z-index bas */
+  z-index: 0;
+  border-radius: 0 18px 18px 0;
   user-select: none;
-  transition: width .15s ease;
+  -webkit-user-select: none;
 }
-.swipe-backdrop:active { background: linear-gradient(135deg, #DC2626, #B91C1C); }
-
-.swipe-backdrop-icon  { font-size: 22px; line-height: 1; }
+.swipe-backdrop:active {
+  background: linear-gradient(135deg, #DC2626, #B91C1C);
+}
+.swipe-backdrop-icon  { font-size: 20px; line-height: 1; }
 .swipe-backdrop-label {
   font-family: 'DM Sans', sans-serif;
   font-size: 11px;
@@ -42,53 +41,32 @@
   letter-spacing: .3px;
 }
 
-/* ── Contenu qui glisse ── */
-.swipe-content {
+/* ── L'intérieur de la carte passe devant le backdrop ── */
+.swipeable > *:not(.swipe-backdrop) {
   position: relative;
-  z-index: 2;
-  background: #fff;
-  border-radius: 18px;
-  transition: transform .22s cubic-bezier(.25,.46,.45,.94);
-  will-change: transform;
+  z-index: 1;
 }
 
-/* État ouvert (backdrop visible) */
-.swipe-wrapper.swipe-open .swipe-content {
-  transform: translateX(-90px);
+/* ── Quand la carte est ouverte ── */
+.swipeable.swipe-open {
+  transform: translateX(-88px);
 }
 
 /* ── Animation de suppression ── */
-.swipe-wrapper.swipe-removing {
-  animation: swipeRemove .35s ease forwards;
+.swipeable.swipe-removing {
+  animation: swipeOut .32s ease forwards;
   pointer-events: none;
-}
-@keyframes swipeRemove {
-  0%   { transform: translateX(0);     opacity: 1; max-height: 200px; }
-  40%  { transform: translateX(-110%); opacity: .4; }
-  100% { transform: translateX(-110%); opacity: 0;  max-height: 0; margin: 0; padding: 0; }
-}
-
-/* ── Lignes de tableau swipeables (historique) ── */
-.swipe-tr-wrapper {
-  position: relative;
   overflow: hidden;
 }
-.swipe-tr-wrapper .swipe-tr-backdrop {
-  position: absolute;
-  top: 0; right: 0; bottom: 0;
-  width: 70px;
-  background: linear-gradient(135deg, #EF4444, #DC2626);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 18px;
+@keyframes swipeOut {
+  0%   { transform: translateX(-88px); opacity: 1;  max-height: 200px; margin-bottom: 10px; }
+  50%  { transform: translateX(-110%); opacity: .3; }
+  100% { transform: translateX(-110%); opacity: 0;  max-height: 0;     margin-bottom: 0; padding: 0; }
 }
-.swipe-tr-wrapper tr {
-  display: block;
-  transition: transform .22s cubic-bezier(.25,.46,.45,.94);
-  background: #fff;
-}
-.swipe-tr-wrapper.swipe-open tr {
-  transform: translateX(-70px);
+
+/* ── Highlight swipe sur ligne de crédit ── */
+.swipe-credit-highlight {
+  transition: background .2s ease;
+  background: #FEF9C3 !important;
+  border-radius: 8px;
 }

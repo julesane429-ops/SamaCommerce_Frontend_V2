@@ -1,0 +1,324 @@
+/* ═══════════════════════════════════════════════════
+   MODULES : Clients · Fournisseurs · Commandes · Livraisons
+   modules.css — styles partagés
+═══════════════════════════════════════════════════ */
+
+/* ── Carte entité (client / fournisseur) ── */
+.entity-card {
+  background: var(--surface);
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  border: 1.5px solid transparent;
+}
+.entity-card:active { transform: scale(.98); }
+.entity-card:hover  { border-color: rgba(124,58,237,.15); box-shadow: 0 4px 18px rgba(0,0,0,.09); }
+
+.entity-avatar {
+  width: 48px; height: 48px;
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  font-weight: 700;
+  color: #fff;
+}
+.avatar-client      { background: linear-gradient(135deg, #7C3AED, #EC4899); }
+.avatar-fournisseur { background: linear-gradient(135deg, #3B82F6, #06B6D4); }
+
+.entity-info { flex: 1; min-width: 0; }
+.entity-name {
+  font-family: 'Sora', sans-serif;
+  font-size: 15px; font-weight: 700;
+  color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.entity-sub { font-size: 12px; color: var(--muted); margin-top: 3px; font-weight: 500; }
+
+.entity-meta {
+  text-align: right;
+  flex-shrink: 0;
+}
+.entity-amount {
+  font-family: 'Sora', sans-serif;
+  font-size: 14px; font-weight: 800;
+  color: var(--primary);
+}
+.entity-count { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ── Commande card ── */
+.commande-card {
+  background: var(--surface);
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  border-left: 4px solid transparent;
+  transition: transform .15s;
+}
+.commande-card:active { transform: scale(.98); }
+.commande-card.status-en_attente  { border-left-color: #F59E0B; }
+.commande-card.status-confirmee   { border-left-color: #3B82F6; }
+.commande-card.status-recue       { border-left-color: #10B981; }
+.commande-card.status-annulee     { border-left-color: #EF4444; }
+
+.commande-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.commande-fournisseur {
+  font-family: 'Sora', sans-serif;
+  font-size: 14px; font-weight: 700;
+  color: var(--text);
+}
+.commande-date { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.commande-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #F3F4F6;
+}
+html.dark .commande-footer { border-top-color: rgba(255,255,255,.06); }
+
+.commande-total {
+  font-family: 'Sora', sans-serif;
+  font-size: 16px; font-weight: 800;
+  color: var(--primary);
+}
+.commande-items-count { font-size: 12px; color: var(--muted); font-weight: 600; }
+
+/* ── Livraison card ── */
+.livraison-card {
+  background: var(--surface);
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  transition: transform .15s;
+}
+.livraison-card:active { transform: scale(.98); }
+
+.livraison-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.livraison-icon-wrap {
+  width: 44px; height: 44px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.liv-en_attente  .livraison-icon-wrap { background: #FFFBEB; }
+.liv-en_transit  .livraison-icon-wrap { background: #EFF6FF; }
+.liv-livree      .livraison-icon-wrap { background: #ECFDF5; }
+.liv-probleme    .livraison-icon-wrap { background: #FEF2F2; }
+
+/* ── Status badges ── */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  font-family: 'DM Sans', sans-serif;
+}
+.badge-en_attente  { background: #FEF3C7; color: #92400E; }
+.badge-confirmee   { background: #EFF6FF; color: #1E40AF; }
+.badge-recue       { background: #ECFDF5; color: #065F46; }
+.badge-annulee     { background: #FEE2E2; color: #991B1B; }
+.badge-en_transit  { background: #EFF6FF; color: #1E40AF; }
+.badge-livree      { background: #ECFDF5; color: #065F46; }
+.badge-probleme    { background: #FEE2E2; color: #991B1B; }
+
+html.dark .badge-en_attente { background: #451A03; color: #FDE68A; }
+html.dark .badge-confirmee  { background: #1E3A5F; color: #93C5FD; }
+html.dark .badge-recue      { background: #064E3B; color: #6EE7B7; }
+html.dark .badge-annulee    { background: #7F1D1D; color: #FCA5A5; }
+html.dark .badge-en_transit { background: #1E3A5F; color: #93C5FD; }
+html.dark .badge-livree     { background: #064E3B; color: #6EE7B7; }
+html.dark .badge-probleme   { background: #7F1D1D; color: #FCA5A5; }
+
+/* ── Détail panel (fiche client / fournisseur) ── */
+.detail-panel {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 14px rgba(0,0,0,.06);
+}
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid #F3F4F6;
+  font-size: 14px;
+}
+html.dark .detail-row { border-bottom-color: rgba(255,255,255,.06); }
+.detail-row:last-child { border-bottom: none; }
+.detail-row-icon { font-size: 16px; width: 24px; flex-shrink: 0; text-align: center; }
+.detail-row-label { color: var(--muted); font-size: 12px; font-weight: 600; min-width: 80px; }
+.detail-row-val   { color: var(--text); font-weight: 600; flex: 1; }
+
+/* ── Stats mini-tiles modules ── */
+.module-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-bottom: 14px;
+}
+.module-stat-tile {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 1px 8px rgba(0,0,0,.05);
+  text-align: center;
+}
+.module-stat-tile .msv {
+  font-family: 'Sora', sans-serif;
+  font-size: 20px; font-weight: 800;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+.module-stat-tile .msl {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .4px;
+  color: var(--muted);
+}
+
+/* ── Vide état ── */
+.module-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+}
+.module-empty-icon { font-size: 48px; margin-bottom: 12px; }
+.module-empty-text { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+
+/* ── Modal sheet ── */
+.module-sheet-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(10,7,30,.6);
+  backdrop-filter: blur(5px);
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding-bottom: calc(var(--nav-h) + var(--safe-b));
+}
+.module-sheet {
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  padding: 10px 20px 28px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90dvh;
+  overflow-y: auto;
+  animation: moduleSheetUp .3s cubic-bezier(.34,1.3,.64,1) both;
+}
+@keyframes moduleSheetUp {
+  from { transform: translateY(60px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.module-sheet-pill {
+  width: 36px; height: 4px;
+  background: #E5E7EB; border-radius: 2px;
+  margin: 0 auto 16px;
+}
+html.dark .module-sheet-pill { background: #3B3760; }
+.module-sheet-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 18px; font-weight: 800;
+  color: var(--text); margin-bottom: 18px;
+  text-align: center;
+}
+
+/* ── Boutons d'action dans la fiche ── */
+.action-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.btn-action {
+  flex: 1;
+  padding: 11px 8px;
+  border: none;
+  border-radius: 13px;
+  font-family: 'Sora', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.btn-action:active { transform: scale(.96); }
+.btn-action-primary { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; box-shadow: 0 3px 10px rgba(124,58,237,.25); }
+.btn-action-danger  { background: #FEE2E2; color: var(--red); }
+.btn-action-green   { background: #ECFDF5; color: #065F46; }
+.btn-action-blue    { background: #EFF6FF; color: #1E40AF; }
+
+html.dark .btn-action-danger { background: #7F1D1D; color: #FCA5A5; }
+html.dark .btn-action-green  { background: #064E3B; color: #6EE7B7; }
+html.dark .btn-action-blue   { background: #1E3A5F; color: #93C5FD; }
+
+/* ── Liste articles commande ── */
+.commande-items-list { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.commande-item-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+html.dark .commande-item-row { background: #2A2740; }
+.commande-item-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); }
+.commande-item-qty  { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.commande-item-prix { font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 700; color: var(--primary); white-space: nowrap; }
+
+/* ── Sélecteur de produits dans nouvelle commande ── */
+.product-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+.product-pick-btn {
+  background: var(--bg);
+  border: 1.5px solid transparent;
+  border-radius: 14px;
+  padding: 10px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.product-pick-btn.selected { border-color: var(--primary); background: #EDE9FE; }
+.product-pick-btn .ppn { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.product-pick-btn .ppp { font-size: 11px; color: var(--green); font-weight: 600; }
+
+html.dark .product-pick-btn { background: #2A2740; }
+html.dark .product-pick-btn.selected { background: #2E1065; }

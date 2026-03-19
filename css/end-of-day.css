@@ -1,0 +1,256 @@
+/* ═══════════════════════════════════════════════════
+   RÉSUMÉ FIN DE JOURNÉE — end-of-day.css
+═══════════════════════════════════════════════════ */
+
+/* ── Backdrop ── */
+#eod-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 7, 30, .65);
+  backdrop-filter: blur(6px);
+  z-index: 600;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: calc(var(--nav-h) + var(--safe-b));
+  animation: eodBackdropIn .25s ease both;
+}
+@keyframes eodBackdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Sheet ── */
+#eod-sheet {
+  background: var(--surface);
+  border-radius: 28px 28px 0 0;
+  width: 100%;
+  max-width: 480px;
+  padding: 0 0 28px;
+  overflow: hidden;
+  animation: eodSheetUp .38s cubic-bezier(.34, 1.3, .64, 1) both;
+  animation-delay: .05s;
+}
+@keyframes eodSheetUp {
+  from { transform: translateY(80px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── Hero banner ── */
+.eod-hero {
+  background: linear-gradient(135deg, #5B21B6 0%, #7C3AED 55%, #EC4899 100%);
+  padding: 28px 22px 24px;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+.eod-hero::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 140px; height: 140px;
+  background: rgba(255,255,255,.08);
+  border-radius: 50%;
+}
+.eod-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -30px; left: -20px;
+  width: 100px; height: 100px;
+  background: rgba(255,255,255,.06);
+  border-radius: 50%;
+}
+.eod-pill {
+  width: 36px; height: 4px;
+  background: rgba(255,255,255,.35);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+.eod-icon  { font-size: 40px; margin-bottom: 8px; }
+.eod-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 20px; font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.eod-subtitle {
+  font-size: 13px;
+  color: rgba(255,255,255,.75);
+  font-weight: 500;
+}
+
+/* ── Corps ── */
+.eod-body { padding: 20px 20px 0; }
+
+/* ── Stats grille 2x2 ── */
+.eod-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.eod-stat {
+  border-radius: 16px;
+  padding: 14px 12px;
+  text-align: center;
+  animation: eodStatIn .4s cubic-bezier(.34,1.3,.64,1) both;
+}
+.eod-stat:nth-child(1) { animation-delay: .12s; background: #EDE9FE; }
+.eod-stat:nth-child(2) { animation-delay: .18s; background: #ECFDF5; }
+.eod-stat:nth-child(3) { animation-delay: .24s; background: #EFF6FF; }
+.eod-stat:nth-child(4) { animation-delay: .30s; background: #FFFBEB; }
+
+html.dark .eod-stat:nth-child(1) { background: #2E1065; }
+html.dark .eod-stat:nth-child(2) { background: #064E3B; }
+html.dark .eod-stat:nth-child(3) { background: #1E3A5F; }
+html.dark .eod-stat:nth-child(4) { background: #451A03; }
+
+@keyframes eodStatIn {
+  from { opacity: 0; transform: scale(.88) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)  translateY(0); }
+}
+
+.eod-stat-val {
+  font-family: 'Sora', sans-serif;
+  font-size: 20px; font-weight: 800;
+  line-height: 1; margin-bottom: 5px;
+}
+.eod-stat:nth-child(1) .eod-stat-val { color: #7C3AED; }
+.eod-stat:nth-child(2) .eod-stat-val { color: #10B981; }
+.eod-stat:nth-child(3) .eod-stat-val { color: #3B82F6; }
+.eod-stat:nth-child(4) .eod-stat-val { color: #F59E0B; }
+
+html.dark .eod-stat:nth-child(1) .eod-stat-val { color: #A78BFA; }
+html.dark .eod-stat:nth-child(2) .eod-stat-val { color: #34D399; }
+html.dark .eod-stat:nth-child(3) .eod-stat-val { color: #60A5FA; }
+html.dark .eod-stat:nth-child(4) .eod-stat-val { color: #FBBF24; }
+
+.eod-stat-label {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .4px;
+  opacity: .7;
+}
+
+/* ── Objectif ── */
+.eod-goal-row {
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  animation: eodStatIn .4s cubic-bezier(.34,1.3,.64,1) both;
+  animation-delay: .35s;
+}
+html.dark .eod-goal-row { background: #2A2740; }
+
+.eod-goal-left { display: flex; flex-direction: column; gap: 4px; }
+.eod-goal-label {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .4px;
+  color: var(--muted);
+}
+.eod-goal-bar-wrap {
+  width: 140px; height: 8px;
+  background: #E5E7EB; border-radius: 999px;
+  overflow: hidden;
+}
+html.dark .eod-goal-bar-wrap { background: #3B3760; }
+
+.eod-goal-bar {
+  height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, #7C3AED, #EC4899);
+  transition: width .8s cubic-bezier(.34,1.2,.64,1);
+  transition-delay: .4s;
+}
+.eod-goal-bar.reached { background: linear-gradient(90deg, #10B981, #34D399); }
+
+.eod-goal-pct {
+  font-family: 'Sora', sans-serif;
+  font-size: 18px; font-weight: 800;
+  color: var(--primary);
+}
+.eod-goal-pct.reached { color: var(--green); }
+.eod-goal-badge {
+  font-size: 12px; font-weight: 700;
+  padding: 4px 10px; border-radius: 999px;
+}
+.eod-goal-badge.reached { background: #ECFDF5; color: #065F46; }
+.eod-goal-badge.missed  { background: #FEE2E2; color: #991B1B; }
+.eod-goal-badge.no-goal { background: #EDE9FE; color: #4C1D95; }
+
+html.dark .eod-goal-badge.reached { background: #064E3B; color: #34D399; }
+html.dark .eod-goal-badge.missed  { background: #7F1D1D; color: #F87171; }
+html.dark .eod-goal-badge.no-goal { background: #2E1065; color: #C4B5FD; }
+
+/* ── Top produit ── */
+.eod-top-product {
+  border-radius: 14px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #EDE9FE, #FCE7F3);
+  animation: eodStatIn .4s cubic-bezier(.34,1.3,.64,1) both;
+  animation-delay: .42s;
+}
+html.dark .eod-top-product { background: linear-gradient(135deg, #2E1065, #500724); }
+
+.eod-top-emoji {
+  font-size: 28px;
+  width: 46px; height: 46px;
+  background: rgba(255,255,255,.5);
+  border-radius: 13px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+html.dark .eod-top-emoji { background: rgba(0,0,0,.25); }
+
+.eod-top-info { flex: 1; min-width: 0; }
+.eod-top-name {
+  font-family: 'Sora', sans-serif;
+  font-size: 14px; font-weight: 700;
+  color: var(--primary-dark);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+html.dark .eod-top-name { color: var(--primary-light); }
+.eod-top-sub { font-size: 12px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+.eod-top-badge {
+  font-family: 'Sora', sans-serif;
+  font-size: 11px; font-weight: 800;
+  background: var(--primary); color: #fff;
+  padding: 3px 9px; border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Message motivant ── */
+.eod-message {
+  text-align: center;
+  font-size: 14px; font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 18px;
+  font-style: italic;
+  animation: eodStatIn .4s ease both;
+  animation-delay: .5s;
+}
+
+/* ── Bouton fermer ── */
+.eod-close-btn {
+  display: block;
+  width: calc(100% - 40px);
+  margin: 0 20px;
+  padding: 15px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff; border: none;
+  border-radius: 16px;
+  font-family: 'Sora', sans-serif;
+  font-size: 15px; font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 5px 18px rgba(124,58,237,.3);
+  transition: transform .15s;
+  animation: eodStatIn .4s cubic-bezier(.34,1.3,.64,1) both;
+  animation-delay: .55s;
+}
+.eod-close-btn:active { transform: scale(.97); }

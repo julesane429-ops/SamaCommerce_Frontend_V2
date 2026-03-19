@@ -1,0 +1,264 @@
+/* ═══════════════════════════════════════════════════
+   MODE SOMBRE — dark-mode.css
+   Fonctionne en surchargeant les CSS variables de :root
+   via la classe .dark sur <html>
+═══════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════
+   VARIABLES MODE SOMBRE
+══════════════════════════════════════ */
+html.dark {
+  --primary:       #A78BFA;
+  --primary-dark:  #7C3AED;
+  --primary-light: #C4B5FD;
+  --accent:        #F472B6;
+  --green:         #34D399;
+  --blue:          #60A5FA;
+  --orange:        #FBBF24;
+  --teal:          #2DD4BF;
+  --red:           #F87171;
+  --surface:       #1E1B2E;
+  --bg:            #13111F;
+  --text:          #F1F0FF;
+  --muted:         #9CA3AF;
+}
+
+/* ══════════════════════════════════════
+   OVERRIDES GÉNÉRAUX
+══════════════════════════════════════ */
+html.dark body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Cards */
+html.dark .card,
+html.dark .modal-box,
+html.dark .today-float,
+html.dark .inv-filters,
+html.dark .mc,
+html.dark .ct,
+html.dark .sk-produit-card,
+html.dark .sk-category-card,
+html.dark .sk-stat-tile,
+html.dark .sk-credit-tile,
+html.dark .sk-vente-card {
+  background: var(--surface);
+  border-color: rgba(167,139,250,.12);
+}
+
+/* Bottom nav */
+html.dark .bottom-nav {
+  background: #1A1728;
+  border-top-color: rgba(167,139,250,.1);
+}
+html.dark .nav-btn .nl { color: #6B7280; }
+html.dark .nav-btn.active .nl { color: var(--primary); }
+
+/* Header */
+html.dark .top-header {
+  background: linear-gradient(135deg, #3B1F8C 0%, #5B21B6 55%, #9D174D 100%);
+}
+
+/* Today float tiles */
+html.dark .ts.g { background: #064E3B; }
+html.dark .ts.b { background: #1E3A5F; }
+html.dark .ts.o { background: #451A03; }
+html.dark .ts.g .v { color: #34D399; }
+html.dark .ts.b .v { color: #60A5FA; }
+html.dark .ts.o .v { color: #FBBF24; }
+
+/* Inputs & selects */
+html.dark input,
+html.dark select,
+html.dark textarea,
+html.dark .search-bar,
+html.dark .vente-search-input,
+html.dark .form-group input,
+html.dark .form-group select,
+html.dark .form-group textarea {
+  background: #2A2740;
+  border-color: rgba(167,139,250,.2);
+  color: var(--text);
+  color-scheme: dark;
+}
+html.dark input::placeholder,
+html.dark .vente-search-input::placeholder { color: #4B5563; }
+html.dark input:focus,
+html.dark select:focus,
+html.dark textarea:focus,
+html.dark .search-bar:focus,
+html.dark .vente-search-input:focus {
+  background: #322F4E;
+  border-color: var(--primary);
+}
+
+/* Stat tiles */
+html.dark .st-g { background: #064E3B; }
+html.dark .st-b { background: #1E3A5F; }
+html.dark .st-y { background: #451A03; }
+html.dark .st-p { background: #2E1065; }
+
+/* Guide */
+html.dark #userGuide {
+  background: linear-gradient(135deg, #2E1065, #500724);
+  border-color: rgba(167,139,250,.2);
+}
+html.dark .guide-title  { color: var(--primary-light); }
+html.dark .guide-list li { color: #C4B5FD; }
+
+/* Alert stock */
+html.dark #alertesStock {
+  background: linear-gradient(135deg, #451A03, #78350F);
+  border-color: #B45309;
+}
+html.dark .alert-title { color: #FDE68A; }
+html.dark #produitsStockFaible > div {
+  background: rgba(0,0,0,.25);
+  color: #FEF3C7;
+}
+
+/* Action buttons (les dégradés restent lisibles en dark) */
+html.dark .action-btn.ab-orange { background: linear-gradient(135deg, #B45309, #92400E); }
+
+/* Chips */
+html.dark .filtre-btn {
+  background: #2A2740;
+  color: var(--muted);
+}
+html.dark .filtre-btn.bg-blue-500 {
+  background: var(--primary) !important;
+  color: #fff !important;
+}
+
+/* Modales overlay */
+html.dark #modalOverlay,
+html.dark #modalRemboursement,
+html.dark #premiumModal,
+html.dark #contactModal {
+  background: rgba(5,3,15,.75);
+}
+
+/* Boutons cancel / secondaires */
+html.dark .btn-cancel,
+html.dark .pay-cancel {
+  background: #2A2740;
+  color: #9CA3AF;
+}
+
+/* Tables */
+html.dark .hist-table thead th {
+  background: #2A2740;
+  color: #6B7280;
+}
+html.dark .hist-table tbody td {
+  border-bottom-color: rgba(167,139,250,.08);
+  color: var(--text);
+}
+
+/* Period select + filter selects */
+html.dark .period-row select,
+html.dark #filterStock,
+html.dark #filterPeriode,
+html.dark #periodeRapports {
+  background: #2A2740;
+  border-color: rgba(167,139,250,.2);
+  color: var(--text);
+}
+
+/* Plus sheet */
+html.dark #plusSheet .sheet-body {
+  background: #1E1B2E;
+}
+html.dark .sheet-pill { background: #3B3760; }
+html.dark .sheet-item:hover { background: #2A2740; }
+html.dark .sheet-item h3 { color: var(--text); }
+
+/* Swipeable backdrop (ok, rouge reste rouge) */
+html.dark .swipeable { background: var(--surface); }
+
+/* Skeleton shimmer adapté */
+html.dark .sk {
+  background: linear-gradient(
+    90deg,
+    #2A2740 0%,
+    #322F4E 40%,
+    #2A2740 80%
+  );
+  background-size: 800px 100%;
+}
+
+/* Total bar vente */
+html.dark .total-bar {
+  background: linear-gradient(135deg, #2E1065, #500724);
+}
+html.dark .total-bar .tbl { color: var(--primary-light); }
+
+/* Emoji grid */
+html.dark .emoji-btn { background: #2A2740; }
+html.dark .emoji-btn:hover { background: #3B2F6E; }
+
+/* Premium inner */
+html.dark .premium-inner {
+  background: linear-gradient(135deg, #2E1065, #500724);
+}
+html.dark .premium-inner h2 { color: var(--primary-light); }
+html.dark .premium-inner p  { color: #C4B5FD; }
+
+/* Sr cards (recherche vente) */
+html.dark .sr-card {
+  background: #2A2740;
+  border-color: rgba(167,139,250,.15);
+}
+html.dark .sr-name  { color: var(--text); }
+html.dark .sr-label { color: #4B5563; }
+html.dark .sr-empty { color: #4B5563; }
+html.dark .sr-highlight { background: #3B2F6E; color: var(--primary-light); }
+
+/* Scrollbar sombre */
+html.dark ::-webkit-scrollbar-thumb { background: #3B3760; }
+
+/* ══════════════════════════════════════
+   BOUTON TOGGLE
+══════════════════════════════════════ */
+#dark-toggle {
+  position: fixed;
+  bottom: calc(var(--nav-h) + var(--safe-b) + 14px);
+  right: 16px;
+  z-index: 99;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  border: none;
+  background: var(--surface);
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background .2s, transform .2s, box-shadow .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+#dark-toggle:active {
+  transform: scale(.9);
+}
+html.dark #dark-toggle {
+  background: #2A2740;
+  box-shadow: 0 4px 16px rgba(0,0,0,.4);
+}
+
+/* ══════════════════════════════════════
+   TRANSITION DOUCE AU CHANGEMENT
+══════════════════════════════════════ */
+html.transitioning,
+html.transitioning *,
+html.transitioning *::before,
+html.transitioning *::after {
+  transition:
+    background   .25s ease,
+    background-color .25s ease,
+    border-color .25s ease,
+    color        .2s ease,
+    box-shadow   .25s ease !important;
+}

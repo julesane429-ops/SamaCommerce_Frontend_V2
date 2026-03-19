@@ -1,139 +1,109 @@
 /**
- * countup.js — Animation des compteurs de statistiques
+ * countup.js v2 — Animation des compteurs de statistiques
  *
- * Observe les éléments dont le contenu change (chiffres)
- * et anime le passage de l'ancienne valeur vers la nouvelle.
+ * CORRECTIF : le flag `_animating` empêche le MutationObserver
+ * de se re-déclencher pendant que l'animation écrit dans le DOM,
+ * ce qui causait une boucle infinie (nombres qui "vibrent").
  *
- * Cible automatiquement les IDs suivants (déjà dans le HTML) :
- *   #chiffreAffaires, #articlesVendus, #stockTotal,
- *   #recettesJour, #recettesSemaine, #recettesMois, #recettesTout,
- *   #caEncaisse, #caEnAttente, #creditsEnCours,
- *   #creditsTotalEncours, #creditsTotalRembourses, #creditsTotalImpaye
- *
- * INTÉGRATION :
- *   Ajouter dans index.html, juste avant </body> :
+ * INTÉGRATION dans index.html, juste avant </body> :
  *   <script src="js/countup.js"></script>
- *
- * Aucune dépendance. Aucun import requis.
  */
 
 (function () {
 
-  // ── IDs à observer ──
   const TARGETS = [
-    'chiffreAffaires',
-    'articlesVendus',
-    'stockTotal',
-    'recettesJour',
-    'recettesSemaine',
-    'recettesMois',
-    'recettesTout',
-    'caEncaisse',
-    'caEnAttente',
-    'creditsEnCours',
-    'tauxRecouvrement',
-    'creditsTotalEncours',
-    'creditsTotalRembourses',
-    'creditsTotalImpaye',
+    'chiffreAffaires', 'articlesVendus', 'stockTotal',
+    'recettesJour', 'recettesSemaine', 'recettesMois', 'recettesTout',
+    'caEncaisse', 'caEnAttente', 'creditsEnCours', 'tauxRecouvrement',
+    'creditsTotalEncours', 'creditsTotalRembourses', 'creditsTotalImpaye',
     'totalPanier',
   ];
 
   const DURATION = 650; // ms
-  const FPS      = 60;
-  const STEP_MS  = 1000 / FPS;
+  const STEPS    = 36;  // frames (~60fps sur 650ms)
 
-  // ── Extraire la valeur numérique d'un string ──
-  // "15 000 F" → 15000 | "87.5 %" → 87.5 | "0" → 0
+  // ── Extraire la valeur numérique ──
   function parseValue(str) {
     if (!str) return 0;
-    const cleaned = str.replace(/\s/g, '').replace(',', '.');
-    const match = cleaned.match(/-?[\d.]+/);
-    return match ? parseFloat(match[0]) : 0;
+    const m = str.replace(/[\s\u00a0]/g, '').replace(',', '.').match(/-?[\d.]+/);
+    return m ? parseFloat(m[0]) : 0;
   }
 
-  // ── Conserver le suffixe d'un string ──
-  // "15 000 F" → " F" | "87.5 %" → " %" | "42" → ""
+  // ── Extraire le suffixe (" F", " %", etc.) ──
   function parseSuffix(str) {
     if (!str) return '';
-    const match = str.match(/[\d\s,.]+(.*)$/);
-    return match ? match[1] : '';
+    // Tout ce qui suit le dernier chiffre
+    const m = str.match(/[\d\s\u00a0,.]+(.*)$/);
+    return m ? m[1] : '';
   }
 
-  // ── Formater un nombre avec espaces comme séparateur ──
-  function formatNumber(n, isDecimal) {
-    if (isDecimal) {
-      return n.toFixed(1);
-    }
-    return Math.round(n).toLocaleString('fr-FR').replace(/,/g, ' ');
+  // ── Formater un nombre ──
+  function fmt(n, decimal) {
+    if (decimal) return n.toFixed(1);
+    return Math.round(n).toLocaleString('fr-FR').replace(/,/g, '\u00a0');
   }
 
-  // ── Animer un élément de fromVal vers toVal ──
-  function animateTo(el, fromVal, toVal, suffix, isDecimal) {
-    // Ne pas animer si la différence est nulle ou trop petite
-    if (Math.abs(toVal - fromVal) < 0.5) return;
+  // ── Easing ──
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
 
-    const steps    = Math.round(DURATION / STEP_MS);
-    let   step     = 0;
+  // ── Animer from → to ──
+  function animateTo(el, from, to, suffix, decimal) {
+    if (Math.abs(to - from) < 1) return;
 
-    // Easing easeOutCubic
-    function ease(t) {
-      return 1 - Math.pow(1 - t, 3);
-    }
+    // Annuler l'animation précédente
+    if (el._cuTimer) { clearInterval(el._cuTimer); el._cuTimer = null; }
 
-    const interval = setInterval(() => {
+    let step = 0;
+    el._animating = true; // bloquer l'observer
+
+    el._cuTimer = setInterval(() => {
       step++;
-      const progress = ease(step / steps);
-      const current  = fromVal + (toVal - fromVal) * progress;
-      el.textContent = formatNumber(current, isDecimal) + suffix;
+      const val = from + (to - from) * easeOut(step / STEPS);
+      el.textContent = fmt(val, decimal) + suffix;
 
-      if (step >= steps) {
-        clearInterval(interval);
-        el.textContent = formatNumber(toVal, isDecimal) + suffix;
+      if (step >= STEPS) {
+        clearInterval(el._cuTimer);
+        el._cuTimer = null;
+        el.textContent = fmt(to, decimal) + suffix;
+        // Débloquer l'observer après un court délai
+        // pour absorber le dernier changement qu'on vient d'écrire
+        setTimeout(() => { el._animating = false; }, 100);
       }
-    }, STEP_MS);
-
-    // Stocker le timer pour pouvoir l'annuler si une nouvelle valeur arrive
-    el._countupTimer = interval;
+    }, DURATION / STEPS);
   }
 
-  // ── Attacher un MutationObserver à chaque élément cible ──
-  function watchElement(el) {
-    // Valeur courante au moment du setup
+  // ── Attacher un observer sur un élément ──
+  function watch(el) {
     let lastText = el.textContent.trim();
+    el._animating = false;
 
     const observer = new MutationObserver(() => {
+      // Si c'est notre propre animation qui modifie le DOM → ignorer
+      if (el._animating) return;
+
       const newText = el.textContent.trim();
-      if (newText === lastText) return; // Pas de changement réel
+      if (newText === lastText) return; // pas de vrai changement
 
-      const fromVal  = parseValue(lastText);
-      const toVal    = parseValue(newText);
-      const suffix   = parseSuffix(newText);
-      const isDecimal = newText.includes('.');
+      const from    = parseValue(lastText);
+      const to      = parseValue(newText);
+      const suffix  = parseSuffix(newText);
+      const decimal = newText.includes('.');
 
+      // Mettre à jour lastText AVANT de lancer l'animation
+      // (évite de comparer avec une valeur obsolète si l'observer refire)
       lastText = newText;
 
-      // Annuler l'animation précédente si elle tourne encore
-      if (el._countupTimer) {
-        clearInterval(el._countupTimer);
-        el._countupTimer = null;
-      }
-
-      // Lancer l'animation
-      animateTo(el, fromVal, toVal, suffix, isDecimal);
+      animateTo(el, from, to, suffix, decimal);
     });
 
-    observer.observe(el, {
-      characterData: true,
-      childList: true,
-      subtree: true,
-    });
+    observer.observe(el, { characterData: true, childList: true, subtree: true });
   }
 
-  // ── Init : attacher les observers après le chargement du DOM ──
+  // ── Init ──
   function init() {
     TARGETS.forEach(id => {
       const el = document.getElementById(id);
-      if (el) watchElement(el);
+      if (el) watch(el);
     });
   }
 

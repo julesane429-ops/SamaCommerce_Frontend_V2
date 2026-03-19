@@ -16,7 +16,7 @@
 
 (function () {
 
-  const SW_PATH    = '/pwa/sw.js';
+  const SW_PATH    = '/sw.js';
   const STORAGE_KEY = 'sc_notif_last_check';
   const PERM_KEY    = 'sc_notif_perm_dismissed';
 

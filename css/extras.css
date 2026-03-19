@@ -1,0 +1,290 @@
+/* ═══════════════════════════════════════════════════
+   AMÉLIORATIONS RESTANTES — extras.css
+   Contient les styles pour les 6 améliorations :
+   1. Export Excel
+   2. Recherche Stock
+   3. Badge crédit nav
+   4. Confirmation remboursement
+   5. Filtre période Stock
+   6. Onboarding tooltips
+═══════════════════════════════════════════════════ */
+
+
+/* ══════════════════════════════════════
+   1. BOUTONS EXPORT EXCEL
+══════════════════════════════════════ */
+.btn-excel {
+  background: #ECFDF5;
+  color: #065F46;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 11px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background .15s, transform .15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.btn-excel:hover  { background: #D1FAE5; }
+.btn-excel:active { transform: scale(.95); }
+
+html.dark .btn-excel { background: #064E3B; color: #34D399; }
+html.dark .btn-excel:hover { background: #065F46; }
+
+/* Groupe de boutons PDF + Excel côte à côte */
+.export-btns {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+
+/* ══════════════════════════════════════
+   2. RECHERCHE RAPIDE STOCK
+══════════════════════════════════════ */
+.stock-search-wrap {
+  position: relative;
+  margin-bottom: 10px;
+}
+.stock-search-icon {
+  position: absolute;
+  left: 13px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  pointer-events: none;
+}
+.stock-search-input {
+  width: 100%;
+  padding: 11px 40px 11px 40px;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 13px;
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  background: #fff;
+  color: var(--text);
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  -webkit-appearance: none;
+}
+.stock-search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(124,58,237,.1);
+}
+.stock-search-input::placeholder { color: #9CA3AF; }
+.stock-search-clear {
+  position: absolute;
+  right: 11px; top: 50%;
+  transform: translateY(-50%);
+  background: #EDE9FE;
+  border: none;
+  width: 24px; height: 24px;
+  border-radius: 7px;
+  font-size: 12px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+.stock-search-clear.visible { display: flex; }
+
+html.dark .stock-search-input { background: #2A2740; border-color: rgba(167,139,250,.2); color: var(--text); }
+html.dark .stock-search-input:focus { background: #322F4E; }
+html.dark .stock-search-clear { background: #2E1065; color: var(--primary-light); }
+
+
+/* ══════════════════════════════════════
+   3. BADGE CRÉDIT NAV BAR
+══════════════════════════════════════ */
+.nav-badge {
+  position: absolute;
+  top: 2px; right: 6px;
+  background: var(--red);
+  color: #fff;
+  font-family: 'Sora', sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid var(--surface);
+  animation: badgePop .3s cubic-bezier(.34,1.56,.64,1) both;
+  pointer-events: none;
+}
+@keyframes badgePop {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.nav-badge.hidden { display: none; }
+
+
+/* ══════════════════════════════════════
+   4. CONFIRMATION REMBOURSEMENT
+══════════════════════════════════════ */
+#rembours-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(.8);
+  background: linear-gradient(135deg, #10B981, #059669);
+  color: #fff;
+  border-radius: 20px;
+  padding: 24px 32px;
+  text-align: center;
+  z-index: 9995;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow: 0 20px 60px rgba(16,185,129,.4);
+  transition: opacity .2s ease, transform .25s cubic-bezier(.34,1.4,.64,1);
+}
+#rembours-toast.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+.rembours-icon  { font-size: 44px; margin-bottom: 8px; }
+.rembours-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 18px; font-weight: 800;
+  margin-bottom: 4px;
+}
+.rembours-sub {
+  font-size: 13px;
+  opacity: .85;
+  font-weight: 500;
+}
+
+
+/* ══════════════════════════════════════
+   5. FILTRE PÉRIODE STOCK (chips)
+══════════════════════════════════════ */
+.stock-period-chips {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.period-chip {
+  border: none;
+  padding: 6px 13px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--surface);
+  color: var(--muted);
+  box-shadow: 0 1px 4px rgba(0,0,0,.07);
+  transition: all .18s;
+  font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
+}
+.period-chip.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(124,58,237,.25);
+}
+html.dark .period-chip { background: #2A2740; color: var(--muted); }
+html.dark .period-chip.active { background: var(--primary); color: #fff; }
+
+
+/* ══════════════════════════════════════
+   6. ONBOARDING TOOLTIPS
+══════════════════════════════════════ */
+#onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  pointer-events: none;
+}
+
+/* Halo autour de l'élément ciblé */
+.onb-spotlight {
+  position: absolute;
+  border-radius: 18px;
+  box-shadow: 0 0 0 9999px rgba(10,7,30,.55);
+  pointer-events: none;
+  transition: all .35s cubic-bezier(.34,1.2,.64,1);
+}
+
+/* Bulle tooltip */
+.onb-bubble {
+  position: absolute;
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 14px 16px;
+  max-width: 220px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+  pointer-events: auto;
+  animation: onbBubbleIn .3s cubic-bezier(.34,1.4,.64,1) both;
+}
+@keyframes onbBubbleIn {
+  from { opacity: 0; transform: scale(.85) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)  translateY(0); }
+}
+
+/* Flèche de la bulle */
+.onb-bubble::before {
+  content: '';
+  position: absolute;
+  width: 12px; height: 12px;
+  background: var(--surface);
+  border-radius: 3px;
+  transform: rotate(45deg);
+}
+.onb-bubble.arrow-top::before    { top: -5px;    left: 20px; }
+.onb-bubble.arrow-bottom::before { bottom: -5px; left: 20px; }
+
+.onb-step {
+  font-size: 10px; font-weight: 700;
+  color: var(--primary); text-transform: uppercase;
+  letter-spacing: .5px; margin-bottom: 4px;
+}
+.onb-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 14px; font-weight: 800;
+  color: var(--text); margin-bottom: 5px;
+}
+.onb-text {
+  font-size: 12px; font-weight: 500;
+  color: var(--muted); line-height: 1.5;
+  margin-bottom: 12px;
+}
+.onb-actions { display: flex; gap: 8px; align-items: center; }
+.onb-next {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff; border: none;
+  padding: 8px 16px; border-radius: 10px;
+  font-family: 'Sora', sans-serif;
+  font-size: 12px; font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(124,58,237,.3);
+}
+.onb-skip {
+  background: none; border: none;
+  color: var(--muted); font-size: 12px;
+  font-weight: 600; cursor: pointer;
+  padding: 4px;
+  font-family: 'DM Sans', sans-serif;
+}
+.onb-dots {
+  display: flex; gap: 4px;
+  align-items: center;
+  margin-left: auto;
+}
+.onb-dot {
+  width: 6px; height: 6px;
+  border-radius: 3px;
+  background: #E5E7EB;
+  transition: all .2s;
+}
+.onb-dot.active {
+  background: var(--primary);
+  width: 14px;
+}

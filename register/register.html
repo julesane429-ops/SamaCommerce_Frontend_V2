@@ -1,83 +1,370 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Inscription - Sama Commerce</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="register.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Inscription – Sama Commerce</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="register.js" defer></script>
   <link rel="stylesheet" href="register.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #4F46E5;
+      --primary-dark: #3730A3;
+      --accent: #06B6D4;
+      --green: #10B981;
+      --orange: #F59E0B;
+      --pink: #EC4899;
+      --surface: #FFFFFF;
+      --bg: #F0FFF8;
+      --text: #064E3B;
+      --muted: #6B7280;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100dvh;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* ── Blobs ── */
+    .bg-blobs {
+      position: fixed; inset: 0; z-index: 0;
+      pointer-events: none; overflow: hidden;
+    }
+    .blob {
+      position: absolute; border-radius: 50%;
+      filter: blur(70px); opacity: .4;
+      animation: blobFloat 9s ease-in-out infinite alternate;
+    }
+    .blob-1 { width: 300px; height: 300px; background: #34D399; top: -60px; left: -80px; animation-delay: 0s; }
+    .blob-2 { width: 220px; height: 220px; background: #6366F1; top: 30%; right: -50px; animation-delay: -4s; }
+    .blob-3 { width: 180px; height: 180px; background: #F59E0B; bottom: -40px; left: 20%; animation-delay: -7s; }
+    @keyframes blobFloat {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(18px, 26px) scale(1.1); }
+    }
+
+    /* ── Card ── */
+    .register-card {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 400px;
+      background: rgba(255,255,255,.93);
+      backdrop-filter: blur(20px);
+      border: 1.5px solid rgba(255,255,255,.75);
+      border-radius: 28px;
+      padding: 36px 28px 32px;
+      box-shadow: 0 20px 60px rgba(16,185,129,.12), 0 4px 20px rgba(0,0,0,.07);
+    }
+
+    /* ── Logo ── */
+    .logo-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      margin-bottom: 26px;
+    }
+    .logo-img-wrap {
+      width: 76px; height: 76px;
+      border-radius: 22px; overflow: hidden;
+      box-shadow: 0 8px 28px rgba(16,185,129,.3);
+      margin-bottom: 14px;
+    }
+    .logo-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .app-name {
+      font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 800;
+      color: var(--text); letter-spacing: -.4px;
+    }
+    .app-tagline { font-size: 13px; color: var(--muted); margin-top: 3px; font-weight: 500; }
+
+    /* ── Step indicator ── */
+    .step-bar {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      margin-bottom: 22px;
+    }
+    .step-dot {
+      width: 8px; height: 8px; border-radius: 4px;
+      background: #D1FAE5; transition: all .3s;
+    }
+    .step-dot.active { background: var(--green); width: 24px; }
+
+    .section-title {
+      font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 700;
+      color: var(--text); margin-bottom: 20px; text-align: center;
+    }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .5px;
+      color: var(--muted); margin-bottom: 6px;
+    }
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute; left: 14px; top: 50%;
+      transform: translateY(-50%); font-size: 17px;
+      pointer-events: none;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 13px 14px 13px 42px;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 14px;
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      background: #F9FAFB;
+      color: #1F2937;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    .form-group input:focus {
+      border-color: var(--green);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(16,185,129,.12);
+    }
+    .form-group input::placeholder { color: #9CA3AF; }
+
+    /* ── Password strength ── */
+    .pwd-strength {
+      margin-top: 6px; display: flex; gap: 4px;
+    }
+    .pwd-bar {
+      flex: 1; height: 4px; border-radius: 2px; background: #E5E7EB;
+      transition: background .3s;
+    }
+    .pwd-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* ── Register btn ── */
+    #registerBtn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, var(--green), #059669);
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      font-family: 'Sora', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 6px 22px rgba(16,185,129,.35);
+      transition: transform .15s, box-shadow .15s;
+      letter-spacing: .2px;
+      margin-top: 4px;
+    }
+    #registerBtn:active { transform: scale(.97); box-shadow: 0 3px 12px rgba(16,185,129,.2); }
+
+    /* ── Terms ── */
+    .terms-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      margin-bottom: 14px; font-size: 12px; color: var(--muted); line-height: 1.4;
+    }
+    .terms-row input[type="checkbox"] { width: 18px; height: 18px; margin-top: 1px; flex-shrink: 0; accent-color: var(--green); }
+    .terms-row a { color: var(--green); font-weight: 600; text-decoration: none; }
+
+    .link-row {
+      text-align: center; font-size: 14px; color: var(--muted); margin-top: 16px;
+    }
+    .link-row a { color: var(--primary); font-weight: 700; text-decoration: none; }
+    .link-row a:hover { text-decoration: underline; }
+
+    /* ── Perks banner ── */
+    .perks {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      margin-bottom: 20px;
+    }
+    .perk {
+      background: linear-gradient(135deg, #ECFDF5, #D1FAE5);
+      border-radius: 14px; padding: 10px 12px;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 600; color: #065F46;
+    }
+    .perk-icon { font-size: 18px; }
+
+    /* ── Guide modal (bottom sheet) ── */
+    .guide-overlay {
+      position: fixed; inset: 0;
+      background: rgba(15,40,30,.55);
+      backdrop-filter: blur(6px);
+      display: flex; align-items: flex-end; justify-content: center;
+      z-index: 50; padding: 16px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+    .guide-sheet {
+      background: var(--surface); border-radius: 28px 28px 20px 20px;
+      padding: 28px 24px; width: 100%; max-width: 480px;
+      box-shadow: 0 -8px 40px rgba(0,0,0,.12);
+      animation: sheetUp .3s cubic-bezier(.34,1.3,.64,1) both;
+      position: relative;
+    }
+    @keyframes sheetUp {
+      from { transform: translateY(60px); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+    .guide-pill {
+      width: 40px; height: 4px; background: #E5E7EB; border-radius: 2px; margin: 0 auto 20px;
+    }
+    .guide-title {
+      font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 800;
+      color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+    }
+    .guide-body { font-size: 14px; color: var(--muted); line-height: 1.6; }
+    .guide-body strong { color: #1F2937; }
+    .guide-steps { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .guide-step { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #374151; }
+    .guide-step-icon {
+      font-size: 20px; flex-shrink: 0; width: 32px; height: 32px;
+      background: #ECFDF5; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .guide-close {
+      position: absolute; top: 16px; right: 16px;
+      background: #F3F4F6; border: none; width: 32px; height: 32px;
+      border-radius: 10px; font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); transition: background .15s;
+    }
+    .guide-close:hover { background: #E5E7EB; }
+    .guide-cta {
+      width: 100%; margin-top: 20px; padding: 14px;
+      background: linear-gradient(135deg, var(--green), #059669);
+      color: #fff; border: none; border-radius: 14px;
+      font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700;
+      cursor: pointer; box-shadow: 0 4px 16px rgba(16,185,129,.3);
+    }
+  </style>
 </head>
+<body>
 
-<body class="flex min-h-screen font-sans items-center justify-center p-6">
+  <!-- Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
 
-  <!-- MODAL GUIDE -->
-  <div id="registerGuideOverlay" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div id="registerGuide"
-      class="relative bg-green-50 border-l-4 border-green-500 text-green-800 p-6 rounded-2xl shadow-2xl max-w-lg w-[90%] animate-fadeIn">
-
-      <!-- Bouton de fermeture -->
-      <button onclick="closeRegisterGuide()"
-        class="absolute top-3 right-3 text-green-600 hover:text-green-900 transition-colors duration-200 font-bold text-xl leading-none focus:outline-none">
-        ✕
-      </button>
-
-      <!-- Contenu -->
-      <div class="pr-6">
-        <h2 class="font-bold text-xl mb-3 flex items-center gap-2">
-          <span class="text-2xl">📝</span>
-          Créez votre compte
-        </h2>
-        <p class="text-sm leading-relaxed text-green-700">
-          Remplissez les champs requis puis cliquez sur
-          <span class="font-semibold">"Créer un compte"</span>.
-          Un email de confirmation peut vous être demandé.
-        </p>
-        <ul class="list-disc list-inside mt-3 space-y-2 text-sm leading-relaxed text-green-700">
-          <li>
-            <span class="font-medium">Android / Ordinateur :</span> ouvrez cette page dans
-            <span class="italic">Chrome</span>, après connexion vous verrez le bouton
-            <span class="font-semibold">"Installer"</span>.
-          </li>
-          <li>
-            <span class="font-medium">Apple (iPhone, iPad) :</span> ouvrez cette page dans
-            <span class="italic">Safari</span>, puis appuyez sur le bouton
-            <span class="font-semibold">"Partager"</span> et sélectionnez
-            <span class="font-semibold">"Ajouter à l’écran d’accueil"</span>.
-          </li>
-        </ul>
-        <p class="mt-3 text-sm leading-relaxed text-green-700">
-          Vous pourrez ensuite vous connecter avec votre email et mot de passe,
-          et accéder rapidement à l’application depuis votre écran d’accueil.
-        </p>
+  <!-- Register card -->
+  <div class="register-card">
+    <!-- Logo -->
+    <div class="logo-wrap">
+      <div class="logo-img-wrap">
+        <img src="/pwa/icons/icon-512.png" alt="Sama Commerce" onerror="this.parentElement.innerHTML='🛍️'">
       </div>
+      <div class="app-name">Sama Commerce</div>
+      <div class="app-tagline">Créez votre boutique en 1 minute</div>
+    </div>
+
+    <!-- Perks -->
+    <div class="perks">
+      <div class="perk"><span class="perk-icon">📦</span>Gestion stock</div>
+      <div class="perk"><span class="perk-icon">📈</span>Vos chiffres</div>
+      <div class="perk"><span class="perk-icon">💳</span>Ventes rapides</div>
+      <div class="perk"><span class="perk-icon">🆓</span>Gratuit</div>
+    </div>
+
+    <div class="section-title">Créer un compte</div>
+
+    <!-- Nom / Entreprise -->
+    <div class="form-group">
+      <label for="companyName">👤 Nom / Entreprise</label>
+      <div class="input-wrap">
+        <span class="input-icon">🏪</span>
+        <input type="text" id="companyName" placeholder="Votre nom ou boutique" autocomplete="organization">
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div class="form-group">
+      <label for="email">Email</label>
+      <div class="input-wrap">
+        <span class="input-icon">✉️</span>
+        <input type="email" id="email" placeholder="nom@exemple.com" autocomplete="email">
+      </div>
+    </div>
+
+    <!-- Mot de passe -->
+    <div class="form-group">
+      <label for="password">Mot de passe</label>
+      <div class="input-wrap">
+        <span class="input-icon">🔒</span>
+        <input type="password" id="password" placeholder="Minimum 8 caractères" autocomplete="new-password"
+          oninput="checkStrength(this.value)">
+      </div>
+      <div class="pwd-strength" id="pwdBars">
+        <div class="pwd-bar" id="bar1"></div>
+        <div class="pwd-bar" id="bar2"></div>
+        <div class="pwd-bar" id="bar3"></div>
+        <div class="pwd-bar" id="bar4"></div>
+      </div>
+      <div class="pwd-hint" id="pwdHint">Entrez un mot de passe</div>
+    </div>
+
+    <!-- Bouton inscription -->
+    <button id="registerBtn">Créer mon compte →</button>
+
+    <div class="link-row" style="margin-top:14px;">
+      Déjà inscrit ?
+      <a href="/login/login.html">Se connecter</a>
     </div>
   </div>
 
-  <!-- FORMULAIRE -->
-  <div class="bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl p-8 
-              w-full max-w-sm md:max-w-md border border-purple-100 relative z-10">
-    <h1 class="text-2xl font-bold text-center mb-6">📝 Inscription</h1>
+  <!-- Guide modal -->
+  <div id="registerGuideOverlay" class="guide-overlay">
+    <div id="registerGuide" class="guide-sheet">
+      <div class="guide-pill"></div>
+      <button class="guide-close" onclick="closeRegisterGuide()">✕</button>
 
-    <input type="email" id="email" placeholder="Email"
-      class="w-full p-3 border border-gray-200 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-green-400 transition">
-    <input type="password" id="password" placeholder="Mot de passe"
-      class="w-full p-3 border border-gray-200 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-green-400 transition">
-    <input type="text" id="companyName" placeholder="Nom Complet ou Nom de l’entreprise"
-      class="w-full p-3 border border-gray-200 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-green-400 transition">
-
-    <button id="registerBtn"
-      class="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg font-bold shadow-md transition transform hover:scale-[1.02]">
-      Créer un compte
-    </button>
-
-    <p class="text-center text-sm mt-4 text-gray-600">
-      Déjà inscrit ?
-      <a href="/login/login.html" class="text-purple-600 font-bold hover:underline">Se connecter</a>
-    </p>
+      <div class="guide-title">📝 Créez votre compte</div>
+      <div class="guide-body">
+        Remplissez les champs et cliquez sur <strong>"Créer mon compte"</strong>.
+        <div class="guide-steps">
+          <div class="guide-step">
+            <div class="guide-step-icon">🤖</div>
+            <div><strong>Android / PC :</strong> Ouvrez dans Chrome → après connexion, cliquez sur <strong>"Installer"</strong>.</div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-icon">🍎</div>
+            <div><strong>iPhone / iPad :</strong> Safari → <strong>"Partager"</strong> → <strong>"Ajouter à l'écran d'accueil"</strong>.</div>
+          </div>
+        </div>
+      </div>
+      <button class="guide-cta" onclick="closeRegisterGuide()">Commencer l'inscription 🚀</button>
+    </div>
   </div>
 
-</body>
+  <script>
+    function closeRegisterGuide() {
+      const el = document.getElementById('registerGuideOverlay');
+      if (el) el.style.display = 'none';
+    }
 
+    // Password strength indicator
+    function checkStrength(val) {
+      const bars = ['bar1','bar2','bar3','bar4'];
+      const hint = document.getElementById('pwdHint');
+      let score = 0;
+      if (val.length >= 8) score++;
+      if (/[A-Z]/.test(val)) score++;
+      if (/[0-9]/.test(val)) score++;
+      if (/[^A-Za-z0-9]/.test(val)) score++;
+
+      const colors = ['#EF4444','#F59E0B','#10B981','#059669'];
+      const labels = ['Trop court','Faible','Bon','Excellent !'];
+
+      bars.forEach((id, i) => {
+        document.getElementById(id).style.background = i < score ? colors[Math.max(0, score-1)] : '#E5E7EB';
+      });
+      hint.textContent = val.length === 0 ? 'Entrez un mot de passe' : labels[Math.max(0, score-1)];
+      hint.style.color = val.length === 0 ? '#9CA3AF' : colors[Math.max(0, score-1)];
+    }
+  </script>
+</body>
 </html>

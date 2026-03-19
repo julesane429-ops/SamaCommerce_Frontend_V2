@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Sama Commerce</title>
   <meta name="api-base" content="https://samacommerce-backend-v2.onrender.com">
-
   <link rel="stylesheet" href="css/global.css">
   <link rel="stylesheet" href="css/animations.css">
   <link rel="stylesheet" href="css/categories.css">
@@ -15,1651 +13,335 @@
   <link rel="stylesheet" href="css/toats.css">
   <link rel="stylesheet" href="css/confirm.css">
   <link rel="stylesheet" href="css/responsive.css">
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
   <link rel="manifest" href="./pwa/manifest.json">
   <meta name="theme-color" content="#7C3AED">
   <link rel="apple-touch-icon" href="/pwa/icons/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="mobile-web-app-capable" content="yes">
-
-  <style>
-    :root {
-      --clr-primary: #7C3AED;
-      --clr-primary-light: #A78BFA;
-      --clr-primary-dark: #5B21B6;
-      --clr-accent: #EC4899;
-      --clr-accent-light: #F9A8D4;
-      --clr-green: #10B981;
-      --clr-blue: #3B82F6;
-      --clr-orange: #F59E0B;
-      --clr-teal: #14B8A6;
-      --clr-surface: #FFFFFF;
-      --clr-bg: #F5F3FF;
-      --clr-text: #1E1B4B;
-      --clr-text-muted: #6B7280;
-      --nav-h: 72px;
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
-      --header-h: 130px;
-      font-family: 'DM Sans', sans-serif;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background: var(--clr-bg);
-      color: var(--clr-text);
-      font-family: 'DM Sans', sans-serif;
-      min-height: 100dvh;
-      overflow-x: hidden;
-    }
-
-    /* ───── SYNC BANNER ───── */
-    #syncBanner {
-      background: linear-gradient(90deg, var(--clr-blue), #6366F1);
-      color: #fff;
-      text-align: center;
-      padding: 10px;
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: .3px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    /* ───── APP SHELL ───── */
-    .app-shell {
-      display: flex;
-      flex-direction: column;
-      min-height: 100dvh;
-    }
-
-    /* ───── TOP HEADER ───── */
-    .top-header {
-      background: linear-gradient(135deg, var(--clr-primary-dark) 0%, var(--clr-primary) 50%, var(--clr-accent) 100%);
-      padding: 20px 20px 28px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .top-header::before {
-      content: '';
-      position: absolute;
-      top: -40px; right: -40px;
-      width: 180px; height: 180px;
-      background: rgba(255,255,255,.08);
-      border-radius: 50%;
-    }
-    .top-header::after {
-      content: '';
-      position: absolute;
-      bottom: -30px; left: 10%;
-      width: 120px; height: 120px;
-      background: rgba(255,255,255,.05);
-      border-radius: 50%;
-    }
-
-    .header-inner {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      position: relative;
-      z-index: 1;
-    }
-
-    #backBtn {
-      background: rgba(255,255,255,.2);
-      border: none;
-      width: 40px; height: 40px;
-      border-radius: 12px;
-      color: #fff;
-      font-size: 18px;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      backdrop-filter: blur(8px);
-      flex-shrink: 0;
-      transition: background .2s;
-    }
-    #backBtn:active { background: rgba(255,255,255,.35); }
-
-    .header-title-block { flex: 1; text-align: center; }
-
-    #appHeader {
-      font-family: 'Sora', sans-serif;
-      font-size: 20px;
-      font-weight: 800;
-      color: #fff;
-      letter-spacing: -.3px;
-    }
-
-    .header-subtitle {
-      font-size: 12px;
-      color: rgba(255,255,255,.75);
-      margin-top: 2px;
-      font-weight: 500;
-    }
-
-    .header-avatar {
-      width: 40px; height: 40px;
-      background: rgba(255,255,255,.2);
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px;
-      backdrop-filter: blur(8px);
-      flex-shrink: 0;
-    }
-
-    /* ─── Today card floating over header ─── */
-    .today-float {
-      margin: -24px 16px 0;
-      background: var(--clr-surface);
-      border-radius: 20px;
-      padding: 16px 20px;
-      box-shadow: 0 8px 32px rgba(124,58,237,.15);
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      position: relative;
-      z-index: 10;
-    }
-
-    .today-stat {
-      text-align: center;
-      padding: 10px 6px;
-      border-radius: 14px;
-    }
-    .today-stat.green  { background: #ECFDF5; }
-    .today-stat.blue   { background: #EFF6FF; }
-    .today-stat.orange { background: #FFFBEB; }
-
-    .today-stat .value {
-      font-family: 'Sora', sans-serif;
-      font-size: 17px;
-      font-weight: 700;
-      line-height: 1;
-    }
-    .today-stat.green .value  { color: var(--clr-green); }
-    .today-stat.blue .value   { color: var(--clr-blue); }
-    .today-stat.orange .value { color: var(--clr-orange); }
-
-    .today-stat .label {
-      font-size: 10px;
-      font-weight: 600;
-      margin-top: 4px;
-      opacity: .7;
-    }
-
-    /* ───── MAIN CONTENT ───── */
-    .page-content {
-      flex: 1;
-      padding: 16px 16px calc(var(--nav-h) + var(--safe-bottom) + 16px);
-      overflow-y: auto;
-    }
-
-    /* ───── SECTION PAGES ───── */
-    .app-page {
-      display: none;
-      animation: fadeSlideUp .28s ease both;
-    }
-    .app-page.active { display: block; }
-
-    @keyframes fadeSlideUp {
-      from { opacity: 0; transform: translateY(18px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ───── BOTTOM NAV ───── */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      height: calc(var(--nav-h) + var(--safe-bottom));
-      padding-bottom: var(--safe-bottom);
-      background: var(--clr-surface);
-      border-top: 1px solid rgba(124,58,237,.1);
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      box-shadow: 0 -8px 32px rgba(0,0,0,.07);
-      z-index: 200;
-    }
-
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      padding: 8px 14px;
-      border-radius: 16px;
-      cursor: pointer;
-      border: none;
-      background: transparent;
-      transition: all .2s;
-      position: relative;
-    }
-
-    .nav-item .nav-icon {
-      font-size: 22px;
-      transition: transform .2s;
-    }
-
-    .nav-item .nav-label {
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--clr-text-muted);
-      transition: color .2s;
-    }
-
-    .nav-item.active .nav-label { color: var(--clr-primary); }
-    .nav-item.active .nav-icon { transform: scale(1.15); }
-
-    .nav-item.active::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 50%; transform: translateX(-50%);
-      width: 36px; height: 3px;
-      background: var(--clr-primary);
-      border-radius: 0 0 4px 4px;
-    }
-
-    /* ─── FAB center nav button (Vendre) ─── */
-    .nav-fab {
-      background: linear-gradient(135deg, var(--clr-primary), var(--clr-accent));
-      border: none;
-      width: 56px; height: 56px;
-      border-radius: 18px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 26px;
-      box-shadow: 0 6px 20px rgba(124,58,237,.4);
-      cursor: pointer;
-      transition: transform .2s, box-shadow .2s;
-      margin-top: -16px;
-      flex-shrink: 0;
-    }
-    .nav-fab:active { transform: scale(.93); box-shadow: 0 3px 10px rgba(124,58,237,.3); }
-
-    /* ───── CARDS ───── */
-    .card {
-      background: var(--clr-surface);
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 2px 16px rgba(0,0,0,.06);
-      margin-bottom: 14px;
-    }
-
-    .card-title {
-      font-family: 'Sora', sans-serif;
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--clr-text);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-
-    /* ───── ACTION GRID (home) ───── */
-    .action-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 18px;
-    }
-
-    .action-btn {
-      border: none;
-      border-radius: 20px;
-      padding: 20px 14px;
-      text-align: center;
-      cursor: pointer;
-      transition: transform .18s, box-shadow .18s;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 4px 20px rgba(0,0,0,.1);
-    }
-    .action-btn:active { transform: scale(.96); }
-
-    .action-btn .btn-icon { font-size: 36px; }
-    .action-btn .btn-title {
-      font-family: 'Sora', sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      color: #fff;
-    }
-    .action-btn .btn-sub { font-size: 11px; color: rgba(255,255,255,.8); }
-
-    .btn-green  { background: linear-gradient(135deg, #34D399, #059669); }
-    .btn-blue   { background: linear-gradient(135deg, #60A5FA, #2563EB); }
-    .btn-purple { background: linear-gradient(135deg, #A78BFA, #7C3AED); }
-    .btn-orange { background: linear-gradient(135deg, #FCD34D, #D97706); }
-    .btn-teal   { background: linear-gradient(135deg, #2DD4BF, #0D9488); }
-    .btn-pink   { background: linear-gradient(135deg, #F472B6, #DB2777); }
-
-    /* ───── ALERT STOCK ───── */
-    .alert-stock {
-      background: linear-gradient(135deg, #FEF3C7, #FDE68A);
-      border: 1.5px solid #F59E0B;
-      border-radius: 18px;
-      padding: 16px 18px;
-      margin-bottom: 14px;
-    }
-    .alert-stock .alert-title {
-      font-family: 'Sora', sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      color: #92400E;
-      margin-bottom: 10px;
-      display: flex; align-items: center; gap: 6px;
-    }
-    .alert-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 7px 10px;
-      background: rgba(255,255,255,.6);
-      border-radius: 10px;
-      margin-bottom: 6px;
-      font-size: 13px;
-      font-weight: 500;
-      color: #78350F;
-    }
-    .alert-badge {
-      background: #F59E0B;
-      color: #fff;
-      border-radius: 8px;
-      padding: 2px 8px;
-      font-size: 11px;
-      font-weight: 700;
-    }
-
-    /* ───── GUIDE ───── */
-    #userGuide {
-      background: linear-gradient(135deg, #EDE9FE, #FCE7F3);
-      border: 1.5px solid var(--clr-primary-light);
-      border-radius: 20px;
-      padding: 18px 16px;
-      margin-bottom: 14px;
-    }
-    .guide-title {
-      font-family: 'Sora', sans-serif;
-      font-size: 16px;
-      font-weight: 800;
-      color: var(--clr-primary-dark);
-      margin-bottom: 10px;
-    }
-    .guide-list {
-      list-style: none;
-      counter-reset: guide;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .guide-list li {
-      counter-increment: guide;
-      font-size: 13px;
-      color: #4C1D95;
-      display: flex;
-      gap: 8px;
-      align-items: flex-start;
-      line-height: 1.4;
-    }
-    .guide-list li::before {
-      content: counter(guide);
-      background: var(--clr-primary);
-      color: #fff;
-      font-weight: 700;
-      font-size: 11px;
-      min-width: 20px; height: 20px;
-      border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-    #btnCloseGuide {
-      background: rgba(124,58,237,.12);
-      border: none;
-      width: 28px; height: 28px;
-      border-radius: 8px;
-      font-size: 14px;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--clr-primary-dark);
-      flex-shrink: 0;
-    }
-
-    /* ───── PAGE HEADERS ───── */
-    .page-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 18px;
-      padding-top: 4px;
-    }
-    .page-header h2 {
-      font-family: 'Sora', sans-serif;
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--clr-text);
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, var(--clr-primary), var(--clr-accent));
-      color: #fff;
-      border: none;
-      padding: 10px 18px;
-      border-radius: 14px;
-      font-family: 'Sora', sans-serif;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 4px 14px rgba(124,58,237,.3);
-      transition: transform .15s;
-    }
-    .btn-primary:active { transform: scale(.96); }
-
-    /* ───── VENTE SECTION ───── */
-    .panier-empty {
-      text-align: center;
-      padding: 30px 0;
-      color: var(--clr-text-muted);
-    }
-    .panier-empty .empty-icon { font-size: 44px; margin-bottom: 8px; }
-    .panier-empty p { font-size: 14px; font-weight: 500; }
-
-    .total-bar {
-      background: linear-gradient(135deg, #EDE9FE, #FCE7F3);
-      border-radius: 16px;
-      padding: 14px 18px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-    .total-bar .label { font-size: 14px; font-weight: 600; color: var(--clr-primary-dark); }
-    .total-bar .amount {
-      font-family: 'Sora', sans-serif;
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--clr-primary);
-    }
-
-    .btn-encaisser {
-      width: 100%;
-      background: linear-gradient(135deg, var(--clr-green), #059669);
-      color: #fff;
-      border: none;
-      padding: 16px;
-      border-radius: 16px;
-      font-family: 'Sora', sans-serif;
-      font-size: 16px;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 6px 20px rgba(16,185,129,.3);
-      transition: transform .15s;
-      letter-spacing: .3px;
-    }
-    .btn-encaisser:active { transform: scale(.97); }
-
-    /* ───── PRODUIT CARD ───── */
-    .produit-card {
-      background: var(--clr-surface);
-      border-radius: 18px;
-      padding: 14px 16px;
-      margin-bottom: 10px;
-      box-shadow: 0 2px 12px rgba(0,0,0,.06);
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-    .produit-emoji {
-      font-size: 32px;
-      width: 50px; height: 50px;
-      background: var(--clr-bg);
-      border-radius: 14px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .produit-info { flex: 1; min-width: 0; }
-    .produit-nom {
-      font-family: 'Sora', sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .produit-prix { font-size: 13px; color: var(--clr-green); font-weight: 600; }
-    .produit-stock {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 8px;
-      font-weight: 700;
-    }
-    .stock-ok    { background: #ECFDF5; color: #065F46; }
-    .stock-low   { background: #FEF3C7; color: #92400E; }
-    .stock-empty { background: #FEE2E2; color: #991B1B; }
-
-    /* ───── FILTER CHIPS ───── */
-    .chips-row {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 8px;
-      scrollbar-width: none;
-      margin-bottom: 14px;
-    }
-    .chips-row::-webkit-scrollbar { display: none; }
-    .chip {
-      border: none;
-      padding: 8px 16px;
-      border-radius: 12px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all .2s;
-      background: var(--clr-surface);
-      color: var(--clr-text-muted);
-      box-shadow: 0 1px 6px rgba(0,0,0,.07);
-    }
-    .chip.active {
-      background: var(--clr-primary);
-      color: #fff;
-      box-shadow: 0 4px 14px rgba(124,58,237,.3);
-    }
-
-    /* ───── RAPPORTS RÉSUMÉ ───── */
-    .stat-grid-2x2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-    .stat-tile {
-      border-radius: 18px;
-      padding: 16px 14px;
-      text-align: center;
-    }
-    .stat-tile .t-val {
-      font-family: 'Sora', sans-serif;
-      font-size: 20px;
-      font-weight: 800;
-      line-height: 1;
-    }
-    .stat-tile .t-label { font-size: 11px; font-weight: 600; margin-top: 5px; opacity: .8; }
-    .tile-green  { background: #ECFDF5; } .tile-green  .t-val { color: var(--clr-green); }
-    .tile-blue   { background: #EFF6FF; } .tile-blue   .t-val { color: var(--clr-blue); }
-    .tile-yellow { background: #FFFBEB; } .tile-yellow .t-val { color: var(--clr-orange); }
-    .tile-purple { background: #EDE9FE; } .tile-purple .t-val { color: var(--clr-primary); }
-
-    .metric-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-    .metric-card {
-      background: var(--clr-surface);
-      border-radius: 16px;
-      padding: 14px;
-      box-shadow: 0 2px 10px rgba(0,0,0,.05);
-    }
-    .metric-card .m-label { font-size: 11px; color: var(--clr-text-muted); font-weight: 600; margin-bottom: 6px; }
-    .metric-card .m-val   { font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 800; }
-
-    /* ───── INVENTAIRE ───── */
-    .inv-table-wrap { overflow-x: auto; border-radius: 16px; }
-    .inv-table { width: 100%; min-width: 580px; border-collapse: collapse; font-size: 13px; }
-    .inv-table thead th {
-      background: var(--clr-bg);
-      padding: 12px 10px;
-      text-align: left;
-      font-family: 'Sora', sans-serif;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .5px;
-      color: var(--clr-text-muted);
-    }
-    .inv-table tbody td {
-      padding: 12px 10px;
-      border-bottom: 1px solid #F3F4F6;
-    }
-    .inv-table tbody tr:last-child td { border-bottom: none; }
-
-    /* ───── CRÉDITS ───── */
-    .credits-summary {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-    .cred-tile {
-      background: var(--clr-surface);
-      border-radius: 16px;
-      padding: 14px 10px;
-      text-align: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,.05);
-    }
-    .cred-tile .cv { font-family: 'Sora', sans-serif; font-size: 16px; font-weight: 800; }
-    .cred-tile .cl { font-size: 10px; font-weight: 600; color: var(--clr-text-muted); margin-top: 4px; }
-
-    /* ───── FORM STYLES ───── */
-    .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: 12px; font-weight: 700; color: var(--clr-text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      width: 100%;
-      padding: 13px 16px;
-      border: 1.5px solid #E5E7EB;
-      border-radius: 14px;
-      font-size: 15px;
-      font-family: 'DM Sans', sans-serif;
-      background: var(--clr-bg);
-      color: var(--clr-text);
-      outline: none;
-      transition: border-color .2s, box-shadow .2s;
-    }
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-      border-color: var(--clr-primary);
-      box-shadow: 0 0 0 3px rgba(124,58,237,.1);
-      background: #fff;
-    }
-
-    /* ───── SEARCH BAR ───── */
-    .search-bar {
-      background: var(--clr-surface);
-      border: 1.5px solid #E5E7EB;
-      border-radius: 14px;
-      padding: 12px 16px;
-      width: 100%;
-      font-size: 14px;
-      font-family: 'DM Sans', sans-serif;
-      outline: none;
-      margin-bottom: 14px;
-      transition: border-color .2s;
-    }
-    .search-bar:focus { border-color: var(--clr-primary); box-shadow: 0 0 0 3px rgba(124,58,237,.1); }
-
-    /* ───── MODALS ───── */
-    #modalOverlay {
-      background: rgba(15,10,40,.6);
-      backdrop-filter: blur(6px);
-    }
-
-    .modal-box {
-      background: var(--clr-surface);
-      border-radius: 28px;
-      padding: 28px 24px;
-      width: calc(100% - 32px);
-      max-width: 420px;
-      box-shadow: 0 24px 80px rgba(0,0,0,.2);
-      animation: modalIn .25s cubic-bezier(.34,1.56,.64,1) both;
-    }
-    @keyframes modalIn {
-      from { opacity: 0; transform: scale(.88) translateY(24px); }
-      to   { opacity: 1; transform: scale(1)  translateY(0); }
-    }
-
-    .modal-title {
-      font-family: 'Sora', sans-serif;
-      font-size: 20px;
-      font-weight: 800;
-      text-align: center;
-      margin-bottom: 22px;
-      color: var(--clr-text);
-    }
-
-    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
-    .btn-cancel {
-      flex: 1;
-      background: #F3F4F6;
-      color: #6B7280;
-      border: none;
-      padding: 14px;
-      border-radius: 14px;
-      font-family: 'Sora', sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .btn-confirm {
-      flex: 1;
-      background: linear-gradient(135deg, var(--clr-primary), var(--clr-accent));
-      color: #fff;
-      border: none;
-      padding: 14px;
-      border-radius: 14px;
-      font-family: 'Sora', sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 4px 14px rgba(124,58,237,.3);
-    }
-
-    /* Paiement buttons */
-    .pay-btn {
-      width: 100%;
-      padding: 16px;
-      border: none;
-      border-radius: 16px;
-      font-family: 'Sora', sans-serif;
-      font-size: 15px;
-      font-weight: 700;
-      color: #fff;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 10px;
-      margin-bottom: 10px;
-      transition: transform .15s, box-shadow .15s;
-      box-shadow: 0 4px 16px rgba(0,0,0,.12);
-    }
-    .pay-btn:active { transform: scale(.97); }
-    .pay-especes { background: linear-gradient(135deg, #34D399, #059669); }
-    .pay-wave    { background: linear-gradient(135deg, #60A5FA, #2563EB); }
-    .pay-orange  { background: linear-gradient(135deg, #FBBF24, #D97706); }
-    .pay-credit  { background: linear-gradient(135deg, #A78BFA, #7C3AED); }
-
-    /* ───── PREMIUM MODAL ───── */
-    .premium-card {
-      background: linear-gradient(135deg, #EDE9FE, #FCE7F3);
-      border-radius: 20px;
-      padding: 20px;
-      margin-bottom: 16px;
-      text-align: center;
-    }
-    .premium-card h2 {
-      font-family: 'Sora', sans-serif;
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--clr-primary-dark);
-      margin-bottom: 8px;
-    }
-    .premium-card p { font-size: 13px; color: #4C1D95; line-height: 1.5; }
-
-    /* ───── TOP BUTTONS (logout / install) ───── */
-    .top-actions {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-    .btn-logout {
-      background: #FEE2E2;
-      color: #DC2626;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 12px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .btn-install {
-      background: #ECFDF5;
-      color: var(--clr-green);
-      border: none;
-      padding: 8px 14px;
-      border-radius: 12px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    /* ───── MISC ───── */
-    .pulse { animation: pulse 1.5s ease-in-out infinite; }
-    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .6; } }
-
-    .chart-wrap { border-radius: 16px; overflow: hidden; margin-bottom: 14px; padding: 4px 0; }
-
-    table.history-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 480px; }
-    table.history-table thead th { background: var(--clr-bg); padding: 10px 8px; text-align: left; font-weight: 700; color: var(--clr-text-muted); font-size: 11px; text-transform: uppercase; }
-    table.history-table tbody td { padding: 10px 8px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; }
-
-    .section-title {
-      font-family: 'Sora', sans-serif;
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--clr-text);
-      margin-bottom: 12px;
-      margin-top: 4px;
-    }
-
-    /* Period select */
-    .period-select {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-    .period-select label { font-size: 13px; font-weight: 700; color: var(--clr-text-muted); white-space: nowrap; }
-    .period-select select {
-      padding: 9px 14px;
-      border: 1.5px solid #E5E7EB;
-      border-radius: 12px;
-      font-size: 13px;
-      font-family: 'DM Sans', sans-serif;
-      background: var(--clr-surface);
-      outline: none;
-      flex: 1;
-    }
-
-    /* Emoji grid */
-    .emoji-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 6px;
-      max-height: 220px;
-      overflow-y: auto;
-      padding: 4px;
-    }
-    .emoji-btn {
-      font-size: 24px;
-      background: var(--clr-bg);
-      border: none;
-      border-radius: 12px;
-      padding: 8px;
-      cursor: pointer;
-      aspect-ratio: 1;
-      transition: background .15s;
-    }
-    .emoji-btn:hover { background: #EDE9FE; }
-
-    /* More page */
-    .more-list { display: flex; flex-direction: column; gap: 12px; }
-    .more-item {
-      background: var(--clr-surface);
-      border-radius: 18px;
-      padding: 18px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      cursor: pointer;
-      box-shadow: 0 2px 10px rgba(0,0,0,.05);
-      border: none;
-      width: 100%;
-      text-align: left;
-      transition: transform .15s;
-    }
-    .more-item:active { transform: scale(.98); }
-    .more-icon {
-      font-size: 28px;
-      width: 52px; height: 52px;
-      border-radius: 16px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .more-item-text h3 { font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700; }
-    .more-item-text p  { font-size: 12px; color: var(--clr-text-muted); margin-top: 2px; }
-    .more-chevron { margin-left: auto; font-size: 18px; color: var(--clr-text-muted); }
-  </style>
+  <link rel="stylesheet" href="css/index.css">
 </head>
-
 <body>
   <div id="syncBanner" style="display:none;">🔄 Synchronisation en cours…</div>
-
-  <div class="app-shell">
-
-    <!-- ═══════════ TOP HEADER ═══════════ -->
+  <div class="app-container">
     <div class="top-header">
       <div class="header-inner">
         <button id="backBtn" style="display:none;">←</button>
-        <div class="header-title-block">
-          <div id="appHeader" style="font-family:'Sora',sans-serif;font-size:20px;font-weight:800;color:#fff;">🏪 Sama Commerce</div>
-          <div class="header-subtitle">Ventes aujourd'hui : <span class="pulse" id="ventesToday">0</span></div>
+        <div class="header-center">
+          <div id="appHeader">🏪 Sama Commerce</div>
+          <div class="header-sub">Ventes aujourd'hui : <span class="pulse" id="ventesToday">0</span></div>
         </div>
-        <div class="header-avatar">💰</div>
+        <div class="header-icon">💰</div>
       </div>
     </div>
-
-    <!-- Floating today card -->
-    <div class="today-float" id="todayFloatCard">
-      <div class="today-stat green">
-        <div class="value pulse" id="chiffreAffaires">0 F</div>
-        <div class="label">Encaissé</div>
-      </div>
-      <div class="today-stat blue">
-        <div class="value" id="articlesVendus">0</div>
-        <div class="label">Vendus</div>
-      </div>
-      <div class="today-stat orange">
-        <div class="value" id="stockTotal">0</div>
-        <div class="label">En stock</div>
-      </div>
+    <div class="today-float">
+      <div class="ts g"><div class="v pulse" id="chiffreAffaires">0 F</div><div class="l">Encaissé</div></div>
+      <div class="ts b"><div class="v" id="articlesVendus">0</div><div class="l">Vendus</div></div>
+      <div class="ts o"><div class="v" id="stockTotal">0</div><div class="l">En stock</div></div>
     </div>
+    <div class="scroll-content">
 
-    <!-- ═══════════ MAIN CONTENT ═══════════ -->
-    <div class="page-content">
-
-      <!-- ── PAGE: ACCUEIL ── -->
-      <div class="app-page active" id="page-accueil">
-        <div class="top-actions" style="margin-top:14px;">
+      <!-- MENU -->
+      <div class="section-page" id="menuSection">
+        <div class="top-actions" style="margin-top:12px;">
           <button class="btn-logout" onclick="logout()">🔓 Déconnexion</button>
-          <button id="installBtn" class="btn-install hidden">📲 Installer</button>
+          <button id="installBtn" class="hidden">📲 Installer</button>
         </div>
-
-        <!-- Guide utilisateur -->
-        <div id="userGuide" style="display:flex;gap:12px;align-items:flex-start;">
-          <div style="flex:1;">
+        <div id="userGuide">
+          <div class="guide-content">
             <div class="guide-title">👋 Bienvenue !</div>
             <ol class="guide-list">
               <li>Allez dans <strong>Catégories</strong> pour organiser vos produits</li>
               <li>Allez dans <strong>Stock</strong> pour gérer vos produits</li>
-              <li>Appuyez sur <strong>Vendre</strong> pour commencer à vendre</li>
+              <li>Appuyez sur <strong>Vendre</strong> pour commencer</li>
               <li>Consultez <strong>Chiffres</strong> pour voir vos gains</li>
               <li>L'<strong>Inventaire</strong> affiche vos bénéfices en détail</li>
               <li>Utilisez <strong>Crédits</strong> pour gérer les dettes clients</li>
-              <li>Les alertes de stock faible apparaissent ici</li>
+              <li>Les alertes stock faible apparaissent ici</li>
               <li>Gratuit jusqu'à 5 produits — version Pro pour plus</li>
             </ol>
           </div>
           <button id="btnCloseGuide">✕</button>
         </div>
-
-        <!-- Alertes stock faible -->
-        <div id="alertesStock" class="alert-stock" style="display:none;">
+        <div id="alertesStock" style="display:none;">
           <div class="alert-title">⚠️ Stock presque épuisé</div>
           <div id="produitsStockFaible"></div>
         </div>
-
-        <!-- Actions rapides -->
-        <div class="section-title" style="margin-top:6px;">Actions rapides</div>
+        <div class="section-label">Actions rapides</div>
         <div class="action-grid">
-          <button class="action-btn btn-green big-button" data-section="vente">
-            <div class="btn-icon">💳</div>
-            <div class="btn-title">VENDRE</div>
-            <div class="btn-sub">Vendre un article</div>
-          </button>
-          <button class="action-btn btn-blue big-button" data-section="stock">
-            <div class="btn-icon">📦</div>
-            <div class="btn-title">STOCK</div>
-            <div class="btn-sub">Gérer produits</div>
-          </button>
-          <button class="action-btn btn-purple big-button" data-section="categories">
-            <div class="btn-icon">🏷️</div>
-            <div class="btn-title">CATÉGORIES</div>
-            <div class="btn-sub">Organiser</div>
-          </button>
-          <button class="action-btn btn-orange big-button" data-section="rapports">
-            <div class="btn-icon">📈</div>
-            <div class="btn-title">CHIFFRES</div>
-            <div class="btn-sub">Voir gains</div>
-          </button>
-          <button class="action-btn btn-teal big-button" data-section="inventaire">
-            <div class="btn-icon">📋</div>
-            <div class="btn-title">INVENTAIRE</div>
-            <div class="btn-sub">Voir bénéfices</div>
-          </button>
-          <button class="action-btn btn-pink big-button" data-section="credits">
-            <div class="btn-icon">📝</div>
-            <div class="btn-title">CRÉDITS</div>
-            <div class="btn-sub">Gérer dettes</div>
-          </button>
+          <button class="action-btn ab-green big-button" data-section="vente"><div class="ai">💳</div><div class="at">VENDRE</div><div class="as">Vendre un article</div></button>
+          <button class="action-btn ab-blue big-button" data-section="stock"><div class="ai">📦</div><div class="at">STOCK</div><div class="as">Gérer produits</div></button>
+          <button class="action-btn ab-purple big-button" data-section="categories"><div class="ai">🏷️</div><div class="at">CATÉGORIES</div><div class="as">Organiser</div></button>
+          <button class="action-btn ab-orange big-button" data-section="rapports"><div class="ai">📈</div><div class="at">CHIFFRES</div><div class="as">Voir gains</div></button>
+          <button class="action-btn ab-teal big-button" data-section="inventaire"><div class="ai">📋</div><div class="at">INVENTAIRE</div><div class="as">Voir bénéfices</div></button>
+          <button class="action-btn ab-pink big-button" data-section="credits"><div class="ai">📝</div><div class="at">CRÉDITS</div><div class="as">Gérer dettes</div></button>
         </div>
       </div>
 
-      <!-- ── PAGE: VENDRE ── -->
-      <div class="app-page" id="page-vente">
-        <div class="page-header">
-          <h2>💳 Vendre</h2>
-        </div>
-
-        <!-- Panier -->
+      <!-- VENTE -->
+      <div class="section-page hidden" id="venteSection">
+        <div class="page-header" style="margin-top:6px;"><h2>💳 Vendre</h2></div>
         <div class="card">
           <div class="card-title">🛒 Panier</div>
-          <div id="panierItems" style="min-height:90px;">
-            <div class="panier-empty">
-              <div class="empty-icon">🛒</div>
-              <p>Votre panier est vide</p>
-            </div>
-          </div>
+          <div id="panierItems" style="min-height:80px;"><div style="text-align:center;padding:24px 0;color:var(--muted);"><div style="font-size:36px;margin-bottom:6px;">🛒</div><div style="font-size:13px;font-weight:500;">Votre panier est vide</div></div></div>
         </div>
-
-        <div class="total-bar">
-          <span class="label">TOTAL</span>
-          <span class="amount" id="totalPanier">0 F</span>
-        </div>
-
+        <div class="total-bar"><span class="tbl">TOTAL</span><span class="tba" id="totalPanier">0 F</span></div>
         <button class="btn-encaisser" onclick="showModal('paiement')">💰 ENCAISSER</button>
-        <button id="btnPrintReceipt" onclick="imprimerRecu()" style="display:none;width:100%;margin-top:10px;padding:14px;background:#EFF6FF;color:var(--clr-blue);border:none;border-radius:14px;font-family:'Sora',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">🧾 Imprimer le reçu</button>
-
-        <!-- Choisir produits -->
-        <div class="section-title" style="margin-top:18px;">Choisir produits</div>
-        <div id="categoriesVente" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+        <button id="btnPrintReceipt" onclick="imprimerRecu()" style="display:none;width:100%;margin-top:10px;padding:12px;background:#EFF6FF;color:var(--blue);border:none;border-radius:13px;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">🧾 Imprimer le reçu</button>
+        <div class="section-label" style="margin-top:16px;">Choisir produits</div>
+        <div id="categoriesVente" style="display:grid;grid-template-columns:1fr 1fr;gap:9px;"></div>
       </div>
 
-      <!-- ── PAGE: STOCK ── -->
-      <div class="app-page" id="page-stock">
-        <div class="page-header">
-          <h2>📦 Mon Stock</h2>
-          <button class="btn-primary" onclick="handleAddProductClick()">+ Ajouter</button>
-        </div>
-
-        <div class="chips-row" id="filtreCategories">
-          <button class="chip active filtre-btn" onclick="filtrerProduits('tous')">Tous</button>
-        </div>
-
+      <!-- STOCK -->
+      <div class="section-page hidden" id="stockSection">
+        <div class="page-header" style="margin-top:6px;"><h2>📦 Mon Stock</h2><button class="btn-primary" onclick="handleAddProductClick()">+ Ajouter</button></div>
+        <div id="filtreCategories"><button class="filtre-btn bg-blue-500 text-white" onclick="filtrerProduits('tous')">Tous</button></div>
         <div id="listeProduits"></div>
       </div>
 
-      <!-- ── PAGE: RAPPORTS ── -->
-      <div class="app-page" id="page-rapports">
-        <div class="page-header">
-          <h2>📈 Chiffres</h2>
-          <button id="btnPdfRapports" style="background:#FEE2E2;color:#DC2626;border:none;padding:9px 14px;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;">📄 PDF</button>
-        </div>
+      <!-- CATEGORIES -->
+      <div class="section-page hidden" id="categoriesSection">
+        <div class="page-header" style="margin-top:6px;"><h2>🏷️ Catégories</h2><button class="btn-primary" onclick="showModal('ajoutCategorie')">+ Ajouter</button></div>
+        <input type="text" id="searchCategorie" class="search-bar" placeholder="🔍 Rechercher une catégorie…">
+        <div id="listeCategories"></div>
+      </div>
 
-        <div class="period-select">
-          <label for="periodeRapports">Période :</label>
-          <select id="periodeRapports">
-            <option value="jour">Aujourd'hui</option>
-            <option value="semaine">Cette semaine</option>
-            <option value="mois">Ce mois</option>
-            <option value="tout">Tout</option>
-          </select>
+      <!-- RAPPORTS -->
+      <div class="section-page hidden" id="rapportsSection">
+        <div class="page-header" style="margin-top:6px;"><h2>📈 Chiffres</h2><button class="btn-pdf" id="btnPdfRapports">📄 PDF</button></div>
+        <div class="period-row"><label for="periodeRapports">Période :</label><select id="periodeRapports"><option value="jour">Aujourd'hui</option><option value="semaine">Cette semaine</option><option value="mois">Ce mois</option><option value="tout">Tout</option></select></div>
+        <div class="stat-2x2">
+          <div class="st st-g"><div class="sv" id="recettesJour">0 F</div><div class="sl">Aujourd'hui</div></div>
+          <div class="st st-b"><div class="sv" id="recettesSemaine">0 F</div><div class="sl">Cette semaine</div></div>
+          <div class="st st-y"><div class="sv" id="recettesMois">0 F</div><div class="sl">Ce mois</div></div>
+          <div class="st st-p"><div class="sv" id="recettesTout">0 F</div><div class="sl">Tout</div></div>
         </div>
-
-        <!-- Résumé 4 tiles -->
-        <div class="stat-grid-2x2">
-          <div class="stat-tile tile-green">
-            <div class="t-val" id="recettesJour">0 F</div>
-            <div class="t-label">Aujourd'hui</div>
-          </div>
-          <div class="stat-tile tile-blue">
-            <div class="t-val" id="recettesSemaine">0 F</div>
-            <div class="t-label">Cette semaine</div>
-          </div>
-          <div class="stat-tile tile-yellow">
-            <div class="t-val" id="recettesMois">0 F</div>
-            <div class="t-label">Ce mois</div>
-          </div>
-          <div class="stat-tile tile-purple">
-            <div class="t-val" id="recettesTout">0 F</div>
-            <div class="t-label">Tout</div>
-          </div>
+        <div class="metric-2x2">
+          <div class="mc"><div class="ml">💰 CA encaissé</div><div class="mv" id="caEncaisse" style="color:var(--green);">0 F</div></div>
+          <div class="mc"><div class="ml">⏳ En attente</div><div class="mv" id="caEnAttente" style="color:var(--orange);">0 F</div></div>
+          <div class="mc"><div class="ml">💳 Crédits</div><div class="mv" id="creditsEnCours" style="color:var(--red);">0 F</div></div>
+          <div class="mc"><div class="ml">📊 Recouvrement</div><div class="mv" id="tauxRecouvrement" style="color:var(--blue);">0 %</div></div>
         </div>
-
-        <!-- Métriques -->
-        <div class="metric-row">
-          <div class="metric-card">
-            <div class="m-label">💰 CA encaissé</div>
-            <div class="m-val" id="caEncaisse" style="color:var(--clr-green);">0 F</div>
-          </div>
-          <div class="metric-card">
-            <div class="m-label">⏳ En attente</div>
-            <div class="m-val" id="caEnAttente" style="color:var(--clr-orange);">0 F</div>
-          </div>
-          <div class="metric-card">
-            <div class="m-label">💳 Crédits</div>
-            <div class="m-val" id="creditsEnCours" style="color:#EF4444;">0 F</div>
-          </div>
-          <div class="metric-card">
-            <div class="m-label">📊 Recouvrement</div>
-            <div class="m-val" id="tauxRecouvrement" style="color:var(--clr-blue);">0 %</div>
-          </div>
-        </div>
-
-        <!-- Journal comptable -->
-        <div class="card">
-          <div class="card-title">🧾 Journal comptable</div>
-          <div id="journalComptable"></div>
-        </div>
-
-        <!-- Paiements -->
-        <div class="card">
-          <div class="card-title">💳 Paiements</div>
-          <div id="rapportsPaiements"></div>
-        </div>
-
-        <!-- Produits populaires -->
-        <div class="card">
-          <div class="card-title">🔥 Produits Populaires</div>
-          <div id="produitsPopulaires"></div>
-        </div>
-
-        <!-- Graphiques -->
+        <div class="card"><div class="card-title">🧾 Journal comptable</div><div id="journalComptable"></div></div>
+        <div class="card"><div class="card-title">💳 Paiements</div><div id="rapportsPaiements"></div></div>
+        <div class="card"><div class="card-title">🔥 Produits Populaires</div><div id="produitsPopulaires"></div></div>
         <div class="card">
           <div class="card-title">📊 Graphiques</div>
           <div class="chart-wrap"><canvas id="chartVentesByDay"></canvas></div>
           <div class="chart-wrap"><canvas id="chartTopProduits"></canvas></div>
           <div class="chart-wrap"><canvas id="chartPaiements"></canvas></div>
           <div class="chart-wrap"><canvas id="chartStocksFaibles"></canvas></div>
-          <div style="height:300px;"><canvas id="chartVentesJour"></canvas></div>
+          <div style="height:280px;"><canvas id="chartVentesJour"></canvas></div>
         </div>
-
-        <!-- Historique ventes -->
         <div class="card" id="salesHistory">
           <div class="card-title">📜 Historique des ventes</div>
-          <div class="inv-table-wrap">
-            <table class="history-table">
-              <thead>
-                <tr>
-                  <th>Date</th><th>Produit</th><th>Qté</th><th>Montant</th><th>Paiement</th><th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="salesHistoryBody"></tbody>
-            </table>
+          <div style="overflow-x:auto;">
+            <table class="hist-table"><thead><tr><th>Date</th><th>Produit</th><th>Qté</th><th>Montant</th><th>Paiement</th><th>Actions</th></tr></thead><tbody id="salesHistoryBody"></tbody></table>
           </div>
         </div>
-
-        <div id="creditsStats" class="card">
-          <canvas id="chartCredits" height="150"></canvas>
-        </div>
+        <div id="creditsStats" class="card" style="display:none;"></div>
       </div>
 
-      <!-- ── PAGE: PLUS (Catégories / Inventaire / Crédits) ── -->
-      <div class="app-page" id="page-plus">
-        <div class="page-header" style="margin-top:14px;">
-          <h2>✨ Plus</h2>
-        </div>
-        <div class="more-list">
-          <button class="more-item big-button" data-section="categories">
-            <div class="more-icon" style="background:#EDE9FE;">🏷️</div>
-            <div class="more-item-text">
-              <h3>Catégories</h3>
-              <p>Organiser vos produits</p>
-            </div>
-            <span class="more-chevron">›</span>
-          </button>
-          <button class="more-item big-button" data-section="inventaire">
-            <div class="more-icon" style="background:#ECFDF5;">📋</div>
-            <div class="more-item-text">
-              <h3>Inventaire</h3>
-              <p>Suivre vos bénéfices</p>
-            </div>
-            <span class="more-chevron">›</span>
-          </button>
-          <button class="more-item big-button" data-section="credits">
-            <div class="more-icon" style="background:#F5F3FF;">📝</div>
-            <div class="more-item-text">
-              <h3>Crédits</h3>
-              <p>Gérer les dettes clients</p>
-            </div>
-            <span class="more-chevron">›</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- ── PAGE: CATÉGORIES (section interne) ── -->
-      <div class="app-page" id="page-categories">
-        <div class="page-header" style="margin-top:4px;">
-          <h2>🏷️ Catégories</h2>
-          <button class="btn-primary" onclick="showModal('ajoutCategorie')">+ Ajouter</button>
-        </div>
-        <input type="text" id="searchCategorie" class="search-bar" placeholder="🔍 Rechercher une catégorie…">
-        <div id="listeCategories"></div>
-      </div>
-
-      <!-- ── PAGE: INVENTAIRE ── -->
-      <div class="app-page" id="page-inventaire">
-        <div class="page-header" style="margin-top:4px;">
-          <h2>📦 Inventaire</h2>
-          <button id="btnPdfInventaire" style="background:#FEE2E2;color:#DC2626;border:none;padding:9px 14px;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;">📄 PDF</button>
-        </div>
-
-        <div class="card" style="display:flex;flex-direction:column;gap:10px;padding:14px;">
+      <!-- INVENTAIRE -->
+      <div class="section-page hidden" id="inventaireSection">
+        <div class="page-header" style="margin-top:6px;"><h2>📦 Inventaire</h2><button class="btn-pdf" id="btnPdfInventaire">📄 PDF</button></div>
+        <div class="inv-filters">
           <input type="text" id="searchInventaire" class="search-bar" style="margin:0;" placeholder="🔍 Rechercher un produit…">
           <div style="display:flex;gap:8px;">
-            <select id="filterStock" style="flex:1;padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:12px;font-size:13px;background:#fff;outline:none;">
-              <option value="">Tous les stocks</option>
-              <option value="low">Stock faible (≤5)</option>
-              <option value="out">Rupture</option>
-            </select>
-            <select id="filterPeriode" style="flex:1;padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:12px;font-size:13px;background:#fff;outline:none;">
-              <option value="tout">Tout</option>
-              <option value="jour">Aujourd'hui</option>
-              <option value="semaine">Cette semaine</option>
-              <option value="mois">Ce mois</option>
-            </select>
+            <select id="filterStock" style="flex:1;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:11px;font-size:13px;background:#fff;outline:none;"><option value="">Tous les stocks</option><option value="low">Stock faible (≤5)</option><option value="out">Rupture</option></select>
+            <select id="filterPeriode" style="flex:1;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:11px;font-size:13px;background:#fff;outline:none;"><option value="tout">Tout</option><option value="jour">Aujourd'hui</option><option value="semaine">Cette semaine</option><option value="mois">Ce mois</option></select>
           </div>
         </div>
-
-        <div id="inventaireStats" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;"></div>
-
-        <div class="card chart-wrap">
-          <canvas id="chartInventaire" height="100"></canvas>
+        <div id="inventaireStats"></div>
+        <div class="card">
+          <canvas id="chartInventaire" height="120"></canvas>
           <canvas id="chartTopProduits" style="display:none;"></canvas>
           <canvas id="chartStockAlert" style="display:none;"></canvas>
         </div>
-
-        <div class="card inv-table-wrap">
-          <table class="inv-table">
-            <thead>
-              <tr>
-                <th>Produit</th><th>Achat</th><th>Vente</th>
-                <th style="text-align:center;">Stock</th>
-                <th style="text-align:center;">Vendues</th>
-                <th>Bénéfice</th>
-                <th style="text-align:center;">Marge</th>
-              </tr>
-            </thead>
-            <tbody id="inventaireListe" class="divide-y"></tbody>
-          </table>
+        <div class="card" style="overflow-x:auto;padding:0;">
+          <table class="hist-table" style="min-width:580px;"><thead><tr><th>Produit</th><th>Achat</th><th>Vente</th><th style="text-align:center;">Stock</th><th style="text-align:center;">Vendues</th><th>Bénéfice</th><th style="text-align:center;">Marge %</th></tr></thead><tbody id="inventaireListe"></tbody></table>
         </div>
       </div>
 
-      <!-- ── PAGE: CRÉDITS ── -->
-      <div class="app-page" id="page-credits">
-        <div class="page-header" style="margin-top:4px;">
-          <h2>📝 Crédits</h2>
+      <!-- CREDITS -->
+      <div class="section-page hidden" id="creditsSection">
+        <div class="page-header" style="margin-top:6px;"><h2>📝 Crédits</h2></div>
+        <div class="cred-tiles">
+          <div class="ct"><div class="cv" id="creditsTotalEncours" style="color:var(--primary);">0 F</div><div class="cl">En cours</div></div>
+          <div class="ct"><div class="cv" id="creditsTotalRembourses" style="color:var(--green);">0 F</div><div class="cl">Remboursé</div></div>
+          <div class="ct"><div class="cv" id="creditsTotalImpaye" style="color:var(--red);">0 F</div><div class="cl">Impayés</div></div>
         </div>
-
-        <!-- Résumé -->
-        <div class="credits-summary">
-          <div class="cred-tile">
-            <div class="cv" id="creditsTotalEncours" style="color:var(--clr-primary);">0 F</div>
-            <div class="cl">En cours</div>
-          </div>
-          <div class="cred-tile">
-            <div class="cv" id="creditsTotalRembourses" style="color:var(--clr-green);">0 F</div>
-            <div class="cl">Remboursé</div>
-          </div>
-          <div class="cred-tile">
-            <div class="cv" id="creditsTotalImpaye" style="color:#EF4444;">0 F</div>
-            <div class="cl">Impayés</div>
-          </div>
-        </div>
-
-        <p id="creditsStatus" style="text-align:center;font-size:13px;color:var(--clr-text-muted);margin-bottom:6px;">Chargement…</p>
-        <p id="creditsMontant" style="text-align:center;font-size:14px;font-weight:700;margin-bottom:14px;"></p>
-
-        <!-- Graphique -->
-        <div class="card"><canvas id="chartCreditsPage" height="100"></canvas></div>
-
-        <!-- Formulaire nouveau crédit -->
+        <p id="creditsStatus" style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:4px;">Chargement…</p>
+        <p id="creditsMontant" style="text-align:center;font-size:13px;font-weight:700;margin-bottom:12px;"></p>
+        <div class="card"><canvas id="chartCredits" height="120"></canvas></div>
         <div class="card">
           <div class="card-title">➕ Nouvelle vente à crédit</div>
           <form id="creditForm">
-            <div class="form-group">
-              <label>👤 Client</label>
-              <input type="text" id="creditClient" placeholder="Nom du client">
-            </div>
-            <div class="form-group">
-              <label>📞 Téléphone</label>
-              <input type="tel" id="creditPhone" placeholder="Téléphone">
-            </div>
-            <div class="form-group">
-              <label>📦 Produit</label>
-              <select id="creditProduct"></select>
-            </div>
-            <div class="form-group">
-              <label>🔢 Quantité</label>
-              <input type="number" id="creditQuantity" min="1" value="1">
-            </div>
-            <div class="form-group">
-              <label>📅 Échéance</label>
-              <input type="date" id="creditDueDate">
-            </div>
-            <button type="submit" class="btn-encaisser" style="background:linear-gradient(135deg,var(--clr-primary),var(--clr-accent));">
-              💾 Enregistrer à crédit
-            </button>
+            <div class="form-group"><label>👤 Client</label><input type="text" id="creditClient" placeholder="Nom du client"></div>
+            <div class="form-group"><label>📞 Téléphone</label><input type="tel" id="creditPhone" placeholder="Téléphone"></div>
+            <div class="form-group"><label>📦 Produit</label><select id="creditProduct"></select></div>
+            <div class="form-group"><label>🔢 Quantité</label><input type="number" id="creditQuantity" min="1" value="1"></div>
+            <div class="form-group"><label>📅 Échéance</label><input type="date" id="creditDueDateSection"></div>
+            <button type="submit" class="btn-encaisser" style="background:linear-gradient(135deg,var(--primary),var(--accent));">💾 Enregistrer à crédit</button>
           </form>
         </div>
-
-        <!-- Historique -->
         <div class="card">
           <div class="card-title">📜 Historique des crédits</div>
-          <p id="creditsResume" style="font-size:13px;color:var(--clr-text-muted);margin-bottom:12px;text-align:center;"></p>
-          <div class="inv-table-wrap">
-            <table class="history-table">
-              <thead>
-                <tr>
-                  <th>Date</th><th>Client</th><th>Produit</th>
-                  <th>Qté</th><th>Montant</th><th>Échéance</th>
-                  <th>Statut</th><th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="creditsHistoryBody"></tbody>
-            </table>
+          <p id="creditsResume" style="font-size:12px;color:var(--muted);margin-bottom:10px;text-align:center;"></p>
+          <div style="overflow-x:auto;">
+            <table class="hist-table" style="min-width:560px;"><thead><tr><th>Date</th><th>Client</th><th>Produit</th><th>Qté</th><th>Montant</th><th>Échéance</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="creditsHistoryBody"></tbody></table>
           </div>
         </div>
-
-        <!-- Tableau crédits legacy (pour compatibilité JS) -->
-        <div style="display:none;">
-          <table><tbody id="creditsListe"></tbody></table>
-          <table><tbody id="creditsListeLegacy"></tbody></table>
-        </div>
+        <div style="display:none;"><table><tbody id="creditsListe"></tbody></table></div>
       </div>
 
-    </div><!-- end page-content -->
+    </div><!-- end scroll-content -->
 
-    <!-- ═══════════ BOTTOM NAV ═══════════ -->
+    <!-- BOTTOM NAV -->
     <nav class="bottom-nav" id="bottomNav">
-      <button class="nav-item active" data-nav="accueil">
-        <span class="nav-icon">🏠</span>
-        <span class="nav-label">Accueil</span>
-      </button>
-      <button class="nav-item" data-nav="stock">
-        <span class="nav-icon">📦</span>
-        <span class="nav-label">Stock</span>
-      </button>
-      <!-- FAB Vendre -->
-      <button class="nav-fab" data-nav="vente" id="navFabVendre">
-        💳
-      </button>
-      <button class="nav-item" data-nav="rapports">
-        <span class="nav-icon">📈</span>
-        <span class="nav-label">Chiffres</span>
-      </button>
-      <button class="nav-item" data-nav="plus">
-        <span class="nav-icon">☰</span>
-        <span class="nav-label">Plus</span>
-      </button>
+      <button class="nav-btn active" id="nav-menu" onclick="navTo('menu')"><span class="ni">🏠</span><span class="nl">Accueil</span></button>
+      <button class="nav-btn" id="nav-stock" onclick="navTo('stock')"><span class="ni">📦</span><span class="nl">Stock</span></button>
+      <button class="nav-fab" onclick="navTo('vente')">💳</button>
+      <button class="nav-btn" id="nav-rapports" onclick="navTo('rapports')"><span class="ni">📈</span><span class="nl">Chiffres</span></button>
+      <button class="nav-btn" id="nav-plus" onclick="openPlusSheet()"><span class="ni">☰</span><span class="nl">Plus</span></button>
     </nav>
+  </div>
 
-  </div><!-- end app-shell -->
+  <!-- PLUS SHEET -->
+  <div id="plusSheet" style="display:none;position:fixed;inset:0;z-index:110;display:none;flex-direction:column;justify-content:flex-end;">
+    <div style="position:absolute;inset:0;background:rgba(15,10,40,.45);backdrop-filter:blur(4px);" onclick="closePlusSheet()"></div>
+    <div style="position:relative;background:#fff;border-radius:24px 24px 0 0;padding:10px 18px calc(var(--nav-h) + var(--safe-b) + 10px);">
+      <div style="width:36px;height:4px;background:#E5E7EB;border-radius:2px;margin:0 auto 16px;"></div>
+      <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:800;color:var(--text);margin-bottom:14px;">✨ Plus</div>
+      <button class="sheet-item big-button" data-section="categories" onclick="closePlusSheet();navTo('categories');"><div class="sheet-icon" style="background:#EDE9FE;">🏷️</div><div><h3>Catégories</h3><p>Organiser vos produits</p></div><span class="sheet-chevron">›</span></button>
+      <button class="sheet-item big-button" data-section="inventaire" onclick="closePlusSheet();navTo('inventaire');"><div class="sheet-icon" style="background:#ECFDF5;">📋</div><div><h3>Inventaire</h3><p>Suivre vos bénéfices</p></div><span class="sheet-chevron">›</span></button>
+      <button class="sheet-item big-button" data-section="credits" onclick="closePlusSheet();navTo('credits');"><div class="sheet-icon" style="background:#F5F3FF;">📝</div><div><h3>Crédits</h3><p>Gérer les dettes clients</p></div><span class="sheet-chevron">›</span></button>
+    </div>
+  </div>
 
-
-  <!-- ═══════════ MODALES ═══════════ -->
-  <div class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4" id="modalOverlay" style="backdrop-filter:blur(5px);">
-
-    <!-- Modal Ajout Produit -->
-    <div class="modal-box hidden fade-in" id="modalAjoutProduit">
+  <!-- MODALES -->
+  <div class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4" id="modalOverlay">
+    <!-- Ajout Produit -->
+    <div class="modal-box hidden" id="modalAjoutProduit">
       <div class="modal-title">📦 Nouveau Produit</div>
-      <div class="form-group"><label>Nom</label><input class="w-full" id="nomProduit" placeholder="Nom du produit" type="text"/></div>
+      <div class="form-group"><label>Nom</label><input id="nomProduit" placeholder="Nom du produit" type="text"></div>
       <div class="form-group"><label>Catégorie</label><select id="categorieProduit"><option value="">Choisir catégorie</option></select></div>
-      <div class="form-group"><label>Prix achat (F CFA)</label><input id="prixAchatProduit" placeholder="Prix achat" type="number"/></div>
-      <div class="form-group"><label>Prix vente (F CFA)</label><input id="prixProduit" placeholder="Prix vente" type="number"/></div>
-      <div class="form-group"><label>Quantité en stock</label><input id="stockProduit" placeholder="Stock" type="number"/></div>
-      <div class="form-group"><label>Description</label><textarea id="descriptionProduit" placeholder="Description (optionnel)" style="height:72px;"></textarea></div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="hideModal()">Annuler</button>
-        <button class="btn-confirm" onclick="ajouterProduit()">Ajouter</button>
-      </div>
+      <div class="form-group"><label>Prix achat (F CFA)</label><input id="prixAchatProduit" placeholder="Prix achat" type="number"></div>
+      <div class="form-group"><label>Prix vente (F CFA)</label><input id="prixProduit" placeholder="Prix vente" type="number"></div>
+      <div class="form-group"><label>Quantité en stock</label><input id="stockProduit" placeholder="Stock" type="number"></div>
+      <div class="form-group"><label>Description</label><textarea id="descriptionProduit" placeholder="Description (optionnel)" style="height:66px;resize:none;"></textarea></div>
+      <div class="modal-actions"><button class="btn-cancel" onclick="hideModal()">Annuler</button><button class="btn-confirm" onclick="ajouterProduit()">Ajouter</button></div>
     </div>
-
-    <!-- Modal Éditer Produit -->
-    <div class="modal-box hidden fade-in" id="modalEditProduit">
+    <!-- Edit Produit -->
+    <div class="modal-box hidden" id="modalEditProduit">
       <div class="modal-title">✏️ Modifier Produit</div>
-      <div class="form-group"><label>Nom</label><input id="editNomProduit" placeholder="Nom du produit" type="text"/></div>
+      <div class="form-group"><label>Nom</label><input id="editNomProduit" placeholder="Nom" type="text"></div>
       <div class="form-group"><label>Catégorie</label><select id="editCategorieProduit"><option value="">Choisir catégorie</option></select></div>
-      <div class="form-group"><label>Prix achat (F CFA)</label><input id="editPrixAchatProduit" placeholder="Prix achat" type="number"/></div>
-      <div class="form-group"><label>Prix vente (F CFA)</label><input id="editPrixProduit" placeholder="Prix vente" type="number"/></div>
-      <div class="form-group"><label>Stock</label><input id="editStockProduit" placeholder="Quantité en stock" type="number"/></div>
-      <div class="form-group"><label>Description</label><textarea id="editDescriptionProduit" placeholder="Description (optionnel)" style="height:72px;"></textarea></div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="hideModal()">Annuler</button>
-        <button class="btn-confirm" onclick="mettreAJourProduit()">Mettre à jour</button>
-      </div>
+      <div class="form-group"><label>Prix achat</label><input id="editPrixAchatProduit" placeholder="Prix achat" type="number"></div>
+      <div class="form-group"><label>Prix vente</label><input id="editPrixProduit" placeholder="Prix vente" type="number"></div>
+      <div class="form-group"><label>Stock</label><input id="editStockProduit" placeholder="Stock" type="number"></div>
+      <div class="form-group"><label>Description</label><textarea id="editDescriptionProduit" placeholder="Description" style="height:66px;resize:none;"></textarea></div>
+      <div class="modal-actions"><button class="btn-cancel" onclick="hideModal()">Annuler</button><button class="btn-confirm" onclick="mettreAJourProduit()">Mettre à jour</button></div>
     </div>
-
-    <!-- Modal Ajout Catégorie -->
-    <div id="modalAjoutCategorie" class="modal-box hidden fade-in">
+    <!-- Ajout Catégorie -->
+    <div class="modal-box hidden" id="modalAjoutCategorie">
       <div class="modal-title">🏷️ Nouvelle Catégorie</div>
-      <div class="form-group">
-        <label>Nom</label>
-        <input id="nomCategorie" type="text" placeholder="Nom de la catégorie"/>
-      </div>
+      <div class="form-group"><label>Nom</label><input id="nomCategorie" type="text" placeholder="Nom de la catégorie"></div>
       <div class="form-group"><label>Choisir un emoji</label></div>
       <div class="emoji-grid">
-        <button class="emoji-btn" onclick="selectEmoji('👕')">👕</button>
-        <button class="emoji-btn" onclick="selectEmoji('👖')">👖</button>
-        <button class="emoji-btn" onclick="selectEmoji('👗')">👗</button>
-        <button class="emoji-btn" onclick="selectEmoji('👔')">👔</button>
-        <button class="emoji-btn" onclick="selectEmoji('👟')">👟</button>
-        <button class="emoji-btn" onclick="selectEmoji('👠')">👠</button>
-        <button class="emoji-btn" onclick="selectEmoji('🎩')">🎩</button>
-        <button class="emoji-btn" onclick="selectEmoji('👜')">👜</button>
-        <button class="emoji-btn" onclick="selectEmoji('💍')">💍</button>
-        <button class="emoji-btn" onclick="selectEmoji('⌚')">⌚</button>
-        <button class="emoji-btn" onclick="selectEmoji('💄')">💄</button>
-        <button class="emoji-btn" onclick="selectEmoji('💅')">💅</button>
-        <button class="emoji-btn" onclick="selectEmoji('🧴')">🧴</button>
-        <button class="emoji-btn" onclick="selectEmoji('🪞')">🪞</button>
-        <button class="emoji-btn" onclick="selectEmoji('🍎')">🍎</button>
-        <button class="emoji-btn" onclick="selectEmoji('🍌')">🍌</button>
-        <button class="emoji-btn" onclick="selectEmoji('🥦')">🥦</button>
-        <button class="emoji-btn" onclick="selectEmoji('🍞')">🍞</button>
-        <button class="emoji-btn" onclick="selectEmoji('🥩')">🥩</button>
-        <button class="emoji-btn" onclick="selectEmoji('🍔')">🍔</button>
-        <button class="emoji-btn" onclick="selectEmoji('🥤')">🥤</button>
-        <button class="emoji-btn" onclick="selectEmoji('📱')">📱</button>
-        <button class="emoji-btn" onclick="selectEmoji('💻')">💻</button>
-        <button class="emoji-btn" onclick="selectEmoji('🎧')">🎧</button>
-        <button class="emoji-btn" onclick="selectEmoji('🎮')">🎮</button>
-        <button class="emoji-btn" onclick="selectEmoji('📺')">📺</button>
-        <button class="emoji-btn" onclick="selectEmoji('🔋')">🔋</button>
-        <button class="emoji-btn" onclick="selectEmoji('🛋️')">🛋️</button>
-        <button class="emoji-btn" onclick="selectEmoji('🛏️')">🛏️</button>
-        <button class="emoji-btn" onclick="selectEmoji('🪑')">🪑</button>
-        <button class="emoji-btn" onclick="selectEmoji('⚽')">⚽</button>
-        <button class="emoji-btn" onclick="selectEmoji('🏀')">🏀</button>
-        <button class="emoji-btn" onclick="selectEmoji('🥊')">🥊</button>
-        <button class="emoji-btn" onclick="selectEmoji('🧸')">🧸</button>
-        <button class="emoji-btn" onclick="selectEmoji('🎲')">🎲</button>
-        <button class="emoji-btn" onclick="selectEmoji('🔧')">🔧</button>
-        <button class="emoji-btn" onclick="selectEmoji('🧰')">🧰</button>
+        <button class="emoji-btn" onclick="selectEmoji('👕')">👕</button><button class="emoji-btn" onclick="selectEmoji('👖')">👖</button><button class="emoji-btn" onclick="selectEmoji('👗')">👗</button><button class="emoji-btn" onclick="selectEmoji('👔')">👔</button><button class="emoji-btn" onclick="selectEmoji('👟')">👟</button><button class="emoji-btn" onclick="selectEmoji('👠')">👠</button><button class="emoji-btn" onclick="selectEmoji('🎩')">🎩</button><button class="emoji-btn" onclick="selectEmoji('👜')">👜</button><button class="emoji-btn" onclick="selectEmoji('💍')">💍</button><button class="emoji-btn" onclick="selectEmoji('⌚')">⌚</button><button class="emoji-btn" onclick="selectEmoji('💄')">💄</button><button class="emoji-btn" onclick="selectEmoji('💅')">💅</button><button class="emoji-btn" onclick="selectEmoji('🧴')">🧴</button><button class="emoji-btn" onclick="selectEmoji('🪞')">🪞</button><button class="emoji-btn" onclick="selectEmoji('🍎')">🍎</button><button class="emoji-btn" onclick="selectEmoji('🍌')">🍌</button><button class="emoji-btn" onclick="selectEmoji('🥦')">🥦</button><button class="emoji-btn" onclick="selectEmoji('🍞')">🍞</button><button class="emoji-btn" onclick="selectEmoji('🥩')">🥩</button><button class="emoji-btn" onclick="selectEmoji('🍔')">🍔</button><button class="emoji-btn" onclick="selectEmoji('🥤')">🥤</button><button class="emoji-btn" onclick="selectEmoji('📱')">📱</button><button class="emoji-btn" onclick="selectEmoji('💻')">💻</button><button class="emoji-btn" onclick="selectEmoji('🎧')">🎧</button><button class="emoji-btn" onclick="selectEmoji('🎮')">🎮</button><button class="emoji-btn" onclick="selectEmoji('📺')">📺</button><button class="emoji-btn" onclick="selectEmoji('🔋')">🔋</button><button class="emoji-btn" onclick="selectEmoji('🛋️')">🛋️</button><button class="emoji-btn" onclick="selectEmoji('🛏️')">🛏️</button><button class="emoji-btn" onclick="selectEmoji('🪑')">🪑</button><button class="emoji-btn" onclick="selectEmoji('⚽')">⚽</button><button class="emoji-btn" onclick="selectEmoji('🏀')">🏀</button><button class="emoji-btn" onclick="selectEmoji('🥊')">🥊</button><button class="emoji-btn" onclick="selectEmoji('🧸')">🧸</button><button class="emoji-btn" onclick="selectEmoji('🎲')">🎲</button><button class="emoji-btn" onclick="selectEmoji('🔧')">🔧</button><button class="emoji-btn" onclick="selectEmoji('🧰')">🧰</button>
       </div>
-      <input id="emojiCategorie" type="hidden" value="🏷️"/>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="hideModal()">Annuler</button>
-        <button class="btn-confirm" onclick="ajouterCategorie()">Ajouter</button>
-      </div>
+      <input id="emojiCategorie" type="hidden" value="🏷️">
+      <div class="modal-actions"><button class="btn-cancel" onclick="hideModal()">Annuler</button><button class="btn-confirm" onclick="ajouterCategorie()">Ajouter</button></div>
     </div>
-
-    <!-- Modal Paiement -->
-    <div class="modal-box hidden fade-in" id="modalPaiement">
+    <!-- Paiement -->
+    <div class="modal-box hidden" id="modalPaiement">
       <div class="modal-title">💳 Mode de paiement</div>
-      <button class="pay-btn pay-especes" onclick="finaliserVente('especes')"><span>💵</span> Espèces</button>
-      <button class="pay-btn pay-wave"    onclick="finaliserVente('wave')"><span>📱</span> Wave</button>
-      <button class="pay-btn pay-orange"  onclick="finaliserVente('orange')"><span>📞</span> Orange Money</button>
-      <button class="pay-btn pay-credit"  onclick="showModalCredit()"><span>📝</span> Crédit</button>
-      <button onclick="hideModal()" style="width:100%;padding:14px;background:#F3F4F6;border:none;border-radius:14px;font-family:'Sora',sans-serif;font-weight:700;font-size:14px;cursor:pointer;color:#6B7280;">Annuler</button>
+      <button class="pay-btn pay-g" onclick="finaliserVente('especes')"><span>💵</span> Espèces</button>
+      <button class="pay-btn pay-b" onclick="finaliserVente('wave')"><span>📱</span> Wave</button>
+      <button class="pay-btn pay-o" onclick="finaliserVente('orange')"><span>📞</span> Orange Money</button>
+      <button class="pay-btn pay-p" onclick="showModalCredit()"><span>📝</span> Crédit</button>
+      <button class="pay-cancel" onclick="hideModal()">Annuler</button>
     </div>
-
-    <!-- Modal Crédit vente -->
-    <div class="modal-box hidden fade-in" id="modalCredit">
+    <!-- Crédit depuis paiement -->
+    <div class="modal-box hidden" id="modalCredit">
       <div class="modal-title">📝 Vente à Crédit</div>
-      <div class="form-group"><label>👤 Nom du client</label><input type="text" id="creditClientName" placeholder="Nom du client"/></div>
-      <div class="form-group"><label>📞 Téléphone</label><input type="tel" id="creditClientPhone" placeholder="Téléphone"/></div>
-      <div class="form-group"><label>📅 Échéance</label><input type="date" id="creditDueDateModal"/></div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="hideModalCredit()">Annuler</button>
-        <button class="btn-confirm" onclick="finaliserVenteCredit()">✅ Enregistrer</button>
-      </div>
+      <div class="form-group"><label>👤 Nom du client</label><input type="text" id="creditClientName" placeholder="Nom du client"></div>
+      <div class="form-group"><label>📞 Téléphone</label><input type="tel" id="creditClientPhone" placeholder="Téléphone"></div>
+      <div class="form-group"><label>📅 Échéance</label><input type="date" id="creditDueDate"></div>
+      <div class="modal-actions"><button class="btn-cancel" onclick="hideModalCredit()">Annuler</button><button class="btn-confirm" onclick="finaliserVenteCredit()">✅ Enregistrer</button></div>
     </div>
-
-    <!-- Modal Modifier Vente -->
-    <div id="modalModifierVente" class="modal-box hidden fade-in">
+    <!-- Modifier vente -->
+    <div id="modalModifierVente" class="modal-box hidden">
       <div class="modal-title">✏️ Modifier la vente</div>
       <form id="formModifierVente">
         <input type="hidden" id="venteId">
         <div class="form-group"><label>Quantité</label><input type="number" id="venteQuantite" required></div>
-        <div class="form-group">
-          <label>Méthode de paiement</label>
-          <select id="ventePaiement">
-            <option value="especes">Espèces</option>
-            <option value="wave">Wave</option>
-            <option value="orange">Orange Money</option>
-          </select>
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" onclick="fermerModal()">Annuler</button>
-          <button type="submit" class="btn-confirm">Enregistrer</button>
-        </div>
+        <div class="form-group"><label>Méthode de paiement</label><select id="ventePaiement"><option value="especes">Espèces</option><option value="wave">Wave</option><option value="orange">Orange Money</option></select></div>
+        <div class="modal-actions"><button type="button" class="btn-cancel" onclick="fermerModal()">Annuler</button><button type="submit" class="btn-confirm">Enregistrer</button></div>
       </form>
-    </div>
-
-  </div><!-- end modalOverlay -->
-
-  <!-- Modal Remboursement -->
-  <div id="modalRemboursement" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center" style="backdrop-filter:blur(5px);">
-    <div class="modal-box" style="max-width:360px;">
-      <div class="modal-title">💰 Remboursement</div>
-      <input type="hidden" id="remboursementVenteId">
-      <button class="pay-btn pay-especes" onclick="confirmerRemboursement('especes')">💵 Espèces</button>
-      <button class="pay-btn pay-wave"    onclick="confirmerRemboursement('wave')">📱 Wave</button>
-      <button class="pay-btn pay-orange"  onclick="confirmerRemboursement('orange')">📞 Orange Money</button>
-      <button class="btn-cancel" style="width:100%;" onclick="hideModalRemboursement()">❌ Annuler</button>
     </div>
   </div>
 
-  <!-- Modal Premium -->
-  <div id="premiumModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50" style="backdrop-filter:blur(5px);">
-    <div class="modal-box" style="max-width:380px;">
-      <div class="premium-card">
-        <h2>🚀 Passez en Premium</h2>
-        <p>Votre plan <strong>Free</strong> permet jusqu'à <strong>5 produits</strong>. Contactez-nous pour débloquer un nombre illimité.</p>
-      </div>
-      <div style="background:#F9FAFB;border-radius:16px;padding:16px;text-align:center;font-size:14px;margin-bottom:16px;">
-        📞 <strong>+221 78 157 10 09</strong> ou <strong>+221 77 348 57 91</strong>
-      </div>
-      <button class="btn-confirm" style="width:100%;" onclick="hideModalById('premiumModal'); showModalById('contactModal')">Passer en Premium</button>
-    </div>
+  <!-- Remboursement -->
+  <div id="modalRemboursement" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4" style="backdrop-filter:blur(5px);">
+    <div class="modal-box"><div class="modal-title">💰 Remboursement</div><input type="hidden" id="remboursementVenteId"><button class="pay-btn pay-g" onclick="confirmerRemboursement('especes')">💵 Espèces</button><button class="pay-btn pay-b" onclick="confirmerRemboursement('wave')">📱 Wave</button><button class="pay-btn pay-o" onclick="confirmerRemboursement('orange')">📞 Orange Money</button><button class="pay-cancel" onclick="hideModalRemboursement()">❌ Annuler</button></div>
   </div>
 
-  <!-- Modal Contact / Upgrade -->
-  <div id="contactModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50" style="backdrop-filter:blur(5px);">
-    <div class="modal-box" style="max-width:420px;">
-      <div class="modal-title">🚀 Passer en Premium</div>
-      <form id="upgradeForm">
-        <div class="form-group"><label>Téléphone (WhatsApp)</label><input type="tel" id="phone" placeholder="Numéro WhatsApp" required></div>
-        <div class="form-group">
-          <label>Moyen de paiement</label>
-          <select id="payment_method" required>
-            <option value="">-- Choisir --</option>
-            <option value="wave">Wave</option>
-            <option value="orange">Orange Money</option>
-            <option value="cash">Espèces</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Montant</label><input type="number" id="amount" value="5000" readonly></div>
-        <input type="hidden" id="expiration">
-        <div class="form-group"><label>Expiration</label><input type="text" id="expiration_display" readonly></div>
-        <button type="submit" class="btn-confirm" style="width:100%;">Envoyer</button>
-      </form>
-      <div style="text-align:center;font-size:13px;color:var(--clr-text-muted);margin-top:14px;">
-        📞 <strong>+221 78 157 10 09</strong> · <strong>+221 77 348 57 91</strong>
-      </div>
-      <button onclick="hideModalById('contactModal')" style="display:block;margin:12px auto 0;background:none;border:none;color:var(--clr-text-muted);cursor:pointer;font-size:14px;">Annuler</button>
-    </div>
+  <!-- Premium -->
+  <div id="premiumModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4" style="backdrop-filter:blur(5px);">
+    <div class="modal-box"><div style="background:linear-gradient(135deg,#EDE9FE,#FCE7F3);border-radius:14px;padding:18px;text-align:center;margin-bottom:14px;"><h2 style="font-family:'Sora',sans-serif;font-size:17px;font-weight:800;color:#5B21B6;margin-bottom:7px;">🚀 Passez en Premium</h2><p style="font-size:13px;color:#4C1D95;line-height:1.5;">Votre plan <strong>Free</strong> permet jusqu'à <strong>5 produits</strong>. Contactez-nous pour débloquer un nombre illimité.</p></div><div style="background:#F9FAFB;border-radius:14px;padding:14px;text-align:center;font-size:13px;margin-bottom:14px;">📞 <strong>+221 78 157 10 09</strong> ou <strong>+221 77 348 57 91</strong></div><button class="btn-confirm" style="width:100%;" onclick="hideModalById('premiumModal'); showModalById('contactModal')">Passer en Premium</button></div>
+  </div>
+
+  <!-- Contact/Upgrade -->
+  <div id="contactModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4" style="backdrop-filter:blur(5px);">
+    <div class="modal-box"><div class="modal-title">🚀 Passer en Premium</div><form id="upgradeForm"><div class="form-group"><label>Téléphone (WhatsApp)</label><input type="tel" id="phone" placeholder="Numéro WhatsApp" required></div><div class="form-group"><label>Moyen de paiement</label><select id="payment_method" required><option value="">-- Choisir --</option><option value="wave">Wave</option><option value="orange">Orange Money</option><option value="cash">Espèces</option></select></div><div class="form-group"><label>Montant</label><input type="number" id="amount" value="5000" readonly></div><input type="hidden" id="expiration"><div class="form-group"><label>Expiration</label><input type="text" id="expiration_display" readonly></div><button type="submit" class="btn-confirm" style="width:100%;">Envoyer</button></form><div style="text-align:center;font-size:12px;color:#6B7280;margin-top:12px;">📞 <strong>+221 78 157 10 09</strong> · <strong>+221 77 348 57 91</strong></div><button onclick="hideModalById('contactModal')" style="display:block;margin:10px auto 0;background:none;border:none;color:#6B7280;cursor:pointer;font-size:13px;">Annuler</button></div>
   </div>
 
   <div id="rapportLoading" style="display:none;"></div>
+  <template id="offline-page"><!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Hors ligne</title><style>body{font-family:sans-serif;text-align:center;padding:50px;background:#f9f9f9;}h2{color:#7C3AED;}p{color:#444;}</style></head><body><h2>⚠️ Hors connexion</h2><p>Vos données locales restent accessibles.</p></body></html></template>
 
-  <template id="offline-page">
-    <!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Hors ligne</title>
-    <style>body{font-family:sans-serif;text-align:center;padding:50px;background:#f9f9f9;}h2{color:#6D28D9;}p{color:#444;}</style>
-    </head><body><h2>⚠️ Vous êtes hors connexion</h2><p>Pas d'inquiétude, vos données locales restent accessibles.</p></body></html>
-  </template>
-
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
-
-  <!-- ═══ NAVIGATION ROUTER ═══ -->
+  <!-- ROUTER -->
   <script>
-    // ── Page mapping: nav-key → page id + section id (for JS compatibility) ──
-    const NAV_MAP = {
-      accueil:    { page: 'page-accueil',    section: 'menuSection' },
-      vente:      { page: 'page-vente',      section: 'venteSection' },
-      stock:      { page: 'page-stock',      section: 'stockSection' },
-      rapports:   { page: 'page-rapports',   section: 'rapportsSection' },
-      plus:       { page: 'page-plus',       section: null },
-      categories: { page: 'page-categories', section: 'categoriesSection' },
-      inventaire: { page: 'page-inventaire', section: 'inventaireSection' },
-      credits:    { page: 'page-credits',    section: 'creditsSection' },
-    };
-
-    // The big-button data-section values the existing JS uses
-    const SECTION_TO_NAV = {
-      vente:      'vente',
-      stock:      'stock',
-      rapports:   'rapports',
-      categories: 'categories',
-      inventaire: 'inventaire',
-      credits:    'credits',
-    };
-
-    let currentNav = 'accueil';
-    let navHistory = [];
-
-    // Pages that are accessible from bottom nav
-    const BOTTOM_NAV_PAGES = ['accueil','vente','stock','rapports','plus'];
-
-    function navigateTo(key, pushHistory = true) {
-      if (!NAV_MAP[key]) return;
-      if (pushHistory && currentNav !== key) navHistory.push(currentNav);
-      currentNav = key;
-
-      // Hide all pages
-      document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
-      // Show target page
-      const pageEl = document.getElementById(NAV_MAP[key].page);
-      if (pageEl) pageEl.classList.add('active');
-
-      // Sync hidden sections for JS compatibility
-      document.querySelectorAll('[id$="Section"]').forEach(s => s.classList.add('hidden'));
-      if (NAV_MAP[key].section) {
-        const sec = document.getElementById(NAV_MAP[key].section);
-        if (sec) sec.classList.remove('hidden');
-      }
-
-      // Update bottom nav active state
-      document.querySelectorAll('.nav-item[data-nav]').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.nav === key);
-      });
-
-      // Back button: show if not a primary nav page
-      const backBtn = document.getElementById('backBtn');
-      const isPrimary = BOTTOM_NAV_PAGES.includes(key);
-      backBtn.style.display = isPrimary ? 'none' : 'flex';
-
-      // Today float: only show on accueil & vente
-      const floatCard = document.getElementById('todayFloatCard');
-      if (floatCard) floatCard.style.display = ['accueil','vente'].includes(key) ? 'grid' : 'none';
-
-      // Scroll top
-      document.querySelector('.page-content').scrollTop = 0;
-
-      // Dispatch custom event so app.js can react (equivalent to old showSection)
-      window.dispatchEvent(new CustomEvent('pageChange', { detail: { key, section: NAV_MAP[key].section } }));
+    function updateNavUI(section) {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      const map = { menu:'nav-menu', stock:'nav-stock', rapports:'nav-rapports' };
+      if (map[section]) document.getElementById(map[section])?.classList.add('active');
+      else if (['categories','inventaire','credits'].includes(section)) document.getElementById('nav-plus')?.classList.add('active');
     }
-
-    // Back button
-    document.getElementById('backBtn').addEventListener('click', () => {
-      if (navHistory.length > 0) {
-        const prev = navHistory.pop();
-        navigateTo(prev, false);
-      } else {
-        navigateTo('accueil', false);
+    function navTo(section) {
+      closePlusSheet();
+      if (window.showSection) window.showSection(section);
+    }
+    function openPlusSheet() {
+      const s = document.getElementById('plusSheet');
+      s.style.display = 'flex';
+    }
+    function closePlusSheet() {
+      const s = document.getElementById('plusSheet');
+      s.style.display = 'none';
+    }
+    window.addEventListener('load', () => {
+      const orig = window.showSection;
+      if (typeof orig === 'function') {
+        window.showSection = function(section) {
+          orig(section);
+          updateNavUI(section);
+          const sc = document.querySelector('.scroll-content');
+          if (sc) sc.scrollTop = 0;
+        };
       }
+      updateNavUI('menu');
     });
-
-    // Bottom nav clicks
-    document.querySelectorAll('.nav-item[data-nav], .nav-fab[data-nav]').forEach(btn => {
-      btn.addEventListener('click', () => navigateTo(btn.dataset.nav));
-    });
-
-    // Big buttons (existing JS compatibility)
-    document.addEventListener('click', e => {
-      const btn = e.target.closest('[data-section]');
-      if (btn) {
-        const sec = btn.dataset.section;
-        if (SECTION_TO_NAV[sec]) navigateTo(SECTION_TO_NAV[sec]);
-      }
-    });
-
-    // Expose showSection globally for app.js compatibility
-    window.showSection = function(sectionId) {
-      const entry = Object.entries(NAV_MAP).find(([,v]) => v.section === sectionId);
-      if (entry) navigateTo(entry[0]);
-    };
-
-    // Init
-    navigateTo('accueil', false);
+    window.navTo = navTo;
+    window.openPlusSheet = openPlusSheet;
+    window.closePlusSheet = closePlusSheet;
   </script>
 
   <script type="module" src="js/app.js"></script>

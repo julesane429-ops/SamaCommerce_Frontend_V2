@@ -13,22 +13,25 @@ import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier
 
 
 export function showSection(section) {
-  const sections = ['menu', 'vente', 'stock', 'categories', 'rapports', 'inventaire', 'credits',
-                  'clients', 'fournisseurs', 'commandes', 'livraisons'];
+  const sections = [
+    'menu','vente','stock','categories','rapports','inventaire','credits',
+    'clients','fournisseurs','commandes','livraisons'   // ← NOUVEAU
+  ];
+ 
   sections.forEach(function (s) {
     const el = document.getElementById(s + 'Section');
     if (el) el.classList.add('hidden');
   });
-
+ 
   const target = document.getElementById(section + 'Section');
   if (target) target.classList.remove('hidden');
-
+ 
   const backBtn = document.getElementById('backBtn');
   if (backBtn) backBtn.style.display = (section === 'menu') ? 'none' : 'block';
-
-  // ✅ utiliser le setter
+ 
   setCurrentSection(section);
-
+ 
+  // Sections existantes
   if (section === 'vente') {
     afficherCategoriesVente();
     afficherPanier();
@@ -47,8 +50,17 @@ export function showSection(section) {
     afficherCredits();
     remplirSelectProduitsCredit();
   }
+ 
+  // ── Nouvelles sections ── dispatch event pour les modules autonomes
+  else if (['clients','fournisseurs','commandes','livraisons'].includes(section)) {
+    window.dispatchEvent(new CustomEvent('pageChange', { detail: { key: section } }));
+  }
+ 
+  // Scroll en haut à chaque changement de section
+  const sc = document.querySelector('.scroll-content');
+  if (sc) sc.scrollTop = 0;
 }
-
+ 
 window.showSection = showSection;
 
 

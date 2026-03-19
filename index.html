@@ -482,6 +482,20 @@
                 <div id="livraisonsList"></div>
             </div>
 
+            <!-- ══════════ SECTION PROFIL ══════════ -->
+<div class="section-page hidden" id="profilSection">
+  <div class="page-header" style="margin-top:6px;">
+    <h2>👤 Mon Profil</h2>
+    <button class="btn-primary" onclick="window.loadProfile()">🔄</button>
+  </div>
+  <div id="profilContent">
+    <!-- Rempli dynamiquement par profil.js -->
+    <div style="text-align:center;padding:40px 0;color:var(--muted);">
+      <div style="font-size:32px;margin-bottom:8px;">⏳</div>
+      <div>Chargement du profil…</div>
+    </div>
+  </div>
+</div>
 
         </div><!-- end scroll-content -->
 
@@ -565,6 +579,14 @@
                 </div>
                 <span class="sheet-chevron">›</span>
             </button>
+            <button class="sheet-item" onclick="closePlusSheet();navTo('profil');">
+  <div class="sheet-icon" style="background:#EDE9FE;">👤</div>
+  <div>
+    <h3>Mon Profil</h3>
+    <p>Boutique · Mot de passe · Plan</p>
+  </div>
+  <span class="sheet-chevron">›</span>
+</button>
         </div>
     </div>
 
@@ -796,7 +818,7 @@
             const map = { menu: 'nav-menu', stock: 'nav-stock', rapports: 'nav-rapports' };
             if (map[section]) document.getElementById(map[section])?.classList.add('active');
             else if (['categories', 'inventaire', 'credits', 'clients',
-                'fournisseurs', 'commandes', 'livraisons'].includes(section)) document.getElementById('nav-plus')?.classList.add('active');
+                'fournisseurs', 'commandes', 'livraisons','profil'].includes(section)) document.getElementById('nav-plus')?.classList.add('active');
         }
         function navTo(section) {
             closePlusSheet();
@@ -846,6 +868,7 @@
     <script src="js/modules-links.js"></script>
     <script src="js/rapports-plus.js"></script>
     <script src="js/notifications.js"></script>
+    <script src="js/profil.js"></script>
 </body>
 
 </html>

@@ -15,7 +15,7 @@ export function afficherInventaire() {
 
   if (!appData.produits || appData.produits.length === 0) {
     tbody.innerHTML =
-      '<tr><td colspan="7" class="text-center text-gray-400 py-6">Aucun produit dans l’inventaire</td></tr>';
+      '<tr><td colspan="7" class="text-center text-gray-400 py-6">Aucun produit dans l\'inventaire</td></tr>';
     return;
   }
 
@@ -66,10 +66,10 @@ export function afficherInventaire() {
     : 0;
 
   const stats = [
-    { label: "Stock total", value: totalStock, color: "blue" },
-    { label: "Valeur stock", value: valeurStock.toLocaleString() + " F", color: "green" },
-    { label: "Profit total", value: profitTotal.toLocaleString() + " F", color: "purple" },
-    { label: "Marge moyenne", value: margeMoyenne.toFixed(1) + " %", color: "orange" }
+    { label: "Stock total",    value: totalStock,                           color: "blue"   },
+    { label: "Valeur stock",   value: valeurStock.toLocaleString() + " F",  color: "green"  },
+    { label: "Profit total",   value: profitTotal.toLocaleString() + " F",  color: "purple" },
+    { label: "Marge moyenne",  value: margeMoyenne.toFixed(1) + " %",       color: "orange" }
   ];
 
   stats.forEach(stat => {
@@ -89,9 +89,9 @@ export function afficherInventaire() {
     const profitRealise = vendu * (prixVente - prixAchat);
     const marge = prixAchat > 0 ? ((prixVente - prixAchat) / prixAchat * 100).toFixed(1) : 0;
 
-    const stockClass = stock === 0 ? "text-red-600 font-bold" : stock <= 5 ? "text-orange-500 font-semibold" : "text-green-600 font-semibold";
+    const stockClass  = stock === 0  ? "text-red-600 font-bold" : stock <= 5 ? "text-orange-500 font-semibold" : "text-green-600 font-semibold";
     const profitClass = profitRealise >= 0 ? "text-green-600 font-semibold" : "text-red-600 font-semibold";
-    const margeClass = marge >= 0 ? "text-green-600 font-semibold" : "text-red-600 font-semibold";
+    const margeClass  = marge >= 0   ? "text-green-600 font-semibold" : "text-red-600 font-semibold";
 
     const tr = document.createElement("tr");
     tr.className = "hover:bg-gray-50 transition";
@@ -107,129 +107,24 @@ export function afficherInventaire() {
     tbody.appendChild(tr);
   });
 
-  // --- Graphique inventaire ---
-  const ctx = document.getElementById("chartInventaire")?.getContext("2d");
-  if (ctx) {
-    if (chartInventaireInstance) chartInventaireInstance.destroy();
-    chartInventaireInstance = new window.Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: produitsFiltres.map(p => p.name),
-        datasets: [
-          { label: "Stock", data: produitsFiltres.map(p => p.stock || 0), backgroundColor: "rgba(59,130,246,0.6)" },
-          { label: "Vendues", data: produitsFiltres.map(p => p.vendu || 0), backgroundColor: "rgba(16,185,129,0.6)" }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { position: "top" } },
-        scales: { y: { beginAtZero: true } }
-      }
-    });
-  }
-}
-
-// ---------- Setup inputs ----------
-export function setupInventaireInputs() {
-  const searchInput = document.getElementById("searchInventaire");
-  const filterStock = document.getElementById("filterStock");
-  const filterPeriode = document.getElementById("filterPeriode");
-
-  if (searchInput) {
-    searchInput.addEventListener("input", afficherInventaire);
-  }
-
-  if (filterStock) {
-    filterStock.addEventListener("change", afficherInventaire);
-  }
-
-  if (filterPeriode) {
-    filterPeriode.addEventListener("change", afficherInventaire);
-  }
-}
-
-// ---------- Initialisation ----------
-export function initInventaire() {
-
-  // 1️⃣ Affiche immédiatement les données locales
-  afficherInventaire();
-
-  // 2️⃣ Active immédiatement les filtres
-  setupInventaireInputs();
-
-  // 3️⃣ Synchronisation en arrière-plan
-  syncFromServer().then(() => {
-    afficherInventaire(); // refresh après sync
-  });
-
-}
-
-
-export function remplirSelectProduitsCredit() {
-  const select = document.getElementById('creditProduct');
-  if (!select) return;
-
-  // vider avant de recharger
-  select.innerHTML = '';
-
-  if (!appData.produits || appData.produits.length === 0) {
-    const opt = document.createElement('option');
-    opt.value = '';
-    opt.textContent = 'Aucun produit disponible';
-    select.appendChild(opt);
-    return;
-  }
-
-  appData.produits.forEach(prod => {
-    const opt = document.createElement('option');
-    opt.value = prod.id;
-    opt.textContent = `${prod.name} (${prod.stock} dispo - ${prod.price}F)`;
-    select.appendChild(opt);
-  });
-}
-// ---------- Search handlers for inventory and categories ----------
-
-export function setupSearchInputs() {
-  var inv = document.getElementById('searchInventaire'); if (inv) { inv.addEventListener('input', function () { var term = this.value.toLowerCase(); document.querySelectorAll('#inventaireListe tr').forEach(function (row) { var prodName = (row.cells[0] && row.cells[0].textContent || '').toLowerCase(); row.style.display = prodName.indexOf(term) !== -1 ? '' : 'none'; }); }); }
-  var cat = document.getElementById('searchCategorie'); if (cat) { cat.addEventListener('input', function () { var term = this.value.toLowerCase(); document.querySelectorAll('#listeCategories > div').forEach(function (div) { var catName = (div.textContent || '').toLowerCase(); div.style.display = catName.indexOf(term) !== -1 ? '' : 'none'; }); }); }
-}
-// ═══════════════════════════════════════════════════════════════
-// PATCH inventaire.js — Remplacer le bloc "Graphique inventaire"
-// ═══════════════════════════════════════════════════════════════
-//
-// Dans js/inventaire.js, remplacer ce bloc (lignes ~110-130) :
-//
-//   // --- Graphique inventaire ---
-//   const ctx = document.getElementById("chartInventaire")?.getContext("2d");
-//   if (ctx) {
-//     if (chartInventaireInstance) chartInventaireInstance.destroy();
-//     chartInventaireInstance = new window.Chart(ctx, {
-//       type: "bar",
-//       data: {
-//         labels: produitsFiltres.map(p => p.name),
-//         datasets: [
-//           { label: "Stock",   data: produitsFiltres.map(p => p.stock || 0), backgroundColor: "rgba(59,130,246,0.6)" },
-//           { label: "Vendues", data: produitsFiltres.map(p => p.vendu || 0), backgroundColor: "rgba(16,185,129,0.6)" }
-//         ]
-//       },
-//       options: {
-//         responsive: true,
-//         plugins: { legend: { position: "top" } },
-//         scales: { y: { beginAtZero: true } }
-//       }
-//     });
-//   }
-//
-// PAR CE BLOC :
-
   // --- Graphique inventaire (redesign) ---
   const ctx = document.getElementById("chartInventaire")?.getContext("2d");
   if (ctx) {
     if (chartInventaireInstance) chartInventaireInstance.destroy();
 
     // Limiter à 12 produits pour la lisibilité
-    const top = produitsFiltres.slice(0, 12);
+    const top    = produitsFiltres.slice(0, 12);
     const labels = top.map(p => p.name.length > 14 ? p.name.slice(0, 13) + "…" : p.name);
+    const dark   = document.documentElement.classList.contains("dark");
+
+    const gridCol  = dark ? "rgba(255,255,255,.07)" : "rgba(0,0,0,.05)";
+    const tickCol  = dark ? "#9CA3AF"               : "#6B7280";
+    const labelCol = dark ? "#F1F0FF"               : "#1E1B4B";
+    const bgColor  = dark ? "#1E1B2E"               : "#FFFFFF";
+
+    // Hauteur dynamique selon le nombre de produits
+    const wrap = ctx.canvas.parentElement;
+    if (wrap) wrap.style.height = Math.max(200, top.length * 28 + 80) + "px";
 
     chartInventaireInstance = new window.Chart(ctx, {
       type: "bar",
@@ -265,6 +160,7 @@ export function setupSearchInputs() {
             position: "top",
             align:    "start",
             labels: {
+              color:         tickCol,
               font:          { family: "'DM Sans', sans-serif", size: 12, weight: "600" },
               boxWidth:      10,
               boxHeight:     10,
@@ -275,10 +171,10 @@ export function setupSearchInputs() {
             },
           },
           tooltip: {
-            backgroundColor: "#fff",
-            titleColor:      "#1E1B4B",
-            bodyColor:       "#6B7280",
-            borderColor:     "rgba(0,0,0,.08)",
+            backgroundColor: bgColor,
+            titleColor:      labelCol,
+            bodyColor:       tickCol,
+            borderColor:     dark ? "rgba(167,139,250,.2)" : "rgba(0,0,0,.08)",
             borderWidth:     1,
             padding:         12,
             cornerRadius:    12,
@@ -291,22 +187,93 @@ export function setupSearchInputs() {
         },
         scales: {
           x: {
-            grid:   { color: "rgba(0,0,0,.05)", drawBorder: false },
-            ticks:  { font: { family: "'DM Sans', sans-serif", size: 11 }, color: "#6B7280", maxRotation: 30 },
+            grid:   { color: gridCol, drawBorder: false },
+            ticks:  { color: tickCol, font: { family: "'DM Sans', sans-serif", size: 11 }, maxRotation: 30 },
             border: { display: false },
           },
           y: {
-            grid:        { color: "rgba(0,0,0,.05)", drawBorder: false },
-            ticks:       { font: { family: "'DM Sans', sans-serif", size: 11 }, color: "#6B7280", stepSize: 1 },
+            grid:        { color: gridCol, drawBorder: false },
+            ticks:       { color: tickCol, font: { family: "'DM Sans', sans-serif", size: 11 }, stepSize: 1 },
             border:      { display: false },
             beginAtZero: true,
           },
         },
       },
     });
-
-    // Appliquer le style dark mode si actif
-    if (typeof window.applyInventaireChartStyle === "function") {
-      window.applyInventaireChartStyle(chartInventaireInstance);
-    }
   }
+}
+
+// ---------- Setup inputs ----------
+export function setupInventaireInputs() {
+  const searchInput = document.getElementById("searchInventaire");
+  const filterStock = document.getElementById("filterStock");
+  const filterPeriode = document.getElementById("filterPeriode");
+
+  if (searchInput)  searchInput.addEventListener("input",  afficherInventaire);
+  if (filterStock)  filterStock.addEventListener("change", afficherInventaire);
+  if (filterPeriode) filterPeriode.addEventListener("change", afficherInventaire);
+}
+
+// ---------- Initialisation ----------
+export function initInventaire() {
+
+  // 1️⃣ Affiche immédiatement les données locales
+  afficherInventaire();
+
+  // 2️⃣ Active immédiatement les filtres
+  setupInventaireInputs();
+
+  // 3️⃣ Synchronisation en arrière-plan
+  syncFromServer().then(() => {
+    afficherInventaire(); // refresh après sync
+  });
+
+}
+
+
+export function remplirSelectProduitsCredit() {
+  const select = document.getElementById('creditProduct');
+  if (!select) return;
+
+  select.innerHTML = '';
+
+  if (!appData.produits || appData.produits.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = 'Aucun produit disponible';
+    select.appendChild(opt);
+    return;
+  }
+
+  appData.produits.forEach(prod => {
+    const opt = document.createElement('option');
+    opt.value = prod.id;
+    opt.textContent = `${prod.name} (${prod.stock} dispo - ${prod.price}F)`;
+    select.appendChild(opt);
+  });
+}
+
+// ---------- Search handlers for inventory and categories ----------
+export function setupSearchInputs() {
+  var inv = document.getElementById('searchInventaire');
+  if (inv) {
+    inv.addEventListener('input', function () {
+      var term = this.value.toLowerCase();
+      document.querySelectorAll('#inventaireListe tr').forEach(function (row) {
+        var prodName = (row.cells[0] && row.cells[0].textContent || '').toLowerCase();
+        row.style.display = prodName.indexOf(term) !== -1 ? '' : 'none';
+      });
+    });
+  }
+
+  var cat = document.getElementById('searchCategorie');
+  if (cat) {
+    cat.addEventListener('input', function () {
+      var term = this.value.toLowerCase();
+      document.querySelectorAll('#listeCategories > div').forEach(function (div) {
+        var catName = (div.textContent || '').toLowerCase();
+        div.style.display = catName.indexOf(term) !== -1 ? '' : 'none';
+      });
+    });
+  }
+}

@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // 2️⃣ Sync serveur initial
   // ======================
   await syncFromServer();
-
+  window.hideSplash?.();
   updateStats();
   verifierStockFaible();
   afficherCategoriesVente();

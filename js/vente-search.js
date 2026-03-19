@@ -1,12 +1,18 @@
 /**
- * vente-search.js — Recherche rapide dans la section Vendre
+ * vente-search.js v2 — Recherche rapide dans la section Vendre
  *
- * Injecte une barre de recherche au-dessus de #categoriesVente.
- * Quand l'utilisateur tape, affiche une grille de produits filtrés
- * en remplacement des catégories. Taper sur un produit l'ajoute
- * au panier via ajouterAuPanier() existant.
+ * CORRECTIF v1 → v2 :
+ * appData n'était pas exposé sur window dans index.js.
+ * Fix en deux parties :
+ *   1. Ajouter window.appData = appData; dans js/index.js (voir ci-dessous)
+ *   2. Ce script lit window.appData avec un retry si pas encore dispo
  *
- * Quand le champ est vide, réaffiche les catégories normalement.
+ * ─── MODIFICATION REQUISE dans js/index.js ───────────────────
+ * Ajouter cette ligne juste après "window.logout = logout;" (ligne 21) :
+ *
+ *   window.appData = appData;
+ *
+ * ─────────────────────────────────────────────────────────────
  *
  * INTÉGRATION dans index.html, juste avant </body> :
  *   <script src="js/vente-search.js"></script>
@@ -15,10 +21,22 @@
 (function () {
 
   // ══════════════════════════════════════
+  // ACCÈS À appData avec retry
+  // ══════════════════════════════════════
+  function getData() {
+    // Tenter window.appData (exposé après le fix index.js)
+    if (window.appData && Array.isArray(window.appData.produits)) {
+      return window.appData;
+    }
+    return null;
+  }
+
+  // ══════════════════════════════════════
   // CONSTRUCTION DE L'UI
   // ══════════════════════════════════════
   function buildSearchBar(venteSection) {
-    // Conteneur barre de recherche
+    if (document.getElementById('venteSearchInput')) return null; // déjà injecté
+
     const wrap = document.createElement('div');
     wrap.className = 'vente-search-wrap';
     wrap.innerHTML = `
@@ -35,23 +53,21 @@
       <button class="vente-search-clear" id="venteSearchClear" aria-label="Effacer">✕</button>
     `;
 
-    // Conteneur résultats (inséré après #categoriesVente)
     const results = document.createElement('div');
     results.id = 'vente-search-results';
 
-    // Insérer avant le label "Choisir produits"
-    const sectionLabel = venteSection.querySelector('.section-label');
-    if (sectionLabel) {
-      sectionLabel.parentNode.insertBefore(wrap, sectionLabel);
-      sectionLabel.parentNode.insertBefore(results, sectionLabel);
-    } else {
-      // Fallback : insérer avant #categoriesVente
-      const cv = document.getElementById('categoriesVente');
-      if (cv) {
-        cv.parentNode.insertBefore(wrap, cv);
-        cv.parentNode.insertBefore(results, cv);
-      }
-    }
+    // Insérer avant le label "Choisir produits" ou avant #categoriesVente
+    const cv = document.getElementById('categoriesVente');
+    if (!cv) return null;
+
+    // Chercher le .section-label juste avant #categoriesVente
+    const sectionLabel = cv.previousElementSibling;
+    const insertBefore = (sectionLabel && sectionLabel.classList.contains('section-label'))
+      ? sectionLabel
+      : cv;
+
+    insertBefore.parentNode.insertBefore(wrap, insertBefore);
+    insertBefore.parentNode.insertBefore(results, insertBefore);
 
     return {
       input:   document.getElementById('venteSearchInput'),
@@ -61,27 +77,43 @@
   }
 
   // ══════════════════════════════════════
-  // HIGHLIGHT DU TERME DANS LE TEXTE
+  // HIGHLIGHT
   // ══════════════════════════════════════
   function highlight(text, term) {
     if (!term) return text;
-    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return text.replace(
-      new RegExp(`(${escaped})`, 'gi'),
-      '<span class="sr-highlight">$1</span>'
-    );
+    const esc = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return text.replace(new RegExp(`(${esc})`, 'gi'), '<span class="sr-highlight">$1</span>');
   }
 
   // ══════════════════════════════════════
-  // RENDU DES RÉSULTATS
+  // RECHERCHE
   // ══════════════════════════════════════
-  function renderResults(results, term, appData) {
+  function searchProducts(term) {
+    const data = getData();
+    if (!data) return [];
+
+    const q = term.toLowerCase().trim();
+    if (!q) return [];
+
+    return data.produits.filter(p => {
+      if ((p.name || '').toLowerCase().includes(q)) return true;
+      const cat = data.categories.find(c => c.id === p.category_id);
+      if (cat && (cat.name || '').toLowerCase().includes(q)) return true;
+      return false;
+    });
+  }
+
+  // ══════════════════════════════════════
+  // RENDU
+  // ══════════════════════════════════════
+  function renderResults(found, term) {
     const container = document.getElementById('vente-search-results');
     if (!container) return;
 
+    const data = getData();
     container.innerHTML = '';
 
-    if (results.length === 0) {
+    if (found.length === 0) {
       container.innerHTML = `
         <div class="sr-label">Résultats pour « ${term} »</div>
         <div class="sr-empty">
@@ -93,20 +125,19 @@
       return;
     }
 
-    // Label
     const label = document.createElement('div');
     label.className = 'sr-label';
-    label.textContent = `${results.length} résultat${results.length > 1 ? 's' : ''} pour « ${term} »`;
+    label.textContent = `${found.length} résultat${found.length > 1 ? 's' : ''} pour « ${term} »`;
     container.appendChild(label);
 
-    results.forEach(produit => {
-      const cat = appData.categories.find(c => c.id === produit.category_id);
+    found.forEach(produit => {
+      const cat = data
+        ? data.categories.find(c => c.id === produit.category_id)
+        : null;
 
-      // Badge stock
-      let stockClass = '';
-      let stockText  = `${produit.stock} en stock`;
-      if (produit.stock === 0)     { stockClass = 'out';  stockText = 'Rupture de stock'; }
-      else if (produit.stock <= 5) { stockClass = 'low';  stockText = `⚠️ ${produit.stock} restants`; }
+      let stockClass = '', stockText = `${produit.stock} en stock`;
+      if (produit.stock === 0)     { stockClass = 'out'; stockText = 'Rupture de stock'; }
+      else if (produit.stock <= 5) { stockClass = 'low'; stockText = `⚠️ ${produit.stock} restants`; }
 
       const card = document.createElement('div');
       card.className = 'sr-card';
@@ -117,14 +148,14 @@
         <div class="sr-stock ${stockClass}">${stockText}</div>
       `;
 
-      // Ajouter au panier en cliquant
       if (produit.stock > 0) {
         card.addEventListener('click', () => {
           if (typeof window.ajouterAuPanier === 'function') {
             window.ajouterAuPanier(produit);
-            // Feedback visuel rapide
-            card.style.borderColor = '#10B981';
-            card.style.boxShadow   = '0 0 0 3px rgba(16,185,129,.2)';
+            // Flash vert de confirmation
+            card.style.transition   = 'border-color .15s, box-shadow .15s';
+            card.style.borderColor  = '#10B981';
+            card.style.boxShadow    = '0 0 0 3px rgba(16,185,129,.2)';
             setTimeout(() => {
               card.style.borderColor = '';
               card.style.boxShadow   = '';
@@ -132,9 +163,8 @@
           }
         });
       } else {
-        // Produit en rupture : désactiver
-        card.style.opacity  = '.5';
-        card.style.cursor   = 'not-allowed';
+        card.style.opacity       = '.45';
+        card.style.cursor        = 'not-allowed';
         card.style.pointerEvents = 'none';
       }
 
@@ -145,47 +175,24 @@
   }
 
   // ══════════════════════════════════════
-  // RECHERCHE DANS appData
+  // AFFICHER / CACHER
   // ══════════════════════════════════════
-  function searchProducts(term) {
-    const appData = window.appData;
-    if (!appData || !appData.produits) return [];
-
-    const q = term.toLowerCase().trim();
-    if (!q) return [];
-
-    return appData.produits.filter(p => {
-      // Chercher dans le nom
-      if (p.name.toLowerCase().includes(q)) return true;
-      // Chercher dans le nom de catégorie
-      const cat = appData.categories.find(c => c.id === p.category_id);
-      if (cat && cat.name.toLowerCase().includes(q)) return true;
-      return false;
-    });
+  function showSearchView() {
+    const cv    = document.getElementById('categoriesVente');
+    const label = document.querySelector('#venteSection .section-label');
+    const res   = document.getElementById('vente-search-results');
+    if (cv)    cv.style.display    = 'none';
+    if (label) label.style.display = 'none';
+    if (res)   res.classList.add('active');
   }
 
-  // ══════════════════════════════════════
-  // MONTRER / CACHER LES VUES
-  // ══════════════════════════════════════
-  function showSearchResults() {
-    const cv      = document.getElementById('categoriesVente');
-    const label   = document.querySelector('#venteSection .section-label');
-    const results = document.getElementById('vente-search-results');
-    if (cv)      cv.style.display      = 'none';
-    if (label)   label.style.display   = 'none';
-    if (results) results.classList.add('active');
-  }
-
-  function showCategories() {
-    const cv      = document.getElementById('categoriesVente');
-    const label   = document.querySelector('#venteSection .section-label');
-    const results = document.getElementById('vente-search-results');
-    if (cv)      cv.style.display      = '';
-    if (label)   label.style.display   = '';
-    if (results) {
-      results.classList.remove('active');
-      results.innerHTML = '';
-    }
+  function showCategoryView() {
+    const cv    = document.getElementById('categoriesVente');
+    const label = document.querySelector('#venteSection .section-label');
+    const res   = document.getElementById('vente-search-results');
+    if (cv)    cv.style.display    = '';
+    if (label) label.style.display = '';
+    if (res)  { res.classList.remove('active'); res.innerHTML = ''; }
   }
 
   // ══════════════════════════════════════
@@ -195,49 +202,47 @@
     const venteSection = document.getElementById('venteSection');
     if (!venteSection) return;
 
-    const { input, clear, results } = buildSearchBar(venteSection);
-    if (!input) return;
+    const ui = buildSearchBar(venteSection);
+    if (!ui) return;
 
-    let debounceTimer = null;
+    const { input, clear } = ui;
+    let debounce = null;
 
-    // ── Saisie ──
     input.addEventListener('input', () => {
       const term = input.value.trim();
-
-      // Afficher / cacher le bouton croix
       clear.classList.toggle('visible', term.length > 0);
 
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        if (!term) {
-          showCategories();
+      clearTimeout(debounce);
+      debounce = setTimeout(() => {
+        if (!term) { showCategoryView(); return; }
+
+        // Si appData pas encore chargé → réessayer dans 300ms
+        if (!getData()) {
+          setTimeout(() => input.dispatchEvent(new Event('input')), 300);
           return;
         }
 
         const found = searchProducts(term);
-        showSearchResults();
-        renderResults(found, term, window.appData || { produits: [], categories: [] });
-      }, 180); // debounce 180ms
+        showSearchView();
+        renderResults(found, term);
+      }, 200);
     });
 
-    // ── Effacer ──
     clear.addEventListener('click', () => {
       input.value = '';
       clear.classList.remove('visible');
-      showCategories();
+      showCategoryView();
       input.focus();
     });
 
-    // ── Fermer la recherche quand on change de section ──
-    // (le champ se vide automatiquement à la navigation)
+    // Réinitialiser quand on change de section
     window.addEventListener('pageChange', () => {
       input.value = '';
       clear.classList.remove('visible');
-      showCategories();
+      showCategoryView();
     });
   }
 
-  // Attendre que le DOM soit prêt
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {

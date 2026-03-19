@@ -24,7 +24,7 @@
     <!-- SheetJS pour l'export Excel (amélioration 1) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="css/extras.css">
-  <link rel="stylesheet" href="css/modules.css">
+    <link rel="stylesheet" href="css/modules.css">
     <link rel="stylesheet" href="css/responsive.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link
@@ -390,8 +390,14 @@
                     <button class="btn-primary" id="clientsAddBtn">+ Ajouter</button>
                 </div>
 
+                <!-- Alertes automatiques -->
+                <div id="clientsAutoAlerts"></div>
+
                 <!-- Stats -->
-                <div class="module-stats" id="clientsStats"></div>
+                <div id="clientsStats"></div>
+
+                <!-- Tri -->
+                <div class="module-chips" id="clientsSortChips"></div>
 
                 <!-- Recherche -->
                 <div style="position:relative;margin-bottom:12px;">
@@ -401,7 +407,7 @@
                         placeholder="Rechercher un client…">
                 </div>
 
-                <!-- Liste -->
+                <!-- Liste cartes -->
                 <div id="clientsList"></div>
             </div>
 
@@ -413,8 +419,14 @@
                     <button class="btn-primary" id="fournisseursAddBtn">+ Ajouter</button>
                 </div>
 
+                <!-- Alertes automatiques -->
+                <div id="fournisseursAutoAlerts"></div>
+
                 <!-- Stats -->
-                <div class="module-stats" id="fournisseursStats"></div>
+                <div id="fournisseursStats"></div>
+
+                <!-- Tri -->
+                <div class="module-chips" id="fournisseursSortChips"></div>
 
                 <!-- Recherche -->
                 <div style="position:relative;margin-bottom:12px;">
@@ -424,7 +436,7 @@
                         placeholder="Rechercher un fournisseur…">
                 </div>
 
-                <!-- Liste -->
+                <!-- Liste cartes -->
                 <div id="fournisseursList"></div>
             </div>
 
@@ -436,13 +448,16 @@
                     <button class="btn-primary" id="commandesAddBtn">+ Créer</button>
                 </div>
 
+                <!-- Alertes automatiques -->
+                <div id="commandesAutoAlerts"></div>
+
                 <!-- Stats -->
-                <div class="module-stats" id="commandesStats"></div>
+                <div id="commandesStats"></div>
 
                 <!-- Chips statut -->
-                <div class="stock-period-chips" id="commandesStatusChips"></div>
+                <div id="commandesStatusChips"></div>
 
-                <!-- Liste -->
+                <!-- Liste cartes -->
                 <div id="commandesList"></div>
             </div>
 
@@ -454,15 +469,19 @@
                     <button class="btn-primary" id="livraisonsAddBtn">+ Créer</button>
                 </div>
 
+                <!-- Alertes automatiques -->
+                <div id="livraisonsAutoAlerts"></div>
+
                 <!-- Stats -->
-                <div class="module-stats" id="livraisonsStats"></div>
+                <div id="livraisonsStats"></div>
 
                 <!-- Chips statut -->
-                <div class="stock-period-chips" id="livraisonsStatusChips"></div>
+                <div id="livraisonsStatusChips"></div>
 
-                <!-- Liste -->
+                <!-- Liste cartes -->
                 <div id="livraisonsList"></div>
             </div>
+
 
         </div><!-- end scroll-content -->
 
@@ -699,7 +718,8 @@
                     style="font-family:'Sora',sans-serif;font-size:17px;font-weight:800;color:#5B21B6;margin-bottom:7px;">
                     🚀 Passez en Premium</h2>
                 <p style="font-size:13px;color:#4C1D95;line-height:1.5;">Votre plan <strong>Free</strong> permet jusqu'à
-                    <strong>5 produits</strong>. Contactez-nous pour débloquer un nombre illimité.</p>
+                    <strong>5 produits</strong>. Contactez-nous pour débloquer un nombre illimité.
+                </p>
             </div>
             <div
                 style="background:#F9FAFB;border-radius:14px;padding:14px;text-align:center;font-size:13px;margin-bottom:14px;">
@@ -775,8 +795,8 @@
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             const map = { menu: 'nav-menu', stock: 'nav-stock', rapports: 'nav-rapports' };
             if (map[section]) document.getElementById(map[section])?.classList.add('active');
-            else if (['categories','inventaire','credits','clients',
-                   'fournisseurs','commandes','livraisons'].includes(section)) document.getElementById('nav-plus')?.classList.add('active');
+            else if (['categories', 'inventaire', 'credits', 'clients',
+                'fournisseurs', 'commandes', 'livraisons'].includes(section)) document.getElementById('nav-plus')?.classList.add('active');
         }
         function navTo(section) {
             closePlusSheet();
@@ -819,10 +839,10 @@
     <script src="js/sparkline.js"></script>
     <script src="js/end-of-day.js"></script>
     <script src="js/extras.js"></script>
-  <script src="js/clients.js"></script>
-<script src="js/fournisseurs.js"></script>
-<script src="js/commandes.js"></script>
-<script src="js/livraisons.js"></script>
+    <script src="js/clients.js"></script>
+    <script src="js/fournisseurs.js"></script>
+    <script src="js/commandes.js"></script>
+    <script src="js/livraisons.js"></script>
     <script src="js/modules-links.js"></script>
     <script src="js/rapports-plus.js"></script>
     <script src="js/notifications.js"></script>

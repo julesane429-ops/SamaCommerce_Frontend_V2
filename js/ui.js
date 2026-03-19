@@ -24,33 +24,43 @@ export function afficherCategories() {
   ctn.innerHTML = '';
 
   if (appData.categories.length === 0) {
-    ctn.innerHTML = '<div class="text-gray-500 text-center py-4">Aucune catégorie trouvée</div>';
+    ctn.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🏷️</div>
+        <div class="empty-text">Aucune catégorie trouvée</div>
+        <div class="empty-sub">Ajoutez votre première catégorie</div>
+      </div>`;
     return;
   }
 
+  // Grille 2 colonnes
+  const grid = document.createElement('div');
+  grid.className = 'categories-grid';
+
   appData.categories.forEach(function (cat) {
     var produitsCount = appData.produits.filter(function (p) { return p.category_id === cat.id; }).length;
+    var stockTotal = appData.produits
+      .filter(function (p) { return p.category_id === cat.id; })
+      .reduce(function (s, p) { return s + (p.stock || 0); }, 0);
 
     var div = document.createElement('div');
-    div.className = (cat.couleur || '') + ' text-white rounded-2xl p-6 shadow-lg';
+    div.className = 'cat-card ' + (cat.couleur || 'cat-default');
     div.innerHTML = `
-      <div class="flex justify-between items-center">
-        <div>
-          <div class="text-4xl mb-2">${cat.emoji || ''}</div>
-          <div class="text-xl font-bold">${cat.name}</div>
-          <div class="text-sm opacity-90">${produitsCount} produits</div>
-        </div>
-        <button class="bg-white bg-opacity-20 text-white px-3 py-2 rounded-lg text-sm">🗑️</button>
+      <button class="cat-delete-btn" aria-label="Supprimer">🗑️</button>
+      <div class="cat-emoji">${cat.emoji || '📦'}</div>
+      <div class="cat-name">${cat.name}</div>
+      <div class="cat-meta">
+        <span class="cat-badge">${produitsCount} produit${produitsCount > 1 ? 's' : ''}</span>
+        <span class="cat-stock">📦 ${stockTotal}</span>
       </div>`;
 
-    // Rendre le bouton actif
-    const btn = div.querySelector('button');
-    if (btn) {
-      btn.addEventListener('click', () => supprimerCategorie(cat.id));
-    }
+    const btn = div.querySelector('.cat-delete-btn');
+    if (btn) btn.addEventListener('click', (e) => { e.stopPropagation(); supprimerCategorie(cat.id); });
 
-    ctn.appendChild(div);
+    grid.appendChild(div);
   });
+
+  ctn.appendChild(grid);
 }
 
 export function afficherProduits(categorieFilter) {
@@ -64,7 +74,12 @@ export function afficherProduits(categorieFilter) {
   let produits = appData.produits.slice();
 
   if (produits.length === 0) {
-    container.innerHTML = '<div class="text-gray-500 text-center py-4">Aucun produit trouvé</div>';
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📦</div>
+        <div class="empty-text">Aucun produit trouvé</div>
+        <div class="empty-sub">Ajoutez votre premier produit</div>
+      </div>`;
     return;
   }
 
@@ -75,67 +90,57 @@ export function afficherProduits(categorieFilter) {
   produits.forEach(function (produit) {
     const categorie = appData.categories.find(c => c.id === produit.category_id);
 
-    const stockColor = (produit.stock < 5) ? 'text-red-600' :
-      (produit.stock < 10) ? 'text-orange-600' :
-        'text-green-600';
+    // Statut stock
+    const stockLevel = produit.stock <= 5 ? 'critical' : produit.stock < 10 ? 'low' : 'ok';
+    const stockLabel = stockLevel === 'critical' ? '🔴' : stockLevel === 'low' ? '🟠' : '🟢';
 
-    let stockBadge = '';
-    if (produit.stock <= 5) {
-      stockBadge = `<span class="ml-2 inline-block px-2 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full">⚠️</span>`;
-    } else if (produit.stock < 10) {
-      stockBadge = `<span class="ml-2 inline-block px-2 py-0.5 text-xs font-bold text-white bg-orange-500 rounded-full">⚠️</span>`;
-    }
-
-    let bgAlertClass = '';
-    if (produit.stock <= 5) bgAlertClass = 'bg-red-50';
-    else if (produit.stock < 10) bgAlertClass = 'bg-orange-50';
+    const marge = (produit.price || 0) - (produit.priceAchat || produit.price_achat || 0);
+    const margeSign = marge >= 0 ? '+' : '';
 
     const div = document.createElement('div');
-    div.className = 'rounded-2xl p-4 shadow-lg ' + bgAlertClass;
+    div.className = `produit-card stock-${stockLevel}`;
+    div.innerHTML = `
+      <div class="produit-card-header">
+        <div class="produit-cat-badge ${categorie ? (categorie.couleur || '') : ''}">
+          ${categorie ? (categorie.emoji + ' ' + categorie.name) : '📦 Sans catégorie'}
+        </div>
+        <div class="produit-stock-pill stock-pill-${stockLevel}">
+          ${stockLabel} ${produit.stock || 0}
+        </div>
+      </div>
 
-    const descriptionHtml = produit.description
-      ? `<div class="text-xs text-gray-500 mt-1">${produit.description}</div>`
-      : '';
+      <div class="produit-card-body">
+        <div class="produit-name">${produit.name}</div>
+        ${produit.description ? `<div class="produit-desc">${produit.description}</div>` : ''}
+        <div class="produit-prices">
+          <div class="produit-price-main">${(produit.price || 0).toLocaleString('fr-FR')} F</div>
+          <div class="produit-price-achat">Achat: ${(produit.priceAchat || produit.price_achat || 0).toLocaleString('fr-FR')} F</div>
+          <div class="produit-marge ${marge >= 0 ? 'marge-pos' : 'marge-neg'}">Marge: ${margeSign}${marge.toLocaleString('fr-FR')} F</div>
+        </div>
+      </div>
 
-    div.innerHTML =
-      `<div class="flex justify-between items-start mb-3">
-         <div>
-           <div class="text-lg font-bold">${produit.name}</div>
-           <div class="text-sm text-gray-600">
-             ${categorie ? (categorie.emoji + ' ' + categorie.name) : 'Sans catégorie'}
-           </div>
-           ${descriptionHtml}
-         </div>
-         <div class="text-right">
-           <div class="text-xl font-bold text-green-600">${(produit.price || 0).toLocaleString()} F</div>
-           <div class="text-sm ${stockColor} font-bold">Stock: ${produit.stock || 0}${stockBadge}</div>
-           <div class="text-xs text-gray-500">Achat: ${(produit.priceAchat || produit.price_achat || 0).toLocaleString()} F</div>
-         </div>
-       </div>
-       <div class="flex gap-2">
-         <button class="btn-edit bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm font-bold">✏️ Éditer</button>
-         <button class="btn-mod-stock-minus bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-bold">- Stock</button>
-         <button class="btn-mod-stock-plus bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-bold">+ Stock</button>
-         <button class="btn-suppr bg-gray-500 text-white px-4 py-2 rounded-lg text-sm">🗑️</button>
-       </div>`;
+      <div class="produit-card-actions">
+        <div class="produit-stock-controls">
+          <button class="btn-mod-stock-minus stock-btn">−</button>
+          <span class="stock-count">${produit.stock || 0}</span>
+          <button class="btn-mod-stock-plus stock-btn">+</button>
+        </div>
+        <div class="produit-action-btns">
+          <button class="btn-edit prd-btn prd-btn-edit">✏️ Éditer</button>
+          <button class="btn-suppr prd-btn prd-btn-del">🗑️</button>
+        </div>
+      </div>`;
 
     container.appendChild(div);
 
-    const btnEdit = div.querySelector('.btn-edit');
-    if (btnEdit) btnEdit.addEventListener('click', () => ouvrirModalEdit(produit));
-
-
-    // Wire buttons
-    const btnMinus = div.querySelector('.btn-mod-stock-minus');
-    if (btnMinus) btnMinus.addEventListener('click', () => modifierStock(produit.id, -1));
-
-    const btnPlus = div.querySelector('.btn-mod-stock-plus');
-    if (btnPlus) btnPlus.addEventListener('click', () => modifierStock(produit.id, 1));
-
-    const btnSuppr = div.querySelector('.btn-suppr');
-    if (btnSuppr) btnSuppr.addEventListener('click', () => supprimerProduit(produit.id));
+    div.querySelector('.btn-edit').addEventListener('click', () => ouvrirModalEdit(produit));
+    div.querySelector('.btn-mod-stock-minus').addEventListener('click', () => modifierStock(produit.id, -1));
+    div.querySelector('.btn-mod-stock-plus').addEventListener('click', () => modifierStock(produit.id, 1));
+    div.querySelector('.btn-suppr').addEventListener('click', () => supprimerProduit(produit.id));
   });
 }
+
+
 
 // ---------- Vente / Panier ----------
 
@@ -291,7 +296,3 @@ export function afficherCredits() {
     });
   }
 }
-
-
-
-

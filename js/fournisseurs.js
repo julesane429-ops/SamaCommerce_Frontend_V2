@@ -1,265 +1,329 @@
 /**
- * fournisseurs.js — Module Gestion des Fournisseurs
- * Section : #fournisseursSection
+ * fournisseurs.js v2 — Cartes riches + Historique commandes + Alertes auto
  */
-
 (function () {
+  const API    = () => document.querySelector('meta[name="api-base"]')?.content || 'https://samacommerce-backend-v2.onrender.com';
+  const auth   = (url, o={}) => window.authfetch(url, o);
+  const notify = (m, t) => window.showNotification?.(m, t);
+  const ok_    = r => { if(!r.ok) throw new Error(r.status); return r.json(); };
 
-  const API  = () => document.querySelector('meta[name="api-base"]')?.content
-               || 'https://samacommerce-backend-v2.onrender.com';
-  const fetch_ = (url, opts = {}) => window.authfetch(url, opts);
+  let fournisseurs = [], searchTerm = '', sortBy = 'total';
 
-  let fournisseurs = [];
-  let searchTerm   = '';
-
-  // ════════════════════════════════════════
-  // CHARGEMENT
-  // ════════════════════════════════════════
-  async function loadFournisseurs() {
-    try {
-      const res = await fetch_(`${API()}/fournisseurs`);
-      if (!res.ok) throw new Error();
-      fournisseurs = await res.json();
-      render();
-    } catch {
-      window.showNotification?.('Erreur chargement fournisseurs', 'error');
-    }
+  function ini(name) {
+    return (name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
   }
 
-  // ════════════════════════════════════════
-  // RENDU LISTE
-  // ════════════════════════════════════════
-  function render() {
-    const container = document.getElementById('fournisseursList');
-    const statsEl   = document.getElementById('fournisseursStats');
+  // ══ LOAD ══
+  async function loadFournisseurs() {
+    renderSkeleton('fournisseursList', 3);
+    try {
+      fournisseurs = await auth(`${API()}/fournisseurs`).then(ok_);
+      autoAlerts();
+      renderStats();
+      renderList();
+    } catch { notify('Erreur chargement fournisseurs','error'); }
+  }
+
+  // ══ ALERTES AUTO ══
+  function autoAlerts() {
+    const container = document.getElementById('fournisseursAutoAlerts');
     if (!container) return;
+    container.innerHTML = '';
 
-    const totalCommandes = fournisseurs.reduce((s, f) => s + Number(f.nb_commandes || 0), 0);
-    const totalDépensé   = fournisseurs.reduce((s, f) => s + Number(f.total_commandes || 0), 0);
+    // Alertes : fournisseurs avec commandes en retard
+    // (on utilisera le cache local si dispo)
+    const cmdsCache = window._commandesCache || [];
+    const now = new Date();
+    const retard = cmdsCache.filter(c => {
+      if (!['en_attente','confirmee'].includes(c.status)) return false;
+      if (!c.expected_date) return false;
+      return new Date(c.expected_date) < now;
+    });
 
-    if (statsEl) {
-      statsEl.innerHTML = `
-        <div class="module-stat-tile">
-          <div class="msv" style="color:var(--blue);">${fournisseurs.length}</div>
+    if (!retard.length) return;
+
+    const notif = document.createElement('div');
+    notif.className = 'auto-notif';
+    notif.innerHTML = `
+      <div class="auto-notif-icon">📦</div>
+      <div class="auto-notif-text">
+        <strong>${retard.length} commande${retard.length>1?'s':''}</strong> en retard de livraison
+      </div>
+      <button class="auto-notif-close" onclick="this.closest('.auto-notif').remove()">✕</button>
+    `;
+    container.appendChild(notif);
+  }
+
+  // ══ STATS ══
+  function renderStats() {
+    const el = document.getElementById('fournisseursStats');
+    if (!el) return;
+    const totalDep  = fournisseurs.reduce((s,f)=>s+ +f.total_commandes,0);
+    const totalCmds = fournisseurs.reduce((s,f)=>s+ +f.nb_commandes,0);
+    const moy       = fournisseurs.length ? Math.round(totalDep/fournisseurs.length) : 0;
+
+    el.innerHTML = `
+      <div class="module-stats">
+        <div class="module-stat-tile" style="background:#EFF6FF;">
+          <div class="msv" style="color:#3B82F6;">${fournisseurs.length}</div>
           <div class="msl">🏭 Fournisseurs</div>
         </div>
-        <div class="module-stat-tile">
-          <div class="msv" style="color:var(--orange);">${totalDépensé.toLocaleString('fr-FR')} F</div>
+        <div class="module-stat-tile" style="background:#FEF9C3;">
+          <div class="msv" style="color:#D97706;font-size:16px;">${totalDep.toLocaleString('fr-FR')} F</div>
           <div class="msl">💸 Total dépensé</div>
         </div>
-        <div class="module-stat-tile">
-          <div class="msv" style="color:var(--primary);">${totalCommandes}</div>
+        <div class="module-stat-tile" style="background:#EDE9FE;">
+          <div class="msv" style="color:#7C3AED;">${totalCmds}</div>
           <div class="msl">📦 Commandes</div>
         </div>
-        <div class="module-stat-tile">
-          <div class="msv" style="color:var(--teal);">${fournisseurs.length ? Math.round(totalDépensé / fournisseurs.length).toLocaleString('fr-FR') : 0} F</div>
+        <div class="module-stat-tile" style="background:#ECFDF5;">
+          <div class="msv" style="color:#10B981;font-size:16px;">${moy.toLocaleString('fr-FR')} F</div>
           <div class="msl">📊 Moy. commande</div>
         </div>
-      `;
-    }
+      </div>`;
+  }
 
-    const filtered = fournisseurs.filter(f =>
-      (f.name || '').toLowerCase().includes(searchTerm) ||
-      (f.phone || '').includes(searchTerm)
+  // ══ LISTE CARTES ══
+  function renderList() {
+    const el = document.getElementById('fournisseursList');
+    if (!el) return;
+
+    let list = fournisseurs.filter(f =>
+      !searchTerm ||
+      (f.name||'').toLowerCase().includes(searchTerm) ||
+      (f.phone||'').includes(searchTerm)
     );
+    if (sortBy==='total')  list.sort((a,b)=>+b.total_commandes - +a.total_commandes);
+    if (sortBy==='cmds')   list.sort((a,b)=>+b.nb_commandes - +a.nb_commandes);
+    if (sortBy==='nom')    list.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+    if (sortBy==='recent') list.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
 
-    if (!filtered.length) {
-      container.innerHTML = `
-        <div class="module-empty">
-          <div class="module-empty-icon">🏭</div>
-          <div class="module-empty-text">${searchTerm ? 'Aucun fournisseur trouvé' : 'Aucun fournisseur encore'}</div>
-          ${!searchTerm ? '<button class="btn-primary" onclick="window.openFournisseurForm()">Ajouter un fournisseur</button>' : ''}
-        </div>`;
-      return;
+    if (!list.length) {
+      el.innerHTML = `<div class="module-empty">
+        <div class="module-empty-icon">🏭</div>
+        <div class="module-empty-text">${searchTerm?'Aucun résultat':'Aucun fournisseur encore'}</div>
+        ${!searchTerm?'<button class="btn-primary" onclick="window.openFournisseurForm()">➕ Ajouter un fournisseur</button>':''}
+      </div>`; return;
     }
 
-    container.innerHTML = '';
-    filtered.forEach(f => {
-      const initials = (f.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const maxTotal = Math.max(...list.map(f=>+f.total_commandes||0),1);
+    el.innerHTML = '';
+
+    list.forEach(f => {
+      const total = +f.total_commandes || 0;
+      const cmds  = +f.nb_commandes   || 0;
+      const pct   = Math.round((total/maxTotal)*100);
+
       const card = document.createElement('div');
       card.className = 'entity-card';
       card.innerHTML = `
-        <div class="entity-avatar avatar-fournisseur">${initials}</div>
-        <div class="entity-info">
-          <div class="entity-name">${f.name}</div>
-          <div class="entity-sub">${f.phone || f.email || 'Aucun contact'}</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+          <div class="entity-avatar avatar-fournisseur">${ini(f.name)}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="entity-name">${f.name}</div>
+            <div class="entity-sub">
+              ${f.phone?`📞 ${f.phone}`:''}${f.email?` · ✉️ ${f.email}`:''}${!f.phone&&!f.email?'Aucun contact':''}
+            </div>
+            ${f.address?`<div class="entity-sub">📍 ${f.address}</div>`:''}
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div class="entity-amount">${total.toLocaleString('fr-FR')} F</div>
+            <div class="entity-count">${cmds} commande${cmds>1?'s':''}</div>
+          </div>
         </div>
-        <div class="entity-meta">
-          <div class="entity-amount">${Number(f.total_commandes || 0).toLocaleString('fr-FR')} F</div>
-          <div class="entity-count">${f.nb_commandes || 0} commande${f.nb_commandes > 1 ? 's' : ''}</div>
+
+        <!-- Barre dépenses relative -->
+        <div class="ca-bar-wrap"><div class="ca-bar blue" style="width:${pct}%"></div></div>
+
+        <!-- Actions -->
+        <div class="entity-actions">
+          ${f.phone?`
+            <button class="entity-btn eb-call" onclick="event.stopPropagation();window.open('tel:${f.phone}')">📞 Appel</button>
+            <button class="entity-btn eb-wa"   onclick="event.stopPropagation();window.open('https://wa.me/${(f.phone||'').replace(/\s+/g,'')}')">💬 WhatsApp</button>
+          `:''}
+          <button class="entity-btn eb-order" onclick="event.stopPropagation();window._commanderFournisseur(${f.id})">📦 Commander</button>
+          <button class="entity-btn eb-edit"  onclick="event.stopPropagation();window.openFournisseurForm(${f.id})">✏️</button>
         </div>
       `;
-      card.addEventListener('click', () => openFournisseurDetail(f));
-      container.appendChild(card);
+
+      card.addEventListener('click', ()=>openFournisseurDetail(f.id));
+      el.appendChild(card);
     });
   }
 
-  // ════════════════════════════════════════
-  // FORMULAIRE AJOUT / ÉDITION
-  // ════════════════════════════════════════
-  function openFournisseurForm(existing = null) {
-    const backdrop = document.createElement('div');
-    backdrop.className = 'module-sheet-backdrop';
+  // ══ COMMANDER RAPIDE ══
+  window._commanderFournisseur = function(id) {
+    const f = fournisseurs.find(x=>x.id===id);
+    window.navTo?.('commandes');
+    setTimeout(()=>window.openCommandeForm?.(f), 300);
+  };
 
-    backdrop.innerHTML = `
-      <div class="module-sheet">
-        <div class="module-sheet-pill"></div>
-        <div class="module-sheet-title">${existing ? '✏️ Modifier fournisseur' : '🏭 Nouveau fournisseur'}</div>
+  // ══ FICHE DÉTAIL ══
+  async function openFournisseurDetail(id) {
+    let detail = fournisseurs.find(f=>f.id===id) || {};
+    try { detail = await auth(`${API()}/fournisseurs/${id}`).then(ok_); } catch {}
 
-        <div class="form-group"><label>Nom *</label>
-          <input id="ff-name" type="text" value="${existing?.name || ''}" placeholder="Nom du fournisseur"></div>
-        <div class="form-group"><label>Téléphone</label>
-          <input id="ff-phone" type="tel" value="${existing?.phone || ''}" placeholder="+221 XX XXX XX XX"></div>
-        <div class="form-group"><label>Email</label>
-          <input id="ff-email" type="email" value="${existing?.email || ''}" placeholder="email@exemple.com"></div>
-        <div class="form-group"><label>Adresse</label>
-          <input id="ff-address" type="text" value="${existing?.address || ''}" placeholder="Adresse / Ville"></div>
-        <div class="form-group"><label>Notes</label>
-          <textarea id="ff-notes" style="height:72px;resize:none;">${existing?.notes || ''}</textarea></div>
+    const commandes = detail.commandes || [];
+    const enCours   = commandes.filter(c=>['en_attente','confirmee'].includes(c.status));
+    const totalDep  = commandes.filter(c=>c.status==='recue').reduce((s,c)=>s+(+c.total||0),0);
 
-        <div class="modal-actions">
-          <button class="btn-cancel" id="ff-cancel">Annuler</button>
-          <button class="btn-confirm" id="ff-save">${existing ? 'Mettre à jour' : 'Ajouter'}</button>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(backdrop);
-    document.getElementById('ff-cancel').addEventListener('click', () => backdrop.remove());
-    backdrop.addEventListener('click', e => { if (e.target === backdrop) backdrop.remove(); });
-
-    document.getElementById('ff-save').addEventListener('click', async () => {
-      const name = document.getElementById('ff-name').value.trim();
-      if (!name) { window.showNotification?.('Le nom est requis', 'warning'); return; }
-
-      const body = {
-        name,
-        phone:   document.getElementById('ff-phone').value.trim()   || null,
-        email:   document.getElementById('ff-email').value.trim()   || null,
-        address: document.getElementById('ff-address').value.trim() || null,
-        notes:   document.getElementById('ff-notes').value.trim()   || null,
-      };
-
-      try {
-        const url    = existing ? `${API()}/fournisseurs/${existing.id}` : `${API()}/fournisseurs`;
-        const method = existing ? 'PATCH' : 'POST';
-        const res    = await fetch_(url, {
-          method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-        });
-        if (!res.ok) throw new Error();
-        window.showNotification?.(existing ? '✅ Fournisseur mis à jour' : '✅ Fournisseur ajouté', 'success');
-        backdrop.remove();
-        loadFournisseurs();
-      } catch {
-        window.showNotification?.('Erreur lors de la sauvegarde', 'error');
-      }
-    });
-  }
-
-  // ════════════════════════════════════════
-  // FICHE DÉTAIL
-  // ════════════════════════════════════════
-  function openFournisseurDetail(f) {
-    const backdrop = document.createElement('div');
-    backdrop.className = 'module-sheet-backdrop';
-
-    backdrop.innerHTML = `
+    const bd = document.createElement('div');
+    bd.className = 'module-sheet-backdrop';
+    bd.innerHTML = `
       <div class="module-sheet">
         <div class="module-sheet-pill"></div>
 
-        <div style="text-align:center;margin-bottom:18px;">
-          <div class="entity-avatar avatar-fournisseur" style="width:64px;height:64px;font-size:28px;margin:0 auto 10px;">
-            ${(f.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2)}
-          </div>
-          <div style="font-family:'Sora',sans-serif;font-size:18px;font-weight:800;">${f.name}</div>
+        <div class="entity-hero">
+          <div class="entity-hero-avatar avatar-fournisseur">${ini(detail.name)}</div>
+          <div class="entity-hero-name">${detail.name}</div>
+          <div class="entity-hero-sub">${detail.phone?`📞 ${detail.phone}`:''}${detail.email?` · ✉️ ${detail.email}`:''}</div>
         </div>
 
         <div class="module-stats">
-          <div class="module-stat-tile">
-            <div class="msv" style="color:var(--blue);">${Number(f.total_commandes||0).toLocaleString('fr-FR')} F</div>
+          <div class="module-stat-tile" style="background:#EFF6FF;">
+            <div class="msv" style="color:#3B82F6;font-size:16px;">${totalDep.toLocaleString('fr-FR')} F</div>
             <div class="msl">💸 Total acheté</div>
           </div>
-          <div class="module-stat-tile">
-            <div class="msv" style="color:var(--primary);">${f.nb_commandes || 0}</div>
+          <div class="module-stat-tile" style="background:#EDE9FE;">
+            <div class="msv" style="color:#7C3AED;">${commandes.length}</div>
             <div class="msl">📦 Commandes</div>
           </div>
         </div>
 
         <div class="detail-panel">
-          ${f.phone   ? `<div class="detail-row"><span class="detail-row-icon">📞</span><span class="detail-row-label">Téléphone</span><span class="detail-row-val">${f.phone}</span></div>` : ''}
-          ${f.email   ? `<div class="detail-row"><span class="detail-row-icon">✉️</span><span class="detail-row-label">Email</span><span class="detail-row-val">${f.email}</span></div>` : ''}
-          ${f.address ? `<div class="detail-row"><span class="detail-row-icon">📍</span><span class="detail-row-label">Adresse</span><span class="detail-row-val">${f.address}</span></div>` : ''}
-          ${f.notes   ? `<div class="detail-row"><span class="detail-row-icon">📝</span><span class="detail-row-label">Notes</span><span class="detail-row-val">${f.notes}</span></div>` : ''}
+          ${detail.phone   ? `<div class="detail-row"><span class="detail-icon">📞</span><span class="detail-label">Téléphone</span><span class="detail-val">${detail.phone}</span></div>` : ''}
+          ${detail.email   ? `<div class="detail-row"><span class="detail-icon">✉️</span><span class="detail-label">Email</span><span class="detail-val">${detail.email}</span></div>` : ''}
+          ${detail.address ? `<div class="detail-row"><span class="detail-icon">📍</span><span class="detail-label">Adresse</span><span class="detail-val">${detail.address}</span></div>` : ''}
+          ${detail.notes   ? `<div class="detail-row"><span class="detail-icon">📝</span><span class="detail-label">Notes</span><span class="detail-val">${detail.notes}</span></div>` : ''}
         </div>
 
-        <div class="action-row">
-          <button class="btn-action btn-action-blue"    id="fd-commande">📦 Commander</button>
-          <button class="btn-action btn-action-primary" id="fd-edit">✏️ Modifier</button>
-          <button class="btn-action btn-action-danger"  id="fd-delete">🗑️</button>
+        ${enCours.length ? `
+          <div style="background:#FFFBEB;border-radius:14px;padding:12px;margin-bottom:14px;border:1.5px solid #F59E0B;">
+            <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:800;color:#92400E;margin-bottom:8px;">
+              ⏳ ${enCours.length} commande${enCours.length>1?'s':''} en cours
+            </div>
+            ${enCours.slice(0,3).map(c=>`
+              <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(245,158,11,.2);">
+                <span style="color:#78350F;">${c.expected_date?new Date(c.expected_date).toLocaleDateString('fr-FR'):'Sans date'}</span>
+                <span style="font-weight:700;color:#D97706;">${(+c.total||0).toLocaleString('fr-FR')} F</span>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+
+        ${commandes.length ? `
+          <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:800;color:var(--text);margin-bottom:10px;">📜 Historique commandes</div>
+          <div class="history-list">
+            ${commandes.slice(0,6).map(c=>`
+              <div class="history-item">
+                <div>
+                  <div class="history-item-name">${c.nb_items||0} article${c.nb_items>1?'s':''}</div>
+                  <div class="history-item-date">${new Date(c.created_at).toLocaleDateString('fr-FR')} · <span class="status-badge badge-${c.status}" style="font-size:10px;padding:1px 6px;">${c.status}</span></div>
+                </div>
+                <div class="history-item-amount">${(+c.total||0).toLocaleString('fr-FR')} F</div>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+
+        <div class="action-row" style="margin-top:16px;">
+          <button class="btn-mod btn-mod-orange" id="fd-cmd">📦 Commander</button>
+          ${detail.phone?`<button class="btn-mod btn-mod-blue" onclick="window.open('tel:${detail.phone}')">📞 Appel</button>`:''}
+          <button class="btn-mod btn-mod-primary" id="fd-edit">✏️ Modifier</button>
+          <button class="btn-mod btn-mod-danger"  id="fd-del">🗑️</button>
         </div>
         <button class="btn-cancel" style="width:100%;margin-top:10px;" id="fd-close">Fermer</button>
-      </div>
-    `;
+      </div>`;
 
-    document.body.appendChild(backdrop);
-    document.getElementById('fd-close').addEventListener('click', () => backdrop.remove());
-    backdrop.addEventListener('click', e => { if (e.target === backdrop) backdrop.remove(); });
-
-    document.getElementById('fd-edit').addEventListener('click', () => {
-      backdrop.remove();
-      openFournisseurForm(f);
-    });
-
-    document.getElementById('fd-commande').addEventListener('click', () => {
-      backdrop.remove();
-      // Naviguer vers Commandes avec fournisseur pré-sélectionné
-      window.navTo?.('commandes');
-      setTimeout(() => window.openCommandeForm?.(f), 300);
-    });
-
-    document.getElementById('fd-delete').addEventListener('click', async () => {
-      const ok = await window.customConfirm?.(`Supprimer "${f.name}" ?`);
-      if (!ok) return;
+    document.body.appendChild(bd);
+    bd.addEventListener('click', e=>{if(e.target===bd)bd.remove();});
+    bd.querySelector('#fd-close').addEventListener('click',()=>bd.remove());
+    bd.querySelector('#fd-edit').addEventListener('click',()=>{bd.remove();openFournisseurForm(id);});
+    bd.querySelector('#fd-cmd').addEventListener('click',()=>{bd.remove();window._commanderFournisseur(id);});
+    bd.querySelector('#fd-del').addEventListener('click', async()=>{
+      if(!await window.customConfirm?.(`Supprimer "${detail.name}" ?`))return;
       try {
-        const res = await fetch_(`${API()}/fournisseurs/${f.id}`, { method: 'DELETE' });
-        if (!res.ok) throw new Error();
-        window.showNotification?.('Fournisseur supprimé', 'success');
-        backdrop.remove();
-        loadFournisseurs();
-      } catch {
-        window.showNotification?.('Erreur suppression', 'error');
-      }
+        await auth(`${API()}/fournisseurs/${id}`,{method:'DELETE'}).then(ok_);
+        notify('Fournisseur supprimé','success'); bd.remove(); loadFournisseurs();
+      } catch { notify('Erreur suppression','error'); }
     });
   }
 
-  // ════════════════════════════════════════
-  // INIT
-  // ════════════════════════════════════════
+  // ══ FORMULAIRE ══
+  async function openFournisseurForm(idOrObj=null) {
+    let existing = null;
+    if (typeof idOrObj === 'number') existing = fournisseurs.find(f=>f.id===idOrObj);
+    else if (typeof idOrObj === 'object') existing = idOrObj;
+
+    const bd = document.createElement('div');
+    bd.className = 'module-sheet-backdrop';
+    bd.innerHTML = `
+      <div class="module-sheet">
+        <div class="module-sheet-pill"></div>
+        <div class="module-sheet-title">${existing?'✏️ Modifier fournisseur':'🏭 Nouveau fournisseur'}</div>
+        <div class="form-group"><label>Nom *</label><input id="ff-name" type="text" value="${existing?.name||''}" placeholder="Nom du fournisseur"></div>
+        <div class="form-group"><label>Téléphone</label><input id="ff-phone" type="tel" value="${existing?.phone||''}" placeholder="+221 XX XXX XX XX"></div>
+        <div class="form-group"><label>Email</label><input id="ff-email" type="email" value="${existing?.email||''}" placeholder="email@exemple.com"></div>
+        <div class="form-group"><label>Adresse / Ville</label><input id="ff-address" type="text" value="${existing?.address||''}" placeholder="Adresse"></div>
+        <div class="form-group"><label>Notes</label><textarea id="ff-notes" style="height:70px;resize:none;">${existing?.notes||''}</textarea></div>
+        <div class="modal-actions">
+          <button class="btn-cancel" id="ff-cancel">Annuler</button>
+          <button class="btn-confirm" id="ff-save">${existing?'Mettre à jour':'Ajouter'}</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(bd);
+    bd.addEventListener('click',e=>{if(e.target===bd)bd.remove();});
+    bd.querySelector('#ff-cancel').addEventListener('click',()=>bd.remove());
+    bd.querySelector('#ff-save').addEventListener('click', async()=>{
+      const name = bd.querySelector('#ff-name').value.trim();
+      if (!name){notify('Le nom est requis','warning');return;}
+      const body = {
+        name,
+        phone:   bd.querySelector('#ff-phone').value.trim()||null,
+        email:   bd.querySelector('#ff-email').value.trim()||null,
+        address: bd.querySelector('#ff-address').value.trim()||null,
+        notes:   bd.querySelector('#ff-notes').value.trim()||null,
+      };
+      try {
+        await auth(existing?`${API()}/fournisseurs/${existing.id}`:`${API()}/fournisseurs`,{
+          method:existing?'PATCH':'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(body),
+        }).then(ok_);
+        notify(existing?'✅ Fournisseur mis à jour':'✅ Fournisseur ajouté','success');
+        bd.remove(); loadFournisseurs();
+      } catch{notify('Erreur sauvegarde','error');}
+    });
+  }
+
+  function renderSkeleton(id,n) {
+    const el=document.getElementById(id); if(!el)return;
+    el.innerHTML=Array(n).fill(`<div style="background:var(--surface);border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:0 2px 16px rgba(0,0,0,.07);"><div style="display:flex;gap:12px;"><div style="width:52px;height:52px;border-radius:16px;background:#F3F4F6;flex-shrink:0;"></div><div style="flex:1;"><div style="height:14px;background:#F3F4F6;border-radius:7px;margin-bottom:8px;width:55%;"></div><div style="height:11px;background:#F3F4F6;border-radius:6px;width:35%;"></div></div></div><div style="height:5px;background:#F3F4F6;border-radius:999px;margin:10px 0;"></div><div style="display:flex;gap:6px;"><div style="flex:1;height:32px;background:#F3F4F6;border-radius:10px;"></div><div style="flex:1;height:32px;background:#F3F4F6;border-radius:10px;"></div></div></div>`).join('');
+  }
+
+  function renderSortChips() {
+    const el=document.getElementById('fournisseursSortChips'); if(!el)return;
+    const opts=[{key:'total',label:'💸 Par dépenses'},{key:'cmds',label:'📦 Par commandes'},{key:'nom',label:'🔤 Par nom'},{key:'recent',label:'🕒 Récents'}];
+    el.innerHTML=opts.map(o=>`<button class="mod-chip ${sortBy===o.key?'active':''}" data-sort="${o.key}">${o.label}</button>`).join('');
+    el.querySelectorAll('.mod-chip').forEach(btn=>{
+      btn.addEventListener('click',()=>{sortBy=btn.dataset.sort;el.querySelectorAll('.mod-chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderList();});
+    });
+  }
+
   function initFournisseursSection() {
-    const section = document.getElementById('fournisseursSection');
-    if (!section || section._fInit) return;
-    section._fInit = true;
-
-    const searchInput = document.getElementById('fournisseursSearch');
-    if (searchInput) {
-      searchInput.addEventListener('input', () => {
-        searchTerm = searchInput.value.trim().toLowerCase();
-        render();
-      });
-    }
-    document.getElementById('fournisseursAddBtn')
-      ?.addEventListener('click', () => openFournisseurForm());
-
+    const sec=document.getElementById('fournisseursSection');
+    if(!sec||sec._init)return; sec._init=true;
+    renderSortChips();
+    const si=document.getElementById('fournisseursSearch');
+    if(si) si.addEventListener('input',()=>{searchTerm=si.value.trim().toLowerCase();renderList();});
+    document.getElementById('fournisseursAddBtn')?.addEventListener('click',()=>openFournisseurForm());
     loadFournisseurs();
   }
 
-  // Exposer
-  window.openFournisseurForm      = openFournisseurForm;
-  window.loadFournisseurs         = loadFournisseurs;
-  window.initFournisseursSection  = initFournisseursSection;
+  window.openFournisseurForm     = openFournisseurForm;
+  window.loadFournisseurs        = loadFournisseurs;
+  window.initFournisseursSection = initFournisseursSection;
 
-  window.addEventListener('pageChange', e => {
-    if (e.detail?.key === 'fournisseurs') initFournisseursSection();
-  });
-
+  window.addEventListener('pageChange', e=>{if(e.detail?.key==='fournisseurs')initFournisseursSection();});
 })();

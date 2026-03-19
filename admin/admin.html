@@ -1,791 +1,1471 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - Sama Commerce</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Admin – Sama Commerce</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="admin.css">
+
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const role = localStorage.getItem("userRole");
+      const role  = localStorage.getItem("userRole");
       const token = localStorage.getItem("authToken");
-
-      // Vérifie si l'utilisateur est connecté et admin
       if (!token || role !== "admin") {
         alert("⛔ Accès réservé aux administrateurs !");
         window.location.href = "/login/login.html";
       }
     });
   </script>
-  <!-- jsPDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:       #4F46E5;
+      --primary-dark:  #3730A3;
+      --primary-light: #818CF8;
+      --accent:        #06B6D4;
+      --green:         #10B981;
+      --orange:        #F59E0B;
+      --red:           #EF4444;
+      --surface:       #FFFFFF;
+      --bg:            #F5F4FF;
+      --sidebar-w:     240px;
+      --header-h:      64px;
+      --text:          #1E1B4B;
+      --muted:         #6B7280;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ═══════════ HEADER ═══════════ */
+    .top-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: var(--surface);
+      border-bottom: 1px solid rgba(79,70,229,.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 100;
+      box-shadow: 0 2px 16px rgba(79,70,229,.07);
+    }
+
+    .top-bar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-logo {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      overflow: hidden;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(79,70,229,.25);
+    }
+    .brand-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .brand-name {
+      font-family: 'Sora', sans-serif;
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -.3px;
+    }
+    .brand-badge {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      letter-spacing: .5px;
+    }
+
+    .top-bar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Notification bell */
+    .notif-btn {
+      position: relative;
+      background: var(--bg);
+      border: none;
+      width: 38px; height: 38px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .notif-btn:hover { background: #EDE9FE; }
+    #alertBadge {
+      position: absolute;
+      top: -3px; right: -3px;
+      background: var(--red);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      font-family: 'Sora', sans-serif;
+      width: 18px; height: 18px;
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--surface);
+    }
+
+    .refresh-btn {
+      background: var(--bg);
+      border: none;
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background .2s, transform .3s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .refresh-btn:hover { background: #EDE9FE; transform: rotate(180deg); }
+
+    /* Notification panel */
+    #notificationPanel {
+      position: absolute;
+      top: 48px; right: 0;
+      width: 300px;
+      background: var(--surface);
+      border-radius: 18px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.14);
+      border: 1px solid rgba(79,70,229,.08);
+      overflow: hidden;
+      z-index: 200;
+    }
+    .notif-header {
+      padding: 14px 18px;
+      font-family: 'Sora', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      border-bottom: 1px solid #F3F4F6;
+    }
+
+    #adminEmail {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+      background: var(--bg);
+      padding: 6px 12px;
+      border-radius: 10px;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .btn-logout {
+      background: #FEE2E2;
+      color: var(--red);
+      border: none;
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-logout:hover { background: #FECACA; }
+
+    /* ═══════════ SIDEBAR ═══════════ */
+    #sidebar {
+      position: fixed;
+      top: var(--header-h);
+      left: 0;
+      width: var(--sidebar-w);
+      height: calc(100vh - var(--header-h));
+      background: var(--surface);
+      border-right: 1px solid rgba(79,70,229,.08);
+      padding: 20px 12px;
+      overflow-y: auto;
+      transition: transform .3s cubic-bezier(.4,0,.2,1);
+      z-index: 90;
+      box-shadow: 2px 0 20px rgba(79,70,229,.05);
+    }
+    #sidebar.collapsed { transform: translateX(calc(-1 * var(--sidebar-w))); }
+
+    .sidebar-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      padding: 8px 12px 4px;
+      margin-top: 8px;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 14px;
+      text-decoration: none;
+      transition: all .2s;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      margin-bottom: 2px;
+    }
+    .sidebar-link:hover { background: #EDE9FE; color: var(--primary); }
+    .sidebar-link.active {
+      background: linear-gradient(135deg, #EDE9FE, #E0E7FF);
+      color: var(--primary);
+      box-shadow: 0 2px 8px rgba(79,70,229,.12);
+    }
+    .sidebar-link .nav-icon { font-size: 18px; }
+
+    /* Sidebar toggle */
+    #sidebarToggle {
+      position: fixed;
+      top: calc(var(--header-h) + 14px);
+      left: calc(var(--sidebar-w) - 14px);
+      z-index: 95;
+      width: 28px; height: 28px;
+      background: var(--primary);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(79,70,229,.3);
+      transition: left .3s, transform .3s;
+    }
+    #sidebarToggle.collapsed { left: 12px; transform: rotate(180deg); }
+
+    /* ═══════════ MAIN CONTENT ═══════════ */
+    #mainContent {
+      margin-left: var(--sidebar-w);
+      margin-top: var(--header-h);
+      padding: 28px 24px;
+      min-height: calc(100vh - var(--header-h));
+      transition: margin-left .3s;
+    }
+    #mainContent.expanded { margin-left: 0; }
+
+    /* ═══════════ SECTIONS ═══════════ */
+    .section { display: none; animation: fadeUp .25s ease both; }
+    .section.active { display: block; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Page title ── */
+    .page-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 22px;
+      letter-spacing: -.4px;
+    }
+
+    /* ═══════════ STAT CARDS ═══════════ */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 2px 16px rgba(0,0,0,.05);
+      border: 1px solid rgba(79,70,229,.06);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,.08); }
+
+    .stat-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+    .stat-card-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--muted);
+    }
+    .stat-icon {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .stat-value {
+      font-family: 'Sora', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+    .stat-footer {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .stat-trend { font-weight: 700; }
+    .trend-up   { color: var(--green); }
+    .trend-down { color: var(--red); }
+
+    /* ═══════════ CHART CARD ═══════════ */
+    .chart-card {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 20px 24px;
+      box-shadow: 0 2px 16px rgba(0,0,0,.05);
+      border: 1px solid rgba(79,70,229,.06);
+      margin-bottom: 20px;
+    }
+    .chart-card-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ═══════════ TABLE / LIST CARD ═══════════ */
+    .list-card {
+      background: var(--surface);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 2px 16px rgba(0,0,0,.05);
+      border: 1px solid rgba(79,70,229,.06);
+      margin-bottom: 20px;
+    }
+    .list-card-header {
+      padding: 16px 22px;
+      border-bottom: 1px solid #F3F4F6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .list-card-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* ═══════════ BUTTONS ═══════════ */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #6366F1);
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 14px;
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(79,70,229,.3);
+      transition: transform .15s, box-shadow .15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,70,229,.35); }
+    .btn-primary:active { transform: scale(.97); }
+
+    .btn-ghost {
+      background: var(--bg);
+      color: var(--primary);
+      border: none;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-ghost:hover { background: #EDE9FE; }
+
+    /* ═══════════ SUBSCRIBERS ═══════════ */
+    .sub-header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 22px;
+    }
+    .sub-filters {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+    .search-input {
+      padding: 10px 14px;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 12px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--surface);
+      outline: none;
+      min-width: 200px;
+      flex: 1;
+      transition: border-color .2s;
+    }
+    .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+    .filter-select {
+      padding: 10px 14px;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 12px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--surface);
+      outline: none;
+      cursor: pointer;
+      transition: border-color .2s;
+    }
+    .filter-select:focus { border-color: var(--primary); }
+
+    #subscribersGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+    }
+
+    /* ═══════════ REVENUE CARDS ═══════════ */
+    .balance-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .balance-card {
+      border-radius: 20px;
+      padding: 22px;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+    .balance-card::before {
+      content: '';
+      position: absolute;
+      top: -30px; right: -30px;
+      width: 100px; height: 100px;
+      background: rgba(255,255,255,.1);
+      border-radius: 50%;
+    }
+    .balance-card-label {
+      font-size: 13px;
+      font-weight: 600;
+      opacity: .85;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .balance-card-value {
+      font-family: 'Sora', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .balance-card-sub { font-size: 12px; opacity: .75; }
+
+    .bc-purple { background: linear-gradient(135deg, var(--primary), #6366F1); }
+    .bc-green  { background: linear-gradient(135deg, var(--green),  #059669); }
+    .bc-orange { background: linear-gradient(135deg, var(--orange), #EF4444); }
+
+    /* Quick action buttons */
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+    .quick-btn {
+      background: var(--surface);
+      border: 1.5px solid #E5E7EB;
+      border-radius: 16px;
+      padding: 16px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: border-color .2s, box-shadow .2s, transform .15s;
+    }
+    .quick-btn:hover {
+      border-color: var(--primary-light);
+      box-shadow: 0 4px 16px rgba(79,70,229,.12);
+      transform: translateY(-2px);
+    }
+    .quick-btn .q-icon { font-size: 24px; }
+    .quick-btn .q-label {
+      font-family: 'Sora', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* Period filter row */
+    .period-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .period-row label { font-size: 13px; font-weight: 700; color: var(--muted); }
+    .period-badge {
+      background: #EDE9FE;
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 10px;
+    }
+
+    /* ═══════════ ACCOUNTS ═══════════ */
+    .account-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .account-card {
+      border-radius: 20px;
+      padding: 22px;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+    .account-card::after {
+      content: '';
+      position: absolute;
+      bottom: -20px; left: -20px;
+      width: 80px; height: 80px;
+      background: rgba(255,255,255,.1);
+      border-radius: 50%;
+    }
+    .ac-orange { background: linear-gradient(135deg, #FB923C, #EA580C); }
+    .ac-blue   { background: linear-gradient(135deg, #60A5FA, #2563EB); }
+    .ac-green  { background: linear-gradient(135deg, #34D399, #059669); }
+
+    .account-card-name {
+      font-family: 'Sora', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .account-card-amount {
+      font-family: 'Sora', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .account-card-sub { font-size: 12px; opacity: .8; margin-bottom: 14px; }
+    .account-card-actions { display: flex; gap: 8px; }
+    .ac-btn {
+      background: rgba(255,255,255,.25);
+      border: none;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .ac-btn:hover { background: rgba(255,255,255,.4); }
+
+    /* Account summary */
+    .account-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .ac-sum-tile {
+      text-align: center;
+      padding: 16px 10px;
+    }
+    .ac-sum-val {
+      font-family: 'Sora', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .ac-sum-label { font-size: 12px; color: var(--muted); font-weight: 600; }
+
+    /* ═══════════ KPI CARDS ═══════════ */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.05);
+      border: 1px solid rgba(79,70,229,.06);
+    }
+    .kpi-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .kpi-label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+    .kpi-icon { font-size: 20px; }
+    .kpi-value {
+      font-family: 'Sora', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .kpi-sub { font-size: 12px; font-weight: 600; }
+
+    /* ═══════════ SETTINGS ═══════════ */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    .settings-card {
+      background: var(--surface);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,.05);
+      border: 1px solid rgba(79,70,229,.06);
+    }
+    .settings-card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #F3F4F6;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .settings-card-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .settings-card-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+    .settings-field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .settings-field input,
+    .settings-field select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 12px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      outline: none;
+      transition: border-color .2s;
+    }
+    .settings-field input:focus,
+    .settings-field select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #F9FAFB;
+    }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-label { font-size: 14px; font-weight: 600; color: var(--text); }
+
+    /* iOS-style toggle */
+    .toggle-wrap { position: relative; display: inline-block; }
+    .toggle-wrap input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-track {
+      display: block;
+      width: 44px; height: 24px;
+      background: #D1D5DB;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background .2s;
+      position: relative;
+    }
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 20px; height: 20px;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,.2);
+      transition: transform .2s;
+    }
+    .toggle-wrap input:checked + .toggle-track { background: var(--primary); }
+    .toggle-wrap input:checked + .toggle-track::after { transform: translateX(20px); }
+
+    .btn-settings {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 14px;
+      font-family: 'Sora', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .15s;
+    }
+    .btn-settings:active { transform: scale(.97); }
+    .btn-s-primary { background: linear-gradient(135deg, var(--primary), #6366F1); color: #fff; box-shadow: 0 4px 14px rgba(79,70,229,.25); }
+    .btn-s-green   { background: linear-gradient(135deg, var(--green), #059669); color: #fff; box-shadow: 0 4px 14px rgba(16,185,129,.25); }
+
+    /* ═══════════ MODALS ═══════════ */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(15,10,50,.55);
+      backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+      z-index: 300;
+    }
+    .modal-box {
+      background: var(--surface);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.2);
+      overflow: hidden;
+      animation: modalIn .25s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(.9) translateY(20px); }
+      to   { opacity: 1; transform: scale(1)  translateY(0); }
+    }
+    .modal-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid #F3F4F6;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-title { font-family: 'Sora', sans-serif; font-size: 17px; font-weight: 800; color: var(--text); }
+    .modal-close {
+      background: var(--bg); border: none; width: 30px; height: 30px;
+      border-radius: 9px; font-size: 15px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted);
+    }
+    .modal-body { padding: 20px 24px; }
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid #F3F4F6;
+      display: flex; justify-content: flex-end; gap: 10px;
+    }
+
+    .modal-field { margin-bottom: 14px; }
+    .modal-field label {
+      display: block; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 5px;
+    }
+    .modal-field input,
+    .modal-field select {
+      width: 100%; padding: 11px 14px;
+      border: 1.5px solid #E5E7EB; border-radius: 12px;
+      font-size: 14px; font-family: 'DM Sans', sans-serif;
+      background: var(--bg); outline: none; transition: border-color .2s;
+    }
+    .modal-field input:focus,
+    .modal-field select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.1); background: #fff; }
+
+    .btn-cancel {
+      background: #F3F4F6; color: #6B7280; border: none;
+      padding: 11px 18px; border-radius: 12px;
+      font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+    .btn-confirm {
+      background: linear-gradient(135deg, var(--primary), #6366F1); color: #fff; border: none;
+      padding: 11px 20px; border-radius: 12px;
+      font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(79,70,229,.3);
+    }
+
+    /* ═══════════ RESPONSIVE ═══════════ */
+    @media (max-width: 768px) {
+      #sidebar { transform: translateX(calc(-1 * var(--sidebar-w))); }
+      #sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,.15); }
+      #mainContent { margin-left: 0 !important; padding: 16px; }
+      #sidebarToggle { left: 12px; }
+      .quick-actions { grid-template-columns: repeat(2, 1fr); }
+      .account-summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #DDD6FE; border-radius: 3px; }
+  </style>
 </head>
 
-<body class="bg-gray-50">
-  <!-- Header -->
-  <header class="bg-white shadow-sm border-b border-gray-200 fixed w-full top-0 z-50">
-    <div class="flex flex-wrap items-center justify-between px-4 sm:px-6 py-3">
-      <div class="flex items-center space-x-3">
-        <div class="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center">
-          <span class="text-white font-bold text-sm">B</span>
-        </div>
-        <h1 class="text-lg sm:text-xl font-semibold text-gray-800">BOUTIQUE GESTION</h1>
+<body>
+
+  <!-- ═══════════ TOP BAR ═══════════ -->
+  <header class="top-bar">
+    <div class="top-bar-brand">
+      <div class="brand-logo">
+        <img src="/pwa/icons/icon-512.png" alt="SC" onerror="this.parentElement.innerHTML='🛍️'">
       </div>
+      <div>
+        <div class="brand-name">Sama Commerce</div>
+      </div>
+      <span class="brand-badge">ADMIN</span>
+    </div>
 
-      <div class="flex items-center space-x-3 sm:space-x-4 mt-2 sm:mt-0">
-        <!-- Notification Bell -->
-        <div class="relative">
-          <!-- Icône cloche -->
-          <button onclick="toggleNotifications()" class="p-2 text-gray-600 hover:text-violet-600 relative">
-            <span class="text-xl">🔔</span>
-            <span id="alertBadge"
-              class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center alert-badge">0</span>
-          </button>
+    <div class="top-bar-right">
+      <!-- Refresh -->
+      <button class="refresh-btn" onclick="refreshAlerts()" title="Rafraîchir">🔄</button>
 
-          <!-- Bouton Rafraîchir -->
-          <button onclick="refreshAlerts()" class="text-sm text-violet-600 hover:underline">
-            🔄
-          </button>
-
-          <!-- Panneau des notifications -->
-          <div id="notificationPanel"
-            class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-            <div class="p-4 border-b border-gray-200">
-              <h3 class="font-semibold text-gray-800">Alertes de Paiement</h3>
-            </div>
-
-            <!-- Liste des alertes chargées dynamiquement -->
-            <div class="max-h-64 overflow-y-auto">
-              <!-- ⚠️ Les alertes sont injectées ici par loadAlerts() -->
-            </div>
-          </div>
-        </div>
-        <!-- Email admin -->
-        <span id="adminEmail" class="text-gray-600 text-sm sm:text-base truncate max-w-[150px] sm:max-w-[250px]"></span>
-
-        <!-- Déconnexion -->
-        <button onclick="logout()"
-          class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors">
-          Déconnexion
+      <!-- Notifications -->
+      <div style="position:relative;">
+        <button class="notif-btn" onclick="toggleNotifications()">
+          🔔
+          <span id="alertBadge">0</span>
         </button>
+        <div id="notificationPanel" class="hidden">
+          <div class="notif-header">🔔 Alertes de Paiement</div>
+          <div class="max-h-64 overflow-y-auto" style="max-height:260px;overflow-y:auto;"></div>
+        </div>
       </div>
+
+      <span id="adminEmail"></span>
+      <button class="btn-logout" onclick="logout()">🔓 Déconnexion</button>
     </div>
   </header>
 
-  <!-- Dashboard Container -->
-  <div id="dashboardContainer">
-    <div class="flex pt-16">
-      <!-- Sidebar Toggle Button -->
-      <button id="sidebarToggle" onclick="toggleSidebar()"
-        class="fixed top-20 left-4 z-50 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white p-3 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105">
-        <span id="toggleIcon" class="text-lg font-bold">☰</span>
-      </button>
+  <!-- ═══════════ SIDEBAR TOGGLE ═══════════ -->
+  <button id="sidebarToggle" onclick="toggleSidebar()">
+    <span id="toggleIcon">‹</span>
+  </button>
 
-      <!-- Sidebar -->
-      <aside id="sidebar"
-        class="w-64 bg-gradient-to-b from-gray-100 to-gray-200 min-h-screen fixed left-0 shadow-lg transition-transform duration-300">
-        <nav class="mt-8 px-4">
-          <ul class="space-y-2">
-            <li>
-              <a href="#" onclick="showSection('dashboard')"
-                class="sidebar-link dashboard-link active flex items-center space-x-3 px-4 py-3 rounded-lg text-violet-600 font-medium transition-all">
-                <span class="text-lg">📊</span>
-                <span>Tableau de bord</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" onclick="showSection('subscribers')"
-                class="sidebar-link subscribers-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:text-violet-600 transition-all">
-                <span class="text-lg">👥</span>
-                <span class="font-medium">Abonnés</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" onclick="showSection('revenue')"
-                class="sidebar-link revenue-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:text-violet-600 transition-all">
-                <span class="text-lg">💰</span>
-                <span class="font-medium">Revenus</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" onclick="showSection('accounts')"
-                class="sidebar-link accounts-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:text-violet-600 transition-all">
-                <span class="text-lg">🏦</span>
-                <span class="font-medium">Mes Comptes</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" onclick="showSection('analytics')"
-                class="sidebar-link analytics-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:text-violet-600 transition-all">
-                <span class="text-lg">📈</span>
-                <span class="font-medium">Analyses</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" onclick="showSection('settings')"
-                class="sidebar-link settings-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:text-violet-600 transition-all">
-                <span class="text-lg">⚙️</span>
-                <span class="font-medium">Paramètres</span>
-              </a>
-            </li>
-          </ul>
-        </nav>
-      </aside>
+  <!-- ═══════════ SIDEBAR ═══════════ -->
+  <aside id="sidebar">
+    <div class="sidebar-section-label">Navigation</div>
+    <nav>
+      <a class="sidebar-link dashboard-link active" onclick="showSection('dashboard')">
+        <span class="nav-icon">📊</span> Tableau de bord
+      </a>
+      <a class="sidebar-link subscribers-link" onclick="showSection('subscribers')">
+        <span class="nav-icon">👥</span> Abonnés
+      </a>
+      <a class="sidebar-link revenue-link" onclick="showSection('revenue')">
+        <span class="nav-icon">💰</span> Revenus
+      </a>
+      <a class="sidebar-link accounts-link" onclick="showSection('accounts')">
+        <span class="nav-icon">🏦</span> Mes Comptes
+      </a>
 
-      <!-- Main Content -->
-      <main id="mainContent" class="flex-1 ml-64 p-8 transition-all duration-300">
-        <!-- Dashboard Section -->
-        <div id="dashboard" class="section active">
-          <!-- Statistics Cards -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="sidebar-section-label" style="margin-top:12px;">Analytiques</div>
+      <a class="sidebar-link analytics-link" onclick="showSection('analytics')">
+        <span class="nav-icon">📈</span> Analyses
+      </a>
 
-            <!-- Total Utilisateurs -->
-            <div class="stat-card bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-gray-500 text-sm font-medium">Total Utilisateurs</p>
-                  <p id="totalUsers" class="text-2xl font-bold text-gray-800 mt-1">0</p>
-                </div>
-                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <span class="text-blue-600 text-xl">👥</span>
-                </div>
-              </div>
-              <div class="mt-4 flex items-center">
-                <span id="totalUsersGrowth" class="text-green-500 text-sm font-medium">+0%</span>
-                <span class="text-gray-500 text-sm ml-2">vs mois dernier</span>
-              </div>
-            </div>
+      <div class="sidebar-section-label" style="margin-top:12px;">Système</div>
+      <a class="sidebar-link settings-link" onclick="showSection('settings')">
+        <span class="nav-icon">⚙️</span> Paramètres
+      </a>
+    </nav>
+  </aside>
 
-            <!-- Abonnés Actifs -->
-            <div class="stat-card bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-gray-500 text-sm font-medium">Abonnés Actifs</p>
-                  <p id="activePremium" class="text-2xl font-bold text-gray-800 mt-1">0</p>
-                </div>
-                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <span class="text-green-600 text-xl">✅</span>
-                </div>
-              </div>
-              <div class="mt-4 flex items-center">
-                <span id="activePremiumGrowth" class="text-green-500 text-sm font-medium">+0%</span>
-                <span class="text-gray-500 text-sm ml-2">vs mois dernier</span>
-              </div>
-            </div>
+  <!-- ═══════════ MAIN ═══════════ -->
+  <main id="mainContent">
 
-            <!-- Revenus Totaux -->
-            <div class="stat-card bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-gray-500 text-sm font-medium">Revenus Totaux</p>
-                  <p id="revenues" class="text-2xl font-bold text-gray-800 mt-1">FCFA0</p>
-                </div>
-                <div class="w-12 h-12 bg-violet-100 rounded-lg flex items-center justify-center">
-                  <span class="text-violet-600 text-xl">💰</span>
-                </div>
-              </div>
-              <div class="mt-4 flex items-center">
-                <span id="revenuesGrowth" class="text-green-500 text-sm font-medium">+0%</span>
-                <span class="text-gray-500 text-sm ml-2">vs mois dernier</span>
-              </div>
-            </div>
+    <!-- ── DASHBOARD ── -->
+    <div id="dashboard" class="section active">
+      <div class="page-title">📊 Tableau de bord</div>
 
-            <!-- Abonnements en Attente -->
-            <div class="stat-card bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-gray-500 text-sm font-medium">Abonnements en Attente</p>
-                  <p id="pendingSubs" class="text-2xl font-bold text-red-600 mt-1">0</p>
-                </div>
-                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                  <span class="text-red-600 text-xl">⚠️</span>
-                </div>
-              </div>
-              <div class="mt-4 flex items-center">
-                <span class="text-red-500 text-sm font-medium">Retards</span>
-                <span class="text-gray-500 text-sm ml-2">à traiter</span>
-              </div>
-            </div>
-
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-card-label">Total Utilisateurs</div>
+            <div class="stat-icon" style="background:#EFF6FF;">👥</div>
           </div>
-
-          <!-- Revenue Chart -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h2 class="text-lg font-semibold text-gray-800">Évolution des Revenus</h2>
-            </div>
-            <div class="p-6">
-              <canvas id="revenueChart" width="400" height="200"></canvas>
-            </div>
+          <div class="stat-value" id="totalUsers">0</div>
+          <div class="stat-footer">
+            <span class="stat-trend trend-up" id="totalUsersGrowth">+0%</span>
+            <span>vs mois dernier</span>
           </div>
         </div>
 
-
-
-        <!-- Subscribers Section -->
-        <div id="subscribers" class="section">
-          <div class="mb-6 flex justify-between items-center">
-            <div>
-              <h1 class="text-2xl font-bold text-gray-800 mb-2">Gestion des Abonnés</h1>
-              <div class="flex items-center space-x-4">
-                <input type="text" id="subscriberSearch" placeholder="Rechercher un abonné..."
-                  onkeyup="filterSubscribers()"
-                  class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent">
-                <select id="statusFilter" onchange="filterSubscribers()"
-                  class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-                  <option value="">Tous les statuts</option>
-                  <option value="Actif">Actif</option>
-                  <option value="Bloqué">Bloqué</option>
-                  <option value="En retard">En retard</option>
-                </select>
-              </div>
-            </div>
-            <button onclick="openAddSubscriberModal()"
-              class="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center space-x-2">
-              <span class="text-lg">👤</span>
-              <span>Ajouter Abonné</span>
-            </button>
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-card-label">Abonnés Actifs</div>
+            <div class="stat-icon" style="background:#ECFDF5;">✅</div>
           </div>
-
-          <div id="subscribersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Subscriber cards will be populated by JavaScript -->
+          <div class="stat-value" id="activePremium">0</div>
+          <div class="stat-footer">
+            <span class="stat-trend trend-up" id="activePremiumGrowth">+0%</span>
+            <span>vs mois dernier</span>
           </div>
         </div>
 
-        <!-- Revenue Section -->
-        <div id="revenue" class="section">
-          <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-800 mb-2">Gestion des Revenus</h1>
-            <div class="flex items-center space-x-4 mt-4">
-              <label class="text-sm font-medium text-gray-700">Période:</label>
-              <select id="revenuePeriodFilter" onchange="filterRevenue()"
-                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 bg-white">
-                <option value="all">Tous les revenus</option>
-                <option value="daily">Journalier</option>
-                <option value="weekly">Hebdomadaire</option>
-                <option value="monthly" selected>Mensuel</option>
-              </select>
-              <div id="revenueFilterInfo" class="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
-                Revenus mensuels affichés
-              </div>
-            </div>
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-card-label">Revenus Totaux</div>
+            <div class="stat-icon" style="background:#EDE9FE;">💰</div>
           </div>
-
-          <!-- Balance Cards (Admin Revenus) -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div id="cardBalance" class="bg-gradient-to-r from-violet-500 to-purple-600 rounded-xl p-6 text-white">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold">Solde Principal</h3>
-                <span class="text-2xl">💳</span>
-              </div>
-              <p id="balanceMain" class="text-3xl font-bold mb-2">FCFA0.00</p>
-              <p class="text-violet-200 text-sm">Somme des abonnements validés</p>
-            </div>
-
-            <div id="cardPeriod" class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-6 text-white">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold">Revenus pour la période</h3>
-                <span class="text-2xl">📈</span>
-              </div>
-              <p id="revenuePeriodValue" class="text-3xl font-bold mb-2">FCFA0.00</p>
-              <p class="text-green-200 text-sm">Montant validé pour la période sélectionnée</p>
-            </div>
-
-            <div id="cardPending" class="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-6 text-white">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold">En Attente</h3>
-                <span class="text-2xl">⏳</span>
-              </div>
-              <p id="pendingAmount" class="text-3xl font-bold mb-2">FCFA0.00</p>
-              <p class="text-orange-200 text-sm">Somme des demandes en attente</p>
-            </div>
-          </div>
-
-
-          <!-- Quick Actions -->
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <button onclick="openWithdrawModal()"
-              class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-              <div class="text-center">
-                <span class="text-2xl mb-2 block">💸</span>
-                <p class="font-medium text-gray-800">Retirer</p>
-              </div>
-            </button>
-            <button onclick="generateReport()"
-              class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-              <div class="text-center">
-                <span class="text-2xl mb-2 block">📊</span>
-                <p class="font-medium text-gray-800">Rapport</p>
-              </div>
-            </button>
-            <button onclick="openTransferModal()"
-              class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-              <div class="text-center">
-                <span class="text-2xl mb-2 block">🔄</span>
-                <p class="font-medium text-gray-800">Transfert</p>
-              </div>
-            </button>
-            <button onclick="showTransactionHistory()"
-              class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-              <div class="text-center">
-                <span class="text-2xl mb-2 block">📋</span>
-                <p class="font-medium text-gray-800">Historique</p>
-              </div>
-            </button>
-          </div>
-
-          <!-- Recent Transactions -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h2 class="text-lg font-semibold text-gray-800">Transactions Récentes</h2>
-            </div>
-            <div id="transactionsList" class="divide-y divide-gray-100">
-              <!-- Transactions will be populated by JavaScript -->
-            </div>
+          <div class="stat-value" id="revenues">0 F</div>
+          <div class="stat-footer">
+            <span class="stat-trend trend-up" id="revenuesGrowth">+0%</span>
+            <span>vs mois dernier</span>
           </div>
         </div>
 
-        <!-- Accounts Section -->
-        <div id="accounts" class="section">
-          <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-800 mb-2">Mes Comptes</h1>
-            <div class="flex items-center space-x-4 mt-4">
-              <label class="text-sm font-medium text-gray-700">Période:</label>
-              <select id="accountsPeriodFilter" onchange="filterAccounts()"
-                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 bg-white">
-                <option value="all">Tous les montants</option>
-                <option value="daily">Journalier</option>
-                <option value="weekly">Hebdomadaire</option>
-                <option value="monthly" selected>Mensuel</option>
-              </select>
-              <div id="accountsFilterInfo" class="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
-                Montants mensuels affichés
-              </div>
-            </div>
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-card-label">En Attente</div>
+            <div class="stat-icon" style="background:#FEE2E2;">⚠️</div>
           </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Orange Money Account -->
-            <div class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl p-6 text-white">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold">Orange Money</h3>
-                <span class="text-2xl">🟠</span>
-              </div>
-              <p id="orangeBalance" class="text-2xl font-bold mb-2">FCFA0</p>
-              <p class="text-orange-200 text-sm mb-4">Compte principal</p>
-              <div class="flex space-x-2">
-                <button onclick="viewAccountDetails('orange')"
-                  class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Détails</button>
-                <button onclick="openTransferModal('orange')"
-                  class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Transférer</button>
-              </div>
-            </div>
-
-            <!-- Wave Account -->
-            <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold">Wave</h3>
-                <span class="text-2xl">🌊</span>
-              </div>
-              <p id="waveBalance" class="text-2xl font-bold mb-2">FCFA0</p>
-              <p class="text-blue-200 text-sm mb-4">Compte secondaire</p>
-              <div class="flex space-x-2">
-                <button onclick="viewAccountDetails('wave')"
-                  class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Détails</button>
-                <button onclick="openTransferModal('wave')"
-                  class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Transférer</button>
-              </div>
-            </div>
-
-            <!-- Cash Account -->
-            <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold">Espèces</h3>
-                <span class="text-2xl">💵</span>
-              </div>
-              <p id="cashBalance" class="text-2xl font-bold mb-2">FCFA0</p>
-              <p class="text-green-200 text-sm mb-4">Caisse physique</p>
-              <div class="flex space-x-2">
-                <button onclick="viewAccountDetails('cash')"
-                  class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Détails</button>
-                <button onclick="openTransferModal()"
-                  class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Ajouter</button>
-              </div>
-            </div>
+          <div class="stat-value" id="pendingSubs" style="color:var(--red);">0</div>
+          <div class="stat-footer">
+            <span class="stat-trend trend-down">Retards</span>
+            <span>à traiter</span>
           </div>
-
-          <!-- Account Summary -->
-          <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-100">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h2 class="text-lg font-semibold text-gray-800">Résumé des Comptes</h2>
-            </div>
-            <div class="p-6">
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div class="text-center">
-                  <p id="totalDisponible" class="text-2xl font-bold text-gray-800">FCFA0</p>
-                  <p class="text-sm text-gray-500">Total Disponible</p>
-                </div>
-                <div class="text-center">
-                  <p id="entriesToday" class="text-2xl font-bold text-green-600">FCFA0</p>
-                  <p class="text-sm text-gray-500">Entrées Aujourd'hui</p>
-                </div>
-                <div class="text-center">
-                  <p id="withdrawalsToday" class="text-2xl font-bold text-red-600">FCFA0</p>
-                  <p class="text-sm text-gray-500">Sorties Aujourd'hui</p>
-                </div>
-                <div class="text-center">
-                  <p id="netProfit" class="text-2xl font-bold text-violet-600">FCFA0</p>
-                  <p class="text-sm text-gray-500">Bénéfice Net</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Analytics Section -->
-        <div id="analytics" class="section">
-          <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-800 mb-2">Analyses et Chiffres</h1>
-          </div>
-
-          <!-- KPI Cards (remplacer les 4 existantes par celles-ci) -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-medium text-gray-500">Chiffre d'Affaires</h3>
-                <span class="text-green-500">📈</span>
-              </div>
-              <p id="kpiCA" class="text-2xl font-bold text-gray-800">FCFA0.00</p>
-              <p class="text-sm text-green-600 mt-2">Total des abonnements validés</p>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-medium text-gray-500">Taux de Conversion</h3>
-                <span class="text-blue-500">🎯</span>
-              </div>
-              <p id="kpiConversion" class="text-2xl font-bold text-gray-800">0.0%</p>
-              <p class="text-sm text-blue-600 mt-2">Premium / Total utilisateurs</p>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-medium text-gray-500">Valeur Moyenne</h3>
-                <span class="text-violet-500">💎</span>
-              </div>
-              <p id="kpiAvgValue" class="text-2xl font-bold text-gray-800">FCFA0.00</p>
-              <p class="text-sm text-violet-600 mt-2">Montant moyen par abonnement</p>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-medium text-gray-500">Taux de Rétention</h3>
-                <span class="text-orange-500">🔄</span>
-              </div>
-              <p id="kpiRetention" class="text-2xl font-bold text-gray-800">0.0%</p>
-              <p class="text-sm text-orange-600 mt-2">Premium actifs avec expiration future</p>
-            </div>
-          </div>
-
-          <!-- Charts -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-              <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-800">Répartition des Revenus</h2>
-              </div>
-              <div class="p-6">
-                <canvas id="revenueBreakdownChart" width="400" height="300"></canvas>
-              </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-              <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-800">Croissance Mensuelle</h2>
-              </div>
-              <div class="p-6">
-                <canvas id="growthChart" width="400" height="300"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Settings Section -->
-        <div id="settings" class="section">
-          <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-800 mb-2">Paramètres</h1>
-          </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- General Settings -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-              <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-800">Paramètres Généraux</h2>
-              </div>
-              <div class="p-6 space-y-6">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Nom de l'application</label>
-                  <input type="text" value="Mon SaaS"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Email de contact</label>
-                  <input type="email" value="contact@monsaas.com"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Fuseau horaire</label>
-                  <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-                    <option>Afrique/Senegal</option>
-                    <option>Europe/Paris</option>
-                    <option>America/New_York</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <!-- Payment Settings -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-              <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-800">Paramètres de Paiement</h2>
-              </div>
-              <div class="p-6 space-y-6">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Prix Plan Premium (FCFA)</label>
-                  <input type="number" value="29.99"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Délai de grâce (jours)</label>
-                  <input type="number" value="7"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-sm font-medium text-gray-700">Alertes automatiques</span>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked class="sr-only peer">
-                    <div
-                      class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600">
-                    </div>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <!-- Notification Settings -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-              <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-800">Notifications</h2>
-              </div>
-              <div class="p-6 space-y-4">
-                <div class="flex items-center justify-between">
-                  <span class="text-sm font-medium text-gray-700">Nouveaux abonnements</span>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked class="sr-only peer">
-                    <div
-                      class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600">
-                    </div>
-                  </label>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-sm font-medium text-gray-700">Paiements en retard</span>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked class="sr-only peer">
-                    <div
-                      class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600">
-                    </div>
-                  </label>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-sm font-medium text-gray-700">Rapports mensuels</span>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" class="sr-only peer">
-                    <div
-                      class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600">
-                    </div>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <!-- Security Settings -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-              <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-800">Sécurité</h2>
-              </div>
-              <div class="p-6 space-y-6">
-                <button
-                  class="w-full bg-violet-600 hover:bg-violet-700 text-white py-2 px-4 rounded-lg font-medium transition-colors">
-                  Changer le mot de passe
-                </button>
-                <button onclick="toggle2FA()"
-                  class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors">
-                  Activer / Désactiver 2FA
-                </button>
-
-                <div class="flex items-center justify-between">
-                  <span class="text-sm font-medium text-gray-700">Sessions multiples</span>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked class="sr-only peer">
-                    <div
-                      class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600">
-                    </div>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Save Button -->
-          <div class="mt-8 flex justify-end">
-            <button onclick="saveSettings()"
-              class="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-              Sauvegarder les paramètres
-            </button>
-          </div>
-        </div>
-      </main>
-    </div>
-  </div>
-
-  <!-- Add Subscriber Modal -->
-  <div id="addSubscriberModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 modal">
-    <div class="flex items-center justify-center min-h-screen p-4">
-      <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h2 class="text-lg font-semibold text-gray-800">Ajouter un Abonné</h2>
-        </div>
-        <div class="p-6 space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Nom complet ou Nom de l'Entreprise</label>
-            <input type="text" id="newSubscriberName"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-            <input type="email" id="newSubscriberEmail"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Téléphone</label>
-            <input type="tel" id="newSubscriberPhone"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Plan</label>
-            <select id="newSubscriberPlan"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-              <option value="Free">Free</option>
-              <option value="Premium">Premium</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Méthode de paiement</label>
-            <select id="newSubscriberPaymentMethod"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-              <option value="wave">Wave</option>
-              <option value="orange">Orange Money</option>
-              <option value="cash">Espèces</option>
-              <option value="none">Aucun</option>
-            </select>
-          </div>
-        </div>
-        <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-          <button onclick="closeAddSubscriberModal()"
-            class="px-4 py-2 text-gray-600 hover:text-gray-800">Annuler</button>
-          <button onclick="addSubscriber()"
-            class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg">Ajouter</button>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Withdraw Modal -->
-  <div id="withdrawModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl p-6 w-full max-w-md">
-      <h2 class="text-lg font-semibold mb-4">Demande de Retrait</h2>
-      <label class="block mb-2 text-sm text-gray-600">Montant (FCFA)</label>
-      <input id="withdrawAmount" type="number" class="w-full px-4 py-2 border rounded-lg mb-4" placeholder="Ex: 5000" />
-
-      <label class="block mb-2 text-sm text-gray-600">Méthode</label>
-      <select id="withdrawMethod" class="w-full px-4 py-2 border rounded-lg mb-4">
-        <option value="wave">🌊 Wave</option>
-        <option value="orange">🟠 Orange</option>
-        <option value="cash">💵 Cash</option>
-      </select>
-
-      <div class="flex justify-end space-x-2">
-        <button onclick="closeWithdrawModal()" class="px-4 py-2 bg-gray-300 rounded-lg">Annuler</button>
-        <button onclick="submitWithdraw()" class="px-4 py-2 bg-violet-600 text-white rounded-lg">Confirmer</button>
+      <div class="chart-card">
+        <div class="chart-card-title">📈 Évolution des Revenus</div>
+        <canvas id="revenueChart" height="200"></canvas>
       </div>
     </div>
-  </div>
 
-  <!-- Modal Transfert -->
-  <div id="transferModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-    <div class="bg-white rounded-2xl shadow-lg p-6 max-w-sm w-full">
-      <h2 class="text-xl font-bold mb-4">Transférer des fonds</h2>
-      <form id="transferForm" class="space-y-3">
-        <input type="hidden" id="fromAccount" />
+    <!-- ── SUBSCRIBERS ── -->
+    <div id="subscribers" class="section">
+      <div class="page-title">👥 Gestion des Abonnés</div>
 
-        <div>
-          <label class="block text-sm mb-1">Montant (FCFA)</label>
-          <input type="number" id="transferAmount" class="w-full border rounded-lg px-3 py-2" required>
-        </div>
-
-        <div>
-          <label class="block text-sm mb-1">Vers</label>
-          <select id="toAccount" class="w-full border rounded-lg px-3 py-2" required>
-            <option value="">-- Choisir --</option>
-            <option value="orange">Orange Money</option>
-            <option value="wave">Wave</option>
-            <option value="cash">Espèces</option>
+      <div class="sub-header">
+        <div class="sub-filters">
+          <input type="text" id="subscriberSearch" class="search-input"
+            placeholder="🔍 Rechercher un abonné…" onkeyup="filterSubscribers()">
+          <select id="statusFilter" class="filter-select" onchange="filterSubscribers()">
+            <option value="">Tous les statuts</option>
+            <option value="Actif">Actif</option>
+            <option value="Bloqué">Bloqué</option>
+            <option value="En retard">En retard</option>
           </select>
         </div>
+        <button class="btn-primary" onclick="openAddSubscriberModal()">
+          ➕ Ajouter Abonné
+        </button>
+      </div>
 
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg w-full">Transférer</button>
-      </form>
-      <div class="mt-3 text-center">
-        <button onclick="hideModal('transferModal')" class="text-gray-500">Annuler</button>
+      <div id="subscribersGrid"></div>
+    </div>
+
+    <!-- ── REVENUE ── -->
+    <div id="revenue" class="section">
+      <div class="page-title">💰 Gestion des Revenus</div>
+
+      <div class="period-row">
+        <label for="revenuePeriodFilter">Période :</label>
+        <select id="revenuePeriodFilter" class="filter-select" onchange="filterRevenue()">
+          <option value="all">Tous</option>
+          <option value="daily">Journalier</option>
+          <option value="weekly">Hebdomadaire</option>
+          <option value="monthly" selected>Mensuel</option>
+        </select>
+        <div class="period-badge" id="revenueFilterInfo">Revenus mensuels</div>
+      </div>
+
+      <div class="balance-grid">
+        <div id="cardBalance" class="balance-card bc-purple">
+          <div class="balance-card-label">💳 Solde Principal</div>
+          <div class="balance-card-value" id="balanceMain">0 FCFA</div>
+          <div class="balance-card-sub">Abonnements validés</div>
+        </div>
+        <div id="cardPeriod" class="balance-card bc-green">
+          <div class="balance-card-label">📈 Revenus de la période</div>
+          <div class="balance-card-value" id="revenuePeriodValue">0 FCFA</div>
+          <div class="balance-card-sub">Montant validé</div>
+        </div>
+        <div id="cardPending" class="balance-card bc-orange">
+          <div class="balance-card-label">⏳ En Attente</div>
+          <div class="balance-card-value" id="pendingAmount">0 FCFA</div>
+          <div class="balance-card-sub">Demandes en cours</div>
+        </div>
+      </div>
+
+      <div class="quick-actions">
+        <button class="quick-btn" onclick="openWithdrawModal()">
+          <span class="q-icon">💸</span><span class="q-label">Retirer</span>
+        </button>
+        <button class="quick-btn" onclick="generateReport()">
+          <span class="q-icon">📊</span><span class="q-label">Rapport</span>
+        </button>
+        <button class="quick-btn" onclick="openTransferModal()">
+          <span class="q-icon">🔄</span><span class="q-label">Transfert</span>
+        </button>
+        <button class="quick-btn" onclick="showTransactionHistory()">
+          <span class="q-icon">📋</span><span class="q-label">Historique</span>
+        </button>
+      </div>
+
+      <div class="list-card">
+        <div class="list-card-header">
+          <div class="list-card-title">🧾 Transactions Récentes</div>
+        </div>
+        <div id="transactionsList" style="divide-y:1px solid #F3F4F6;"></div>
       </div>
     </div>
-  </div>
 
+    <!-- ── ACCOUNTS ── -->
+    <div id="accounts" class="section">
+      <div class="page-title">🏦 Mes Comptes</div>
 
-  <!-- Modal Détails Compte -->
-  <div id="accountDetailsModal"
-    class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-    <div class="bg-white rounded-2xl shadow-lg p-6 max-w-lg w-full">
-      <!-- Titre -->
-      <h2 id="accountDetailsTitle" class="text-xl font-bold mb-4 text-center">Détails</h2>
-
-      <!-- Contenu transactions -->
-      <div id="accountTransactions" class="max-h-96 overflow-y-auto space-y-4 pr-2">
-        <!-- Abonnements, retraits et transferts s’insèrent ici dynamiquement -->
+      <div class="period-row">
+        <label for="accountsPeriodFilter">Période :</label>
+        <select id="accountsPeriodFilter" class="filter-select" onchange="filterAccounts()">
+          <option value="all">Tous</option>
+          <option value="daily">Journalier</option>
+          <option value="weekly">Hebdomadaire</option>
+          <option value="monthly" selected>Mensuel</option>
+        </select>
+        <div class="period-badge" id="accountsFilterInfo">Montants mensuels</div>
       </div>
 
-      <!-- Bouton fermer -->
-      <div class="mt-5 text-center">
-        <button onclick="hideModal('accountDetailsModal')"
-          class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700">
-          Fermer
+      <div class="account-cards-grid">
+        <div class="account-card ac-orange">
+          <div class="account-card-name">🟠 Orange Money</div>
+          <div class="account-card-amount" id="orangeBalance">0 FCFA</div>
+          <div class="account-card-sub">Compte principal</div>
+          <div class="account-card-actions">
+            <button class="ac-btn" onclick="viewAccountDetails('orange')">Détails</button>
+            <button class="ac-btn" onclick="openTransferModal('orange')">Transférer</button>
+          </div>
+        </div>
+        <div class="account-card ac-blue">
+          <div class="account-card-name">🌊 Wave</div>
+          <div class="account-card-amount" id="waveBalance">0 FCFA</div>
+          <div class="account-card-sub">Compte secondaire</div>
+          <div class="account-card-actions">
+            <button class="ac-btn" onclick="viewAccountDetails('wave')">Détails</button>
+            <button class="ac-btn" onclick="openTransferModal('wave')">Transférer</button>
+          </div>
+        </div>
+        <div class="account-card ac-green">
+          <div class="account-card-name">💵 Espèces</div>
+          <div class="account-card-amount" id="cashBalance">0 FCFA</div>
+          <div class="account-card-sub">Caisse physique</div>
+          <div class="account-card-actions">
+            <button class="ac-btn" onclick="viewAccountDetails('cash')">Détails</button>
+            <button class="ac-btn" onclick="openTransferModal()">Ajouter</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="list-card">
+        <div class="list-card-header">
+          <div class="list-card-title">📊 Résumé des Comptes</div>
+        </div>
+        <div style="padding:20px;">
+          <div class="account-summary-grid">
+            <div class="ac-sum-tile">
+              <div class="ac-sum-val" id="totalDisponible" style="color:var(--text);">0 F</div>
+              <div class="ac-sum-label">Total Disponible</div>
+            </div>
+            <div class="ac-sum-tile">
+              <div class="ac-sum-val" id="entriesToday" style="color:var(--green);">0 F</div>
+              <div class="ac-sum-label">Entrées Aujourd'hui</div>
+            </div>
+            <div class="ac-sum-tile">
+              <div class="ac-sum-val" id="withdrawalsToday" style="color:var(--red);">0 F</div>
+              <div class="ac-sum-label">Sorties Aujourd'hui</div>
+            </div>
+            <div class="ac-sum-tile">
+              <div class="ac-sum-val" id="netProfit" style="color:var(--primary);">0 F</div>
+              <div class="ac-sum-label">Bénéfice Net</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ANALYTICS ── -->
+    <div id="analytics" class="section">
+      <div class="page-title">📈 Analyses & Chiffres</div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-label">Chiffre d'Affaires</div>
+            <span class="kpi-icon">📈</span>
+          </div>
+          <div class="kpi-value" id="kpiCA">0 F</div>
+          <div class="kpi-sub" style="color:var(--green);">Abonnements validés</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-label">Taux de Conversion</div>
+            <span class="kpi-icon">🎯</span>
+          </div>
+          <div class="kpi-value" id="kpiConversion">0.0%</div>
+          <div class="kpi-sub" style="color:var(--accent);">Premium / Total</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-label">Valeur Moyenne</div>
+            <span class="kpi-icon">💎</span>
+          </div>
+          <div class="kpi-value" id="kpiAvgValue">0 F</div>
+          <div class="kpi-sub" style="color:var(--primary-light);">Par abonnement</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-label">Taux de Rétention</div>
+            <span class="kpi-icon">🔄</span>
+          </div>
+          <div class="kpi-value" id="kpiRetention">0.0%</div>
+          <div class="kpi-sub" style="color:var(--orange);">Actifs / expiration future</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="chart-card">
+          <div class="chart-card-title">🥧 Répartition des Revenus</div>
+          <canvas id="revenueBreakdownChart" height="250"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">📊 Croissance Mensuelle</div>
+          <canvas id="growthChart" height="250"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div id="settings" class="section">
+      <div class="page-title">⚙️ Paramètres</div>
+
+      <div class="settings-grid">
+        <!-- Général -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <span>🏪</span>
+            <div class="settings-card-title">Paramètres Généraux</div>
+          </div>
+          <div class="settings-card-body">
+            <div class="settings-field">
+              <label>Nom de l'application</label>
+              <input type="text" value="Sama Commerce">
+            </div>
+            <div class="settings-field">
+              <label>Email de contact</label>
+              <input type="email" value="contact@samacommerce.com">
+            </div>
+            <div class="settings-field">
+              <label>Fuseau horaire</label>
+              <select>
+                <option>Afrique/Senegal</option>
+                <option>Europe/Paris</option>
+                <option>America/New_York</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paiement -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <span>💳</span>
+            <div class="settings-card-title">Paramètres de Paiement</div>
+          </div>
+          <div class="settings-card-body">
+            <div class="settings-field">
+              <label>Prix Plan Premium (FCFA)</label>
+              <input type="number" value="5000">
+            </div>
+            <div class="settings-field">
+              <label>Délai de grâce (jours)</label>
+              <input type="number" value="7">
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label">Alertes automatiques</span>
+              <label class="toggle-wrap">
+                <input type="checkbox" checked>
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <span>🔔</span>
+            <div class="settings-card-title">Notifications</div>
+          </div>
+          <div class="settings-card-body">
+            <div class="toggle-row">
+              <span class="toggle-label">Nouveaux abonnements</span>
+              <label class="toggle-wrap"><input type="checkbox" checked><span class="toggle-track"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label">Paiements en retard</span>
+              <label class="toggle-wrap"><input type="checkbox" checked><span class="toggle-track"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label">Rapports mensuels</span>
+              <label class="toggle-wrap"><input type="checkbox"><span class="toggle-track"></span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sécurité -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <span>🔐</span>
+            <div class="settings-card-title">Sécurité</div>
+          </div>
+          <div class="settings-card-body">
+            <button class="btn-settings btn-s-primary">🔑 Changer le mot de passe</button>
+            <button class="btn-settings btn-s-green" onclick="toggle2FA()">🛡️ Activer / Désactiver 2FA</button>
+            <div class="toggle-row">
+              <span class="toggle-label">Sessions multiples</span>
+              <label class="toggle-wrap"><input type="checkbox" checked><span class="toggle-track"></span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;display:flex;justify-content:flex-end;">
+        <button class="btn-primary" onclick="saveSettings()" style="padding:12px 28px;font-size:14px;">
+          💾 Sauvegarder
         </button>
       </div>
     </div>
+
+  </main>
+
+  <!-- ═══════════ MODALS ═══════════ -->
+
+  <!-- Add Subscriber -->
+  <div id="addSubscriberModal" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">➕ Ajouter un Abonné</div>
+        <button class="modal-close" onclick="closeAddSubscriberModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-field"><label>Nom / Entreprise</label><input type="text" id="newSubscriberName" placeholder="Nom complet ou entreprise"></div>
+        <div class="modal-field"><label>Email</label><input type="email" id="newSubscriberEmail" placeholder="email@exemple.com"></div>
+        <div class="modal-field"><label>Téléphone</label><input type="tel" id="newSubscriberPhone" placeholder="+221 XX XXX XX XX"></div>
+        <div class="modal-field">
+          <label>Plan</label>
+          <select id="newSubscriberPlan">
+            <option value="Free">Free</option>
+            <option value="Premium">Premium</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label>Méthode de paiement</label>
+          <select id="newSubscriberPaymentMethod">
+            <option value="wave">🌊 Wave</option>
+            <option value="orange">🟠 Orange Money</option>
+            <option value="cash">💵 Espèces</option>
+            <option value="none">Aucun</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeAddSubscriberModal()">Annuler</button>
+        <button class="btn-confirm" onclick="addSubscriber()">Ajouter</button>
+      </div>
+    </div>
   </div>
 
+  <!-- Withdraw -->
+  <div id="withdrawModal" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">💸 Demande de Retrait</div>
+        <button class="modal-close" onclick="closeWithdrawModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-field"><label>Montant (FCFA)</label><input id="withdrawAmount" type="number" placeholder="Ex: 5000"></div>
+        <div class="modal-field">
+          <label>Méthode</label>
+          <select id="withdrawMethod">
+            <option value="wave">🌊 Wave</option>
+            <option value="orange">🟠 Orange Money</option>
+            <option value="cash">💵 Espèces</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeWithdrawModal()">Annuler</button>
+        <button class="btn-confirm" onclick="submitWithdraw()">Confirmer</button>
+      </div>
+    </div>
+  </div>
 
+  <!-- Transfer -->
+  <div id="transferModal" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">🔄 Transfert de Fonds</div>
+        <button class="modal-close" onclick="hideModal('transferModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="transferForm">
+          <input type="hidden" id="fromAccount">
+          <div class="modal-field"><label>Montant (FCFA)</label><input type="number" id="transferAmount" placeholder="Montant" required></div>
+          <div class="modal-field">
+            <label>Vers</label>
+            <select id="toAccount" required>
+              <option value="">-- Choisir --</option>
+              <option value="orange">🟠 Orange Money</option>
+              <option value="wave">🌊 Wave</option>
+              <option value="cash">💵 Espèces</option>
+            </select>
+          </div>
+          <div class="modal-footer" style="padding:0;border:none;margin-top:16px;">
+            <button type="button" class="btn-cancel" onclick="hideModal('transferModal')">Annuler</button>
+            <button type="submit" class="btn-confirm">Transférer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account Details -->
+  <div id="accountDetailsModal" class="modal-backdrop hidden">
+    <div class="modal-box" style="max-width:520px;">
+      <div class="modal-header">
+        <div class="modal-title" id="accountDetailsTitle">Détails du compte</div>
+        <button class="modal-close" onclick="hideModal('accountDetailsModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="accountTransactions" style="max-height:380px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="hideModal('accountDetailsModal')">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Sidebar overlay (mobile) ── -->
+  <div id="sidebarOverlay" onclick="toggleSidebar()"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:89;"></div>
 
   <script>
     const API_BASE = "https://samacommerce-backend-v2.onrender.com";
+
+    /* ── Sidebar toggle ── */
+    let sidebarOpen = true;
+    function toggleSidebar() {
+      const sidebar  = document.getElementById('sidebar');
+      const main     = document.getElementById('mainContent');
+      const toggle   = document.getElementById('sidebarToggle');
+      const overlay  = document.getElementById('sidebarOverlay');
+      const isMobile = window.innerWidth < 768;
+
+      if (isMobile) {
+        sidebarOpen = !sidebarOpen;
+        sidebar.classList.toggle('open', sidebarOpen);
+        overlay.style.display = sidebarOpen ? 'block' : 'none';
+      } else {
+        sidebarOpen = !sidebarOpen;
+        sidebar.classList.toggle('collapsed', !sidebarOpen);
+        main.style.marginLeft = sidebarOpen ? 'var(--sidebar-w)' : '0';
+        toggle.style.left = sidebarOpen ? 'calc(var(--sidebar-w) - 14px)' : '12px';
+      }
+    }
+
+    /* Init sidebar on mobile as closed */
+    if (window.innerWidth < 768) {
+      sidebarOpen = false;
+      document.getElementById('sidebar').classList.remove('open');
+    }
+
+    /* ── Section navigation ── */
+    function showSection(name) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+      document.getElementById(name)?.classList.add('active');
+      document.querySelector(`.${name}-link`)?.classList.add('active');
+      // Close sidebar on mobile after nav
+      if (window.innerWidth < 768) {
+        sidebarOpen = true;
+        toggleSidebar();
+      }
+    }
+
+    /* ── Modal helpers ── */
+    function hideModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
+    }
+    function showModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('hidden');
+    }
+
+    /* Close modal on backdrop click */
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+      backdrop.addEventListener('click', e => {
+        if (e.target === backdrop) backdrop.classList.add('hidden');
+      });
+    });
   </script>
+
   <script src="admin.js"></script>
 </body>
-
 </html>

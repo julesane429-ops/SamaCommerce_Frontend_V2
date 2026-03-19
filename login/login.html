@@ -1,102 +1,427 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Connexion - Sama Commerce</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="login.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Connexion – Sama Commerce</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="login.js" defer></script>
   <link rel="stylesheet" href="login.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #4F46E5;
+      --primary-dark: #3730A3;
+      --accent: #06B6D4;
+      --green: #10B981;
+      --orange: #F59E0B;
+      --pink: #EC4899;
+      --surface: #FFFFFF;
+      --bg: #F0F4FF;
+      --text: #1E1B4B;
+      --muted: #6B7280;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100dvh;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated background ── */
+    .bg-blobs {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(70px);
+      opacity: .45;
+      animation: blobFloat 8s ease-in-out infinite alternate;
+    }
+    .blob-1 { width: 340px; height: 340px; background: #6366F1; top: -80px; left: -80px; animation-delay: 0s; }
+    .blob-2 { width: 260px; height: 260px; background: #06B6D4; top: 40%; right: -60px; animation-delay: -3s; }
+    .blob-3 { width: 200px; height: 200px; background: #EC4899; bottom: -60px; left: 30%; animation-delay: -6s; }
+    @keyframes blobFloat {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(20px, 30px) scale(1.08); }
+    }
+
+    /* ── Card ── */
+    .login-card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 400px;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(20px);
+      border: 1.5px solid rgba(255,255,255,.7);
+      border-radius: 28px;
+      padding: 36px 28px 32px;
+      box-shadow: 0 20px 60px rgba(79,70,229,.15), 0 4px 20px rgba(0,0,0,.06);
+    }
+
+    /* ── Logo block ── */
+    .logo-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+    .logo-img-wrap {
+      width: 76px; height: 76px;
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 8px 28px rgba(79,70,229,.3);
+      margin-bottom: 14px;
+    }
+    .logo-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+
+    .app-name {
+      font-family: 'Sora', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -.4px;
+    }
+    .app-tagline {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 3px;
+      font-weight: 500;
+    }
+
+    /* ── Section title ── */
+    .section-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    /* ── Form ── */
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .input-wrap {
+      position: relative;
+    }
+    .input-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 17px;
+      pointer-events: none;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 13px 14px 13px 42px;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 14px;
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      background: #F9FAFB;
+      color: var(--text);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    .form-group input:focus {
+      border-color: var(--primary);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+    }
+    .form-group input::placeholder { color: #9CA3AF; }
+
+    /* ── 2FA section ── */
+    #twofaSection {
+      background: #EEF2FF;
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 14px;
+      border: 1.5px solid #C7D2FE;
+    }
+    #twofaSection label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .5px; color: var(--primary-dark); margin-bottom: 6px; display: block;
+    }
+    #twofaSection input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid #C7D2FE;
+      border-radius: 12px;
+      font-size: 18px;
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      letter-spacing: 6px;
+      text-align: center;
+      background: #fff;
+      outline: none;
+    }
+    #twofaSection input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
+    #verify2faBtn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--green), #059669);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Sora', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(16,185,129,.3);
+      transition: transform .15s;
+    }
+    #verify2faBtn:active { transform: scale(.97); }
+
+    /* ── Buttons ── */
+    #loginBtn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, var(--primary), #6366F1);
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      font-family: 'Sora', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 6px 22px rgba(79,70,229,.35);
+      transition: transform .15s, box-shadow .15s;
+      letter-spacing: .2px;
+      margin-top: 4px;
+    }
+    #loginBtn:active { transform: scale(.97); box-shadow: 0 3px 12px rgba(79,70,229,.2); }
+
+    .divider {
+      display: flex; align-items: center; gap: 10px;
+      margin: 18px 0;
+      color: #D1D5DB;
+      font-size: 12px;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px; background: #E5E7EB;
+    }
+
+    .link-row {
+      text-align: center;
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 16px;
+    }
+    .link-row a {
+      color: var(--primary);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .link-row a:hover { text-decoration: underline; }
+
+    /* ── Guide modal ── */
+    .guide-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,10,60,.55);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 50;
+      padding: 16px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+    .guide-sheet {
+      background: var(--surface);
+      border-radius: 28px 28px 20px 20px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 -8px 40px rgba(0,0,0,.15);
+      animation: sheetUp .3s cubic-bezier(.34,1.3,.64,1) both;
+      position: relative;
+    }
+    @keyframes sheetUp {
+      from { transform: translateY(60px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    .guide-pill {
+      width: 40px; height: 4px;
+      background: #E5E7EB;
+      border-radius: 2px;
+      margin: 0 auto 20px;
+    }
+    .guide-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .guide-body { font-size: 14px; color: var(--muted); line-height: 1.6; }
+    .guide-body strong { color: var(--text); }
+    .guide-steps {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .guide-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13px;
+      color: #374151;
+    }
+    .guide-step-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      width: 32px; height: 32px;
+      background: #EEF2FF;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .guide-close {
+      position: absolute;
+      top: 16px; right: 16px;
+      background: #F3F4F6;
+      border: none;
+      width: 32px; height: 32px;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted);
+      transition: background .15s;
+    }
+    .guide-close:hover { background: #E5E7EB; }
+    .guide-cta {
+      width: 100%;
+      margin-top: 20px;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--primary), #6366F1);
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      font-family: 'Sora', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(79,70,229,.3);
+    }
+  </style>
 </head>
+<body>
 
-<body class="font-sans antialiased">
-  <div class="fixed inset-0 bg-black/30 md:bg-black/20 pointer-events-none"></div>
+  <!-- Animated background -->
+  <div class="bg-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
 
-  <main class="relative w-full min-h-svh flex items-center justify-center md:justify-end p-4 md:pr-16">
-    <section
-      class="w-full max-w-md md:max-w-lg bg-white/90 md:bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl border border-white/40 p-6 sm:p-8">
-      <div class="text-center mb-6">
-        <div class="bg-purple-600 text-white w-14 h-14 flex items-center justify-center rounded-full mx-auto shadow-lg">
-          🔑</div>
-        <h1 class="text-2xl font-bold mt-3 text-gray-900">Connexion</h1>
-        <p class="text-sm text-gray-600">Accédez à votre compte</p>
+  <!-- Login card -->
+  <div class="login-card">
+    <!-- Logo -->
+    <div class="logo-wrap">
+      <div class="logo-img-wrap">
+        <img src="/pwa/icons/icon-512.png" alt="Sama Commerce" onerror="this.parentElement.innerHTML='🛍️'">
       </div>
+      <div class="app-name">Sama Commerce</div>
+      <div class="app-tagline">Gérez votre boutique simplement</div>
+    </div>
 
-      <label class="block text-sm font-medium text-gray-700 mb-1" for="email">Email</label>
-      <input type="email" id="email" placeholder="ex: nom@exemple.com"
-        class="w-full p-3 border border-gray-200 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition bg-white/90">
+    <div class="section-title">Connexion</div>
 
-      <label class="block text-sm font-medium text-gray-700 mb-1" for="password">Mot de passe</label>
-      <input type="password" id="password" placeholder="••••••••"
-        class="w-full p-3 border border-gray-200 rounded-xl mb-5 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition bg-white/90">
-
-      <div id="twofaSection" class="hidden mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-1" for="twofaCode">Code 2FA</label>
-        <input type="text" id="twofaCode" maxlength="6" placeholder="123456"
-          class="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition bg-white/90">
-        <button id="verify2faBtn"
-          class="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl font-semibold shadow-md mt-3 transition">
-          Vérifier le code
-        </button>
+    <!-- Email -->
+    <div class="form-group">
+      <label for="email">Email</label>
+      <div class="input-wrap">
+        <span class="input-icon">✉️</span>
+        <input type="email" id="email" placeholder="nom@exemple.com" autocomplete="email">
       </div>
+    </div>
 
-      <button id="loginBtn"
-        class="w-full bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-xl font-semibold shadow-md transition active:scale-[0.99]">Se
-        connecter</button>
-
-      <p class="text-center text-sm mt-4 text-gray-700">
-        Pas encore de compte ?
-        <a href="/register/register.html" class="text-purple-700 font-semibold hover:underline">Créer un compte</a>
-      </p>
-    </section>
-  </main>
-
-  <!-- MODAL GUIDE -->
-  <div id="loginGuideOverlay" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div id="loginGuide"
-      class="relative bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-6 rounded-2xl shadow-2xl max-w-lg w-[90%] animate-fadeIn">
-
-      <!-- Bouton de fermeture -->
-      <button onclick="closeLoginGuide()"
-        class="absolute top-3 right-3 text-blue-600 hover:text-blue-900 transition-colors duration-200 font-bold text-xl leading-none focus:outline-none">
-        ✕
-      </button>
-
-      <!-- Contenu -->
-      <div class="pr-6">
-        <h2 class="font-bold text-xl mb-3 flex items-center gap-2">
-          <span class="text-2xl">🔑</span>
-          Besoin d’aide ?
-        </h2>
-        <p class="text-sm leading-relaxed text-blue-700">
-          Entrez votre email et votre mot de passe pour accéder à votre espace.
-          Si vous n’avez pas encore de compte, cliquez sur
-          <span class="font-semibold">"Créer un compte"</span>.
-        </p>
-        <ul class="list-disc list-inside mt-3 space-y-2 text-sm leading-relaxed text-blue-700">
-          <li>
-            <span class="font-medium">Android / Ordinateur :</span> ouvrez cette page dans
-            <span class="italic">Chrome</span>, après connexion vous verrez le bouton
-            <span class="font-semibold">"Installer"</span>.
-          </li>
-          <li>
-            <span class="font-medium">Apple (iPhone, iPad) :</span> ouvrez cette page dans
-            <span class="italic">Safari</span>, puis appuyez sur le bouton
-            <span class="font-semibold">"Partager"</span> et sélectionnez
-            <span class="font-semibold">"Ajouter à l’écran d’accueil"</span>.
-          </li>
-        </ul>
-        <p class="mt-3 text-sm leading-relaxed text-blue-700">
-          Vous pourrez ainsi accéder rapidement à l’application depuis votre écran d’accueil.
-        </p>
+    <!-- Mot de passe -->
+    <div class="form-group">
+      <label for="password">Mot de passe</label>
+      <div class="input-wrap">
+        <span class="input-icon">🔒</span>
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
       </div>
+    </div>
+
+    <!-- 2FA -->
+    <div id="twofaSection" class="hidden">
+      <label for="twofaCode">🔐 Code de vérification</label>
+      <input type="text" id="twofaCode" maxlength="6" placeholder="• • • • • •" inputmode="numeric">
+      <button id="verify2faBtn">✅ Vérifier le code</button>
+    </div>
+
+    <!-- Bouton connexion -->
+    <button id="loginBtn">Se connecter →</button>
+
+    <div class="link-row">
+      Pas encore de compte ?
+      <a href="/register/register.html">Créer un compte</a>
+    </div>
+  </div>
+
+  <!-- Guide modal (bottom sheet) -->
+  <div id="loginGuideOverlay" class="guide-overlay">
+    <div id="loginGuide" class="guide-sheet">
+      <div class="guide-pill"></div>
+      <button class="guide-close" onclick="closeLoginGuide()">✕</button>
+
+      <div class="guide-title">🔑 Besoin d'aide ?</div>
+      <div class="guide-body">
+        Entrez votre <strong>email</strong> et votre <strong>mot de passe</strong> pour accéder à votre espace.
+        <div class="guide-steps">
+          <div class="guide-step">
+            <div class="guide-step-icon">🤖</div>
+            <div><strong>Android / PC :</strong> Ouvrez dans Chrome, après connexion, cliquez sur <strong>"Installer"</strong> pour ajouter l'appli.</div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-icon">🍎</div>
+            <div><strong>iPhone / iPad :</strong> Ouvrez dans Safari → bouton <strong>"Partager"</strong> → <strong>"Ajouter à l'écran d'accueil"</strong>.</div>
+          </div>
+        </div>
+      </div>
+      <button class="guide-cta" onclick="closeLoginGuide()">C'est parti ! 🚀</button>
     </div>
   </div>
 
   <script>
     const API_BASE = "https://samacommerce-backend-v2.onrender.com";
+    function closeLoginGuide() {
+      const overlay = document.getElementById('loginGuideOverlay');
+      if (overlay) overlay.style.display = 'none';
+    }
   </script>
 </body>
-
 </html>

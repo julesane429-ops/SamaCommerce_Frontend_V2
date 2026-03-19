@@ -193,3 +193,120 @@ export function setupSearchInputs() {
   var inv = document.getElementById('searchInventaire'); if (inv) { inv.addEventListener('input', function () { var term = this.value.toLowerCase(); document.querySelectorAll('#inventaireListe tr').forEach(function (row) { var prodName = (row.cells[0] && row.cells[0].textContent || '').toLowerCase(); row.style.display = prodName.indexOf(term) !== -1 ? '' : 'none'; }); }); }
   var cat = document.getElementById('searchCategorie'); if (cat) { cat.addEventListener('input', function () { var term = this.value.toLowerCase(); document.querySelectorAll('#listeCategories > div').forEach(function (div) { var catName = (div.textContent || '').toLowerCase(); div.style.display = catName.indexOf(term) !== -1 ? '' : 'none'; }); }); }
 }
+// ═══════════════════════════════════════════════════════════════
+// PATCH inventaire.js — Remplacer le bloc "Graphique inventaire"
+// ═══════════════════════════════════════════════════════════════
+//
+// Dans js/inventaire.js, remplacer ce bloc (lignes ~110-130) :
+//
+//   // --- Graphique inventaire ---
+//   const ctx = document.getElementById("chartInventaire")?.getContext("2d");
+//   if (ctx) {
+//     if (chartInventaireInstance) chartInventaireInstance.destroy();
+//     chartInventaireInstance = new window.Chart(ctx, {
+//       type: "bar",
+//       data: {
+//         labels: produitsFiltres.map(p => p.name),
+//         datasets: [
+//           { label: "Stock",   data: produitsFiltres.map(p => p.stock || 0), backgroundColor: "rgba(59,130,246,0.6)" },
+//           { label: "Vendues", data: produitsFiltres.map(p => p.vendu || 0), backgroundColor: "rgba(16,185,129,0.6)" }
+//         ]
+//       },
+//       options: {
+//         responsive: true,
+//         plugins: { legend: { position: "top" } },
+//         scales: { y: { beginAtZero: true } }
+//       }
+//     });
+//   }
+//
+// PAR CE BLOC :
+
+  // --- Graphique inventaire (redesign) ---
+  const ctx = document.getElementById("chartInventaire")?.getContext("2d");
+  if (ctx) {
+    if (chartInventaireInstance) chartInventaireInstance.destroy();
+
+    // Limiter à 12 produits pour la lisibilité
+    const top = produitsFiltres.slice(0, 12);
+    const labels = top.map(p => p.name.length > 14 ? p.name.slice(0, 13) + "…" : p.name);
+
+    chartInventaireInstance = new window.Chart(ctx, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [
+          {
+            label:           "Stock",
+            data:            top.map(p => p.stock || 0),
+            backgroundColor: "rgba(59,130,246,0.75)",
+            borderColor:     "#3B82F6",
+            borderWidth:     0,
+            borderRadius:    8,
+            borderSkipped:   false,
+          },
+          {
+            label:           "Vendues",
+            data:            top.map(p => p.vendu || 0),
+            backgroundColor: "rgba(16,185,129,0.75)",
+            borderColor:     "#10B981",
+            borderWidth:     0,
+            borderRadius:    8,
+            borderSkipped:   false,
+          },
+        ],
+      },
+      options: {
+        responsive:          true,
+        maintainAspectRatio: false,
+        animation:           { duration: 700, easing: "easeOutQuart" },
+        plugins: {
+          legend: {
+            position: "top",
+            align:    "start",
+            labels: {
+              font:          { family: "'DM Sans', sans-serif", size: 12, weight: "600" },
+              boxWidth:      10,
+              boxHeight:     10,
+              borderRadius:  4,
+              padding:       16,
+              usePointStyle: true,
+              pointStyle:    "circle",
+            },
+          },
+          tooltip: {
+            backgroundColor: "#fff",
+            titleColor:      "#1E1B4B",
+            bodyColor:       "#6B7280",
+            borderColor:     "rgba(0,0,0,.08)",
+            borderWidth:     1,
+            padding:         12,
+            cornerRadius:    12,
+            titleFont:  { family: "'Sora', sans-serif",   size: 13, weight: "700" },
+            bodyFont:   { family: "'DM Sans', sans-serif", size: 12 },
+            callbacks: {
+              label: (ctx) => ` ${ctx.raw} ${ctx.dataset.label === "Stock" ? "en stock" : "vendues"}`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid:   { color: "rgba(0,0,0,.05)", drawBorder: false },
+            ticks:  { font: { family: "'DM Sans', sans-serif", size: 11 }, color: "#6B7280", maxRotation: 30 },
+            border: { display: false },
+          },
+          y: {
+            grid:        { color: "rgba(0,0,0,.05)", drawBorder: false },
+            ticks:       { font: { family: "'DM Sans', sans-serif", size: 11 }, color: "#6B7280", stepSize: 1 },
+            border:      { display: false },
+            beginAtZero: true,
+          },
+        },
+      },
+    });
+
+    // Appliquer le style dark mode si actif
+    if (typeof window.applyInventaireChartStyle === "function") {
+      window.applyInventaireChartStyle(chartInventaireInstance);
+    }
+  }

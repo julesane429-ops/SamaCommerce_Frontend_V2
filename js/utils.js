@@ -13,7 +13,8 @@ import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier
 
 
 export function showSection(section) {
-  const sections = ['menu', 'vente', 'stock', 'categories', 'rapports', 'inventaire', 'credits'];
+  const sections = ['menu', 'vente', 'stock', 'categories', 'rapports', 'inventaire', 'credits',
+                  'clients', 'fournisseurs', 'commandes', 'livraisons'];
   sections.forEach(function (s) {
     const el = document.getElementById(s + 'Section');
     if (el) el.classList.add('hidden');

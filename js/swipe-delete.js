@@ -1,167 +1,138 @@
 /**
- * swipe-delete.js — Swipe to delete pour Sama Commerce
+ * swipe-delete.js v2 — Swipe to delete sans rewrapping DOM
  *
- * Permet de glisser vers la gauche sur :
- *   - Les cartes produit (#listeProduits)
- *   - Les lignes de crédit (#creditsHistoryBody)
+ * CORRECTIF v1 → v2 :
+ * La v1 enveloppait chaque carte dans un nouveau div, ce qui cassait
+ * les références des event listeners déjà attachés par ui.js (boutons
+ * Éditer, Stock+/-, Supprimer), empêchant la page de fonctionner.
  *
- * S'attache via MutationObserver : chaque fois que le JS existant
- * injecte de nouveaux éléments, le swipe est automatiquement activé.
+ * v2 injecte le backdrop DANS la carte existante et applique
+ * translateX directement sur elle — aucun rewrapping, aucune
+ * rupture des listeners existants.
  *
  * INTÉGRATION dans index.html, juste avant </body> :
  *   <script src="js/swipe-delete.js"></script>
- *
- * Aucune modification du JS existant requise.
  */
 
 (function () {
 
-  // ══════════════════════════════════════
-  // CONFIG
-  // ══════════════════════════════════════
-  const OPEN_THRESHOLD  = 40;   // px pour considérer le swipe "ouvert"
-  const CLOSE_THRESHOLD = 20;   // px de retour pour fermer
-  const BACKDROP_WIDTH  = 90;   // px révélés (doit matcher le CSS)
+  const OPEN_THRESHOLD = 42;  // px de swipe gauche pour ouvrir
+  const BACKDROP_W     = 88;  // doit correspondre au CSS
 
-  // ══════════════════════════════════════
-  // UTILITAIRE : un seul swipe ouvert à la fois
-  // ══════════════════════════════════════
-  let currentOpen = null;
-
-  function closeAll(except) {
-    document.querySelectorAll('.swipe-wrapper.swipe-open').forEach(w => {
-      if (w !== except) w.classList.remove('swipe-open');
+  // ── Un seul swipe ouvert à la fois ──
+  function closeAllExcept(card) {
+    document.querySelectorAll('.swipeable.swipe-open').forEach(c => {
+      if (c !== card) c.classList.remove('swipe-open');
     });
   }
 
   // ══════════════════════════════════════
-  // ATTACHER LE SWIPE À UNE CARTE (div)
+  // ATTACHER LE SWIPE SUR UNE CARTE
   // ══════════════════════════════════════
-  function attachSwipeToCard(card, onDelete) {
-    // Éviter le double attachement
-    if (card.dataset.swipeAttached) return;
-    card.dataset.swipeAttached = 'true';
+  function attachSwipe(card, onDelete) {
+    if (card._swipeAttached) return;
+    card._swipeAttached = true;
 
-    // Créer le wrapper
-    const wrapper = document.createElement('div');
-    wrapper.className = 'swipe-wrapper';
+    // 1. Ajouter la classe de base
+    card.classList.add('swipeable');
 
-    // Créer le backdrop rouge
+    // 2. Injecter le backdrop à l'intérieur
     const backdrop = document.createElement('div');
     backdrop.className = 'swipe-backdrop';
     backdrop.innerHTML = `
       <span class="swipe-backdrop-icon">🗑️</span>
       <span class="swipe-backdrop-label">Supprimer</span>
     `;
+    card.appendChild(backdrop);
 
-    // Envelopper la carte
-    const content = document.createElement('div');
-    content.className = 'swipe-content';
-    card.parentNode.insertBefore(wrapper, card);
-    content.appendChild(card);
-    wrapper.appendChild(backdrop);
-    wrapper.appendChild(content);
-
-    // ── Gestion tactile ──
+    // 3. Gestion tactile
     let startX = 0, startY = 0;
     let isDragging = false;
     let isOpen = false;
-    let startedOpen = false;
+    let wasOpen = false;
 
-    content.addEventListener('touchstart', (e) => {
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
+    card.addEventListener('touchstart', e => {
+      startX    = e.touches[0].clientX;
+      startY    = e.touches[0].clientY;
       isDragging = false;
-      startedOpen = isOpen;
+      wasOpen   = isOpen;
     }, { passive: true });
 
-    content.addEventListener('touchmove', (e) => {
+    card.addEventListener('touchmove', e => {
       const dx = e.touches[0].clientX - startX;
       const dy = Math.abs(e.touches[0].clientY - startY);
 
-      // Ignorer si scroll vertical
-      if (!isDragging && dy > Math.abs(dx)) return;
+      // Scroll vertical → ignorer
+      if (!isDragging && dy > Math.abs(dx) + 5) return;
 
-      // Swipe gauche uniquement
-      if (dx > 0 && !startedOpen) return;
+      // Swipe vers la droite quand fermé → ignorer
+      if (!isDragging && dx > 0 && !wasOpen) return;
 
       isDragging = true;
 
-      let offset = 0;
-      if (startedOpen) {
-        offset = Math.max(-BACKDROP_WIDTH, Math.min(0, dx - BACKDROP_WIDTH));
+      // Calculer le déplacement avec résistance en bout de course
+      let offset;
+      if (wasOpen) {
+        offset = Math.max(-BACKDROP_W, Math.min(0, dx - BACKDROP_W));
       } else {
-        offset = Math.max(-BACKDROP_WIDTH, Math.min(0, dx));
+        offset = Math.max(-BACKDROP_W * 1.1, Math.min(0, dx));
       }
 
-      content.style.transition = 'none';
-      content.style.transform = `translateX(${offset}px)`;
+      card.style.transition = 'none';
+      card.style.transform  = `translateX(${offset}px)`;
     }, { passive: true });
 
-    content.addEventListener('touchend', (e) => {
-      content.style.transition = '';
-      const dx = e.changedTouches[0].clientX - startX;
+    card.addEventListener('touchend', e => {
+      card.style.transition = '';
+      card.style.transform  = '';
 
       if (!isDragging) {
-        // Simple tap → fermer si ouvert
+        // Simple tap : fermer si ouvert (mais ne pas déclencher les boutons enfants)
         if (isOpen) {
-          wrapper.classList.remove('swipe-open');
+          card.classList.remove('swipe-open');
           isOpen = false;
         }
         return;
       }
 
-      content.style.transform = '';
+      const dx = e.changedTouches[0].clientX - startX;
 
-      if (startedOpen) {
-        // Était ouvert : fermer si tiré vers droite
-        if (dx > CLOSE_THRESHOLD) {
-          wrapper.classList.remove('swipe-open');
+      if (wasOpen) {
+        if (dx > 20) {
+          card.classList.remove('swipe-open');
           isOpen = false;
         } else {
-          wrapper.classList.add('swipe-open');
+          card.classList.add('swipe-open');
           isOpen = true;
         }
       } else {
-        // Était fermé : ouvrir si tiré vers gauche
         if (dx < -OPEN_THRESHOLD) {
-          closeAll(wrapper);
-          wrapper.classList.add('swipe-open');
+          closeAllExcept(card);
+          card.classList.add('swipe-open');
           isOpen = true;
         } else {
-          wrapper.classList.remove('swipe-open');
+          card.classList.remove('swipe-open');
           isOpen = false;
         }
       }
     }, { passive: true });
 
-    // Fermer si on clique ailleurs
-    document.addEventListener('touchstart', (e) => {
-      if (isOpen && !wrapper.contains(e.target)) {
-        wrapper.classList.remove('swipe-open');
+    // Fermer si on touche autre chose
+    document.addEventListener('touchstart', e => {
+      if (isOpen && !card.contains(e.target)) {
+        card.classList.remove('swipe-open');
         isOpen = false;
       }
     }, { passive: true });
 
-    // ── Clic sur le backdrop → supprimer ──
-    backdrop.addEventListener('click', () => {
-      wrapper.classList.add('swipe-removing');
+    // 4. Clic sur backdrop → animation + suppression
+    backdrop.addEventListener('click', e => {
+      e.stopPropagation();
+      card.classList.add('swipe-removing');
       setTimeout(() => {
         onDelete();
-        wrapper.remove();
-      }, 350);
+      }, 320);
     });
-  }
-
-  // ══════════════════════════════════════
-  // TROUVER LE BOUTON SUPPRIMER EXISTANT
-  // Récupère l'action de suppression du bouton 🗑️ déjà dans la carte
-  // ══════════════════════════════════════
-  function getDeleteAction(card) {
-    // Le JS existant attache les événements sur .btn-suppr
-    const btn = card.querySelector('.btn-suppr');
-    if (!btn) return null;
-    return () => btn.click();
   }
 
   // ══════════════════════════════════════
@@ -172,63 +143,55 @@
     if (!container) return;
 
     function processCards() {
-      // Les cartes produit sont des div directs de #listeProduits
-      // qui ne sont pas encore dans un .swipe-wrapper
-      container.querySelectorAll(':scope > div:not([data-swipe-attached])').forEach(card => {
-        const deleteAction = getDeleteAction(card);
-        if (!deleteAction) return;
-        attachSwipeToCard(card, deleteAction);
+      container.querySelectorAll(':scope > div').forEach(card => {
+        if (card._swipeAttached) return;
+
+        // Trouver le bouton 🗑️ existant créé par ui.js
+        const btnSuppr = card.querySelector('.btn-suppr');
+        if (!btnSuppr) return;
+
+        attachSwipe(card, () => btnSuppr.click());
       });
     }
 
-    // Process les cartes déjà présentes
     processCards();
-
-    // Observer les nouvelles cartes
-    const observer = new MutationObserver(processCards);
-    observer.observe(container, { childList: true });
+    new MutationObserver(processCards).observe(container, { childList: true });
   }
 
   // ══════════════════════════════════════
   // OBSERVER #creditsHistoryBody
-  // Lignes de tableau — swipe plus discret
+  // Swipe gauche = highlight du bouton Rembourser
   // ══════════════════════════════════════
   function watchCredits() {
     const tbody = document.getElementById('creditsHistoryBody');
     if (!tbody) return;
 
     function processRows() {
-      tbody.querySelectorAll('tr:not([data-swipe-attached])').forEach(tr => {
-        tr.dataset.swipeAttached = 'true';
+      tbody.querySelectorAll('tr').forEach(tr => {
+        if (tr._swipeAttached) return;
+        tr._swipeAttached = true;
 
-        // Trouver le bouton Rembourser (pas supprimer, mais on peut swipe)
-        // On cherche plutôt le bouton de remboursement
-        const rembBtn = tr.querySelector('button');
-        if (!rembBtn) return; // ligne déjà payée → pas de swipe
+        const btn = tr.querySelector('button');
+        if (!btn) return; // ligne déjà remboursée
 
-        let startX = 0, isOpen = false;
+        let startX = 0;
 
-        tr.addEventListener('touchstart', (e) => {
+        tr.addEventListener('touchstart', e => {
           startX = e.touches[0].clientX;
         }, { passive: true });
 
-        tr.addEventListener('touchend', (e) => {
+        tr.addEventListener('touchend', e => {
           const dx = e.changedTouches[0].clientX - startX;
-
           if (dx < -40) {
-            // Swipe gauche → mettre en évidence le bouton rembourser
-            tr.style.transition = 'background .2s ease';
-            tr.style.background = '#FEF3C7';
-            tr.style.borderRadius = '12px';
-
-            // Faire clignoter le bouton
-            rembBtn.style.transform = 'scale(1.08)';
-            rembBtn.style.boxShadow = '0 0 0 3px rgba(245,158,11,.3)';
-
+            // Flash jaune + zoom sur le bouton Rembourser
+            tr.classList.add('swipe-credit-highlight');
+            btn.style.transition = 'transform .15s ease, box-shadow .15s ease';
+            btn.style.transform  = 'scale(1.1)';
+            btn.style.boxShadow  = '0 0 0 3px rgba(245,158,11,.35)';
             setTimeout(() => {
-              tr.style.background = '';
-              rembBtn.style.transform = '';
-              rembBtn.style.boxShadow = '';
+              tr.classList.remove('swipe-credit-highlight');
+              btn.style.transform  = '';
+              btn.style.boxShadow  = '';
             }, 1200);
           }
         }, { passive: true });
@@ -236,8 +199,7 @@
     }
 
     processRows();
-    const observer = new MutationObserver(processRows);
-    observer.observe(tbody, { childList: true });
+    new MutationObserver(processRows).observe(tbody, { childList: true });
   }
 
   // ══════════════════════════════════════

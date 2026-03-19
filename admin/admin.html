@@ -10,6 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="admin.css">
+  
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -854,6 +855,7 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #DDD6FE; border-radius: 3px; }
   </style>
+  <script src="admin-modules.js" defer></script>
 </head>
 
 <body>
@@ -922,6 +924,19 @@
       <a class="sidebar-link settings-link" onclick="showSection('settings')">
         <span class="nav-icon">⚙️</span> Paramètres
       </a>
+ 
+<!-- Séparateur -->
+<div class="sidebar-section-label" style="margin-top:12px;">Boutiques</div>
+ 
+<a class="sidebar-link adminClients-link" onclick="showSection('adminClients')">
+  <span class="nav-icon">👥</span> Clients
+</a>
+<a class="sidebar-link adminCommandes-link" onclick="showSection('adminCommandes')">
+  <span class="nav-icon">📦</span> Commandes
+</a>
+<a class="sidebar-link adminLivraisons-link" onclick="showSection('adminLivraisons')">
+  <span class="nav-icon">🚚</span> Livraisons
+</a>
     </nav>
   </aside>
 
@@ -1291,6 +1306,99 @@
         </button>
       </div>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+     SECTION CLIENTS ADMIN
+     Ajouter dans <main> après la section #settings
+═══════════════════════════════════════════════════════════ -->
+ 
+<div id="adminClients" class="section">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">👥 Clients — Toutes boutiques</h1>
+    <button
+      onclick="loadAdminClients()"
+      class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2">
+      🔄 Actualiser
+    </button>
+  </div>
+ 
+  <!-- Stats -->
+  <div id="adminClientsStats"></div>
+ 
+  <!-- Recherche -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
+    <input
+      type="search"
+      id="adminClientsSearch"
+      placeholder="🔍 Rechercher par nom, téléphone ou boutique…"
+      class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-400 focus:border-transparent outline-none text-sm">
+  </div>
+ 
+  <!-- Liste -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div id="adminClientsList">
+      <div class="text-center text-gray-500 py-8">Cliquez sur Clients dans le menu pour charger</div>
+    </div>
+  </div>
+</div>
+ 
+ 
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION COMMANDES ADMIN
+═══════════════════════════════════════════════════════════ -->
+ 
+<div id="adminCommandes" class="section">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">📦 Commandes — Toutes boutiques</h1>
+    <button
+      onclick="loadAdminCommandes()"
+      class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2">
+      🔄 Actualiser
+    </button>
+  </div>
+ 
+  <!-- Stats -->
+  <div id="adminCommandesStats"></div>
+ 
+  <!-- Chips filtre statut -->
+  <div class="mb-4" id="adminCommandesChips"></div>
+ 
+  <!-- Liste -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div id="adminCommandesList">
+      <div class="text-center text-gray-500 py-8">Cliquez sur Commandes dans le menu pour charger</div>
+    </div>
+  </div>
+</div>
+ 
+ 
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION LIVRAISONS ADMIN
+═══════════════════════════════════════════════════════════ -->
+ 
+<div id="adminLivraisons" class="section">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">🚚 Livraisons — Toutes boutiques</h1>
+    <button
+      onclick="loadAdminLivraisons()"
+      class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2">
+      🔄 Actualiser
+    </button>
+  </div>
+ 
+  <!-- Stats -->
+  <div id="adminLivraisonsStats"></div>
+ 
+  <!-- Chips filtre statut -->
+  <div class="mb-4" id="adminLivraisonsChips"></div>
+ 
+  <!-- Liste -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div id="adminLivraisonsList">
+      <div class="text-center text-gray-500 py-8">Cliquez sur Livraisons dans le menu pour charger</div>
+    </div>
+  </div>
+</div>
 
   </main>
 

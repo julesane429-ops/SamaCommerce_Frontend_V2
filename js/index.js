@@ -19,6 +19,7 @@ import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier
 // ------------------- Exposer globalement -------------------
 // State / auth
 window.logout = logout;
+window.appData = appData;
 window.getCurrentUserId = getCurrentUserId;
 
 // Rapports

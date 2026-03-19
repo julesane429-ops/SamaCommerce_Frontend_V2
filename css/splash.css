@@ -1,0 +1,136 @@
+/* ═══════════════════════════════════════
+   SPLASH SCREEN — splash.css
+   À inclure dans index.html avant tout autre CSS
+═══════════════════════════════════════ */
+
+#splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: linear-gradient(145deg, #5B21B6 0%, #7C3AED 45%, #EC4899 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  /* La disparition est déclenchée via la classe .splash-out */
+  transition: opacity .45s ease, visibility .45s ease;
+}
+
+/* ── Logo ── */
+.splash-logo-wrap {
+  width: 96px;
+  height: 96px;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 6px rgba(255,255,255,.15),
+    0 16px 48px rgba(0,0,0,.3);
+  animation: splashLogoIn .55s cubic-bezier(.34,1.56,.64,1) both;
+  animation-delay: .1s;
+  margin-bottom: 22px;
+}
+.splash-logo-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── App name ── */
+.splash-name {
+  font-family: 'Sora', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -.4px;
+  animation: splashTextIn .5s ease both;
+  animation-delay: .25s;
+  opacity: 0;
+}
+
+/* ── Tagline ── */
+.splash-tagline {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255,255,255,.7);
+  margin-top: 6px;
+  animation: splashTextIn .5s ease both;
+  animation-delay: .38s;
+  opacity: 0;
+}
+
+/* ── Barre de chargement ── */
+.splash-bar-wrap {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140px;
+  height: 4px;
+  background: rgba(255,255,255,.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.splash-bar {
+  height: 100%;
+  width: 0%;
+  background: #fff;
+  border-radius: 2px;
+  animation: splashBarFill 1.6s ease forwards;
+  animation-delay: .3s;
+}
+
+/* ── Texte chargement ── */
+.splash-loading-text {
+  position: absolute;
+  bottom: 36px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,.55);
+  letter-spacing: .5px;
+  animation: splashTextIn .5s ease both;
+  animation-delay: .4s;
+  opacity: 0;
+}
+
+/* ── Décoration cercles ── */
+.splash-circle-1,
+.splash-circle-2 {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,.06);
+  pointer-events: none;
+}
+.splash-circle-1 {
+  width: 280px; height: 280px;
+  top: -80px; right: -80px;
+}
+.splash-circle-2 {
+  width: 200px; height: 200px;
+  bottom: -60px; left: -40px;
+}
+
+/* ── État de sortie ── */
+#splash-screen.splash-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ── Keyframes ── */
+@keyframes splashLogoIn {
+  from { opacity: 0; transform: scale(.6) translateY(20px); }
+  to   { opacity: 1; transform: scale(1)  translateY(0); }
+}
+@keyframes splashTextIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes splashBarFill {
+  0%   { width: 0%; }
+  60%  { width: 75%; }
+  85%  { width: 90%; }
+  100% { width: 100%; }
+}

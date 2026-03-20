@@ -390,6 +390,13 @@
       Pas encore de compte ?
       <a href="/register/register.html">Créer un compte</a>
     </div>
+    <button type="button" id="demo-btn" onclick="loginDemo()" style="
+  width:100%;padding:13px;margin-top:10px;
+  background:linear-gradient(135deg,#F3F4F6,#E5E7EB);
+  color:#6B7280;border:none;border-radius:14px;
+  font-family:'Sora',sans-serif;font-size:14px;font-weight:700;
+  cursor:pointer;
+">👀 Essayer la démo</button>
   </div>
 
   <!-- Guide modal (bottom sheet) -->
@@ -423,5 +430,26 @@
       if (overlay) overlay.style.display = 'none';
     }
   </script>
+  <script>
+async function loginDemo() {
+  const API = document.querySelector('meta[name="api-base"]')?.content || 'https://samacommerce-backend-v2.onrender.com';
+  const btn = document.getElementById('demo-btn');
+  btn.textContent = '⏳ Chargement démo…';
+  btn.disabled = true;
+  try {
+    const res  = await fetch(API + '/demo/login', { method:'POST', headers:{'Content-Type':'application/json'} });
+    const data = await res.json();
+    if (data.token) {
+      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('userRole',  data.user.role);
+      localStorage.setItem('is_demo',   'true');
+      window.location.replace('../index.html');
+    }
+  } catch {
+    btn.textContent = '👀 Essayer la démo';
+    btn.disabled = false;
+  }
+}
+</script>
 </body>
 </html>

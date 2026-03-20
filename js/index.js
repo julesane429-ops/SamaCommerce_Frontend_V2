@@ -220,6 +220,7 @@ window.addEventListener('online', () => { console.log('Back online -> retry outb
 
 
 export async function updateHeader() {
+  if (!localStorage.getItem('authToken')) return;
   try {
     const res = await authfetch(API_BASE + '/auth/me');
     if (res.ok) {

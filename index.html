@@ -482,6 +482,69 @@
                 <div id="livraisonsList"></div>
             </div>
 
+            <!-- ══════════ SECTION CALENDRIER ══════════ -->
+<div class="section-page hidden" id="calendrierSection">
+ 
+  <div class="page-header" style="margin-top:6px;">
+    <h2>📅 Échéances</h2>
+    <button class="btn-primary" onclick="window.initCalendrierSection && (window.calendrierSection?._init=false, window.initCalendrierSection())" id="cal-refresh">🔄</button>
+  </div>
+ 
+  <!-- Stats du mois -->
+  <div id="cal-month-stats"></div>
+ 
+  <!-- Navigation mois -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <button id="cal-prev" style="
+      background:var(--surface);border:1.5px solid #E5E7EB;
+      width:38px;height:38px;border-radius:11px;font-size:18px;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      box-shadow:0 1px 6px rgba(0,0,0,.06);">‹</button>
+ 
+    <div style="text-align:center;">
+      <div id="cal-month-title" style="font-family:'Sora',sans-serif;font-size:16px;font-weight:800;color:var(--text);"></div>
+      <button id="cal-today-btn" style="background:none;border:none;font-size:11px;color:var(--primary);font-weight:700;cursor:pointer;padding:2px 0;">Aujourd'hui</button>
+    </div>
+ 
+    <button id="cal-next" style="
+      background:var(--surface);border:1.5px solid #E5E7EB;
+      width:38px;height:38px;border-radius:11px;font-size:18px;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      box-shadow:0 1px 6px rgba(0,0,0,.06);">›</button>
+  </div>
+ 
+  <!-- Légende -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+    <div style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted);">
+      <div style="width:8px;height:8px;border-radius:50%;background:#EF4444;"></div> Crédit
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted);">
+      <div style="width:8px;height:8px;border-radius:50%;background:#F59E0B;"></div> Commande
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted);">
+      <div style="width:8px;height:8px;border-radius:50%;background:#3B82F6;"></div> Livraison
+    </div>
+  </div>
+ 
+  <!-- Grille calendrier -->
+  <div id="cal-grid" style="
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:4px;
+    margin-bottom:18px;
+    position:relative;
+  "></div>
+ 
+  <!-- Séparateur -->
+  <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:800;color:var(--text);margin-bottom:10px;">
+    📋 Échéances du mois
+  </div>
+ 
+  <!-- Liste échéances -->
+  <div id="cal-event-list"></div>
+</div>
+ 
+
             <!-- ══════════ SECTION PROFIL ══════════ -->
 <div class="section-page hidden" id="profilSection">
   <div class="page-header" style="margin-top:6px;">
@@ -579,6 +642,14 @@
                 </div>
                 <span class="sheet-chevron">›</span>
             </button>
+            <button class="sheet-item" onclick="closePlusSheet();navTo('calendrier');">
+  <div class="sheet-icon" style="background:#EFF6FF;">📅</div>
+  <div>
+    <h3>Échéances</h3>
+    <p>Crédits · Commandes · Livraisons</p>
+  </div>
+  <span class="sheet-chevron">›</span>
+</button>
             <button class="sheet-item" onclick="closePlusSheet();navTo('profil');">
   <div class="sheet-icon" style="background:#EDE9FE;">👤</div>
   <div>

@@ -1,20 +1,116 @@
 // ============================================================
 // sw.js — Service Worker Sama Commerce
-// Version 4 — Push notifications + cache amélioré
+// Version 5 — Network First pour JS/HTML/CSS, Cache First pour assets
 // ============================================================
 
-const CACHE   = 'samacommerce-v4';
-const API_URL = 'https://samacommerce-backend-v2.onrender.com';
+const CACHE_STATIC = 'samacommerce-static-v5';
+const CACHE_PAGES  = 'samacommerce-pages-v5';
+const API_URL      = 'https://samacommerce-backend-v2.onrender.com';
 
-const PRECACHE_URLS = [
-  '/',
-  '/index.html',
+const STATIC_ASSETS = [
   '/pwa/manifest.json',
   '/pwa/icons/icon-192.png',
   '/pwa/icons/icon-512.png',
 ];
 
-// ── Icônes pour les notifications selon le type ──
+// ════════════════════════════════════════
+// INSTALL — pré-cache uniquement les assets statiques (images, manifest)
+// ════════════════════════════════════════
+self.addEventListener('install', evt => {
+  evt.waitUntil(
+    caches.open(CACHE_STATIC)
+      .then(cache => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting())
+  );
+  console.log('📦 SW v5 installé');
+});
+
+// ════════════════════════════════════════
+// ACTIVATE — supprime tous les anciens caches
+// ════════════════════════════════════════
+self.addEventListener('activate', evt => {
+  evt.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(
+        keys
+          .filter(k => k !== CACHE_STATIC && k !== CACHE_PAGES)
+          .map(k => {
+            console.log('🗑️ Suppression ancien cache :', k);
+            return caches.delete(k);
+          })
+      ))
+      .then(() => self.clients.claim())
+  );
+  console.log('⚡ SW v5 activé');
+});
+
+// ════════════════════════════════════════
+// FETCH
+// ════════════════════════════════════════
+self.addEventListener('fetch', evt => {
+  if (evt.request.method !== 'GET') return;
+
+  const url = evt.request.url;
+
+  // ── 1. Appels API → toujours réseau, jamais de cache ──
+  if (url.startsWith(API_URL)) return;
+
+  // ── 2. Images & manifest → Cache First ──
+  const isStaticAsset = /\.(png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf)$/i.test(url)
+    || url.includes('/pwa/');
+
+  if (isStaticAsset) {
+    evt.respondWith(
+      caches.open(CACHE_STATIC).then(cache =>
+        cache.match(evt.request).then(cached => {
+          if (cached) return cached;
+          return fetch(evt.request).then(resp => {
+            if (resp && resp.status === 200) {
+              cache.put(evt.request, resp.clone());
+            }
+            return resp;
+          });
+        })
+      )
+    );
+    return;
+  }
+
+  // ── 3. HTML, JS, CSS → Network First (fraîcheur garantie) ──
+  evt.respondWith(
+    fetch(evt.request)
+      .then(resp => {
+        // Mise en cache de la réponse fraîche
+        if (resp && resp.status === 200 && resp.type === 'basic') {
+          const clone = resp.clone();
+          caches.open(CACHE_PAGES).then(cache => cache.put(evt.request, clone));
+        }
+        return resp;
+      })
+      .catch(() => {
+        // Réseau indisponible → fallback sur le cache
+        return caches.match(evt.request).then(cached => {
+          if (cached) return cached;
+          // Fallback offline générique
+          const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+            <title>Hors ligne – Sama Commerce</title>
+            <style>
+              body { font-family: sans-serif; text-align: center; padding: 50px; background: #f9f9f9; }
+              h2 { color: #7C3AED; } p { color: #444; }
+            </style></head>
+            <body>
+              <h2>⚠️ Vous êtes hors connexion</h2>
+              <p>Reconnectez-vous à Internet pour accéder à Sama Commerce.</p>
+            </body></html>`;
+          return new Response(html, { headers: { 'Content-Type': 'text/html' } });
+        });
+      })
+  );
+});
+
+// ════════════════════════════════════════
+// PUSH — Réception d'une notification push
+// ════════════════════════════════════════
 const NOTIF_ICONS = {
   credit:    '/pwa/icons/icon-192.png',
   stock:     '/pwa/icons/icon-192.png',
@@ -22,115 +118,38 @@ const NOTIF_ICONS = {
   default:   '/pwa/icons/icon-192.png',
 };
 
-// ════════════════════════════════════════
-// INSTALL
-// ════════════════════════════════════════
-self.addEventListener('install', evt => {
-  evt.waitUntil(
-    caches.open(CACHE)
-      .then(cache => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting())
-  );
-  console.log('📦 SW v4 installé');
-});
-
-// ════════════════════════════════════════
-// ACTIVATE
-// ════════════════════════════════════════
-self.addEventListener('activate', evt => {
-  evt.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(
-        keys.filter(k => k !== CACHE).map(k => caches.delete(k))
-      ))
-      .then(() => self.clients.claim())
-  );
-  console.log('⚡ SW v4 activé');
-});
-
-// ════════════════════════════════════════
-// FETCH — Cache first pour assets, network first pour API
-// ════════════════════════════════════════
-self.addEventListener('fetch', evt => {
-  if (evt.request.method !== 'GET') return;
-
-  // Ne pas cacher les appels API
-  if (evt.request.url.startsWith(API_URL)) return;
-
-  evt.respondWith(
-    caches.match(evt.request).then(cached => {
-      if (cached) return cached;
-
-      return fetch(evt.request)
-        .then(resp => {
-          if (
-            resp &&
-            resp.status === 200 &&
-            resp.type === 'basic' &&
-            evt.request.url.startsWith(self.location.origin)
-          ) {
-            const clone = resp.clone();
-            caches.open(CACHE).then(c => c.put(evt.request, clone));
-          }
-          return resp;
-        })
-        .catch(() => {
-          // Fallback offline
-          const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
-            <title>Hors ligne</title>
-            <style>body{font-family:sans-serif;text-align:center;padding:50px;background:#f9f9f9;}
-            h2{color:#7C3AED;}p{color:#444;}</style></head>
-            <body><h2>⚠️ Vous êtes hors connexion</h2>
-            <p>Vos données locales restent accessibles.</p></body></html>`;
-          return new Response(html, { headers: { 'Content-Type': 'text/html' } });
-        });
-    })
-  );
-});
-
-// ════════════════════════════════════════
-// PUSH — Réception d'une notification push
-// ════════════════════════════════════════
 self.addEventListener('push', evt => {
   let data = { title: 'Sama Commerce', body: 'Vous avez une notification', type: 'default', url: '/' };
-
   try {
     if (evt.data) data = { ...data, ...evt.data.json() };
   } catch {
     if (evt.data) data.body = evt.data.text();
   }
 
-  const icon  = NOTIF_ICONS[data.type] || NOTIF_ICONS.default;
-  const badge = '/pwa/icons/icon-192.png';
-
-  const options = {
-    body:    data.body,
-    icon,
-    badge,
-    tag:     data.tag || data.type || 'sc-notif',
-    data:    { url: data.url || '/' },
-    vibrate: [100, 50, 100],
-    actions: data.actions || [],
-    requireInteraction: data.important || false,
-  };
-
   evt.waitUntil(
-    self.registration.showNotification(data.title, options)
+    self.registration.showNotification(data.title, {
+      body:    data.body,
+      icon:    NOTIF_ICONS[data.type] || NOTIF_ICONS.default,
+      badge:   '/pwa/icons/icon-192.png',
+      tag:     data.tag || data.type || 'sc-notif',
+      data:    { url: data.url || '/' },
+      vibrate: [100, 50, 100],
+      actions: data.actions || [],
+      requireInteraction: data.important || false,
+    })
   );
 });
 
 // ════════════════════════════════════════
-// NOTIFICATION CLICK — Ouvrir l'app
+// NOTIFICATION CLICK
 // ════════════════════════════════════════
 self.addEventListener('notificationclick', evt => {
   evt.notification.close();
-
   const targetUrl = evt.notification.data?.url || '/';
 
   evt.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then(clients => {
-        // Si une fenêtre est déjà ouverte, la focaliser
         for (const client of clients) {
           if (client.url.includes(self.location.origin) && 'focus' in client) {
             client.focus();
@@ -138,30 +157,25 @@ self.addEventListener('notificationclick', evt => {
             return;
           }
         }
-        // Sinon ouvrir une nouvelle fenêtre
-        if (self.clients.openWindow) {
-          return self.clients.openWindow(targetUrl);
-        }
+        if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
       })
   );
 });
 
 // ════════════════════════════════════════
-// MESSAGE — Communication avec la page
+// MESSAGE
 // ════════════════════════════════════════
 self.addEventListener('message', evt => {
   if (evt.data?.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
-
-  // Déclencher une notification locale (sans push serveur)
   if (evt.data?.type === 'LOCAL_NOTIF') {
     const { title, body, tag, url, type } = evt.data;
     self.registration.showNotification(title || 'Sama Commerce', {
-      body:    body  || '',
+      body:    body || '',
       icon:    NOTIF_ICONS[type] || NOTIF_ICONS.default,
       badge:   '/pwa/icons/icon-192.png',
-      tag:     tag   || 'local',
+      tag:     tag || 'local',
       data:    { url: url || '/' },
       vibrate: [80, 40, 80],
     });

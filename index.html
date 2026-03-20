@@ -889,7 +889,7 @@
             const map = { menu: 'nav-menu', stock: 'nav-stock', rapports: 'nav-rapports' };
             if (map[section]) document.getElementById(map[section])?.classList.add('active');
             else if (['categories', 'inventaire', 'credits', 'clients',
-                'fournisseurs', 'commandes', 'livraisons','profil'].includes(section)) document.getElementById('nav-plus')?.classList.add('active');
+                'fournisseurs', 'commandes', 'livraisons','profil','calendrier'].includes(section)) document.getElementById('nav-plus')?.classList.add('active');
         }
         function navTo(section) {
             closePlusSheet();

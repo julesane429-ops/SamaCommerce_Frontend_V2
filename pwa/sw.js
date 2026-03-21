@@ -153,6 +153,11 @@ self.addEventListener('notificationclick', evt => {
 self.addEventListener('message', evt => {
   if (evt.data?.type === 'SKIP_WAITING') self.skipWaiting();
 
+  // Vider le cache pages à la déconnexion pour éviter les données résiduelles
+  if (evt.data?.type === 'CLEAR_CACHE') {
+    caches.delete(CACHE_PAGES).catch(() => {});
+  }
+
   if (evt.data?.type === 'LOCAL_NOTIF') {
     const { title, body, tag, url, type } = evt.data;
     self.registration.showNotification(title || 'Sama Commerce', {

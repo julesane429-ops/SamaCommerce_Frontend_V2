@@ -164,11 +164,11 @@ export function ajouterAuPanier(produit) { if (!appData) return; const exist = a
 export function afficherPanier() {
   const c = document.getElementById('panierItems'); const total = document.getElementById('totalPanier'); if (!c) return; if (!appData || !appData.panier || !appData.panier.length) { c.innerHTML = '<div class="text-gray-500 text-center py-8"><div class="text-4xl mb-2">🛒</div><div>Panier vide</div></div>'; if (total) total.textContent = '0 F'; return; }
   c.innerHTML = ''; var totalPrix = 0; appData.panier.forEach(function (item) {
-    const div = document.createElement('div'); div.className = 'flex justify-between items-center bg-gray-50 rounded-2xl p-3'; div.innerHTML = '<div><div class="font-bold">' + item.name + '</div><div class="text-sm text-gray-600">' + (item.price || 0).toLocaleString() + ' F × ' + item.quantite + '</div></div><div class="flex items-center gap-2"><button class="bg-red-500 text-white w-8 h-8 rounded-full text-sm font-bold">-</button><span class="font-bold text-lg w-8 text-center">' + item.quantite + '</span><button class="bg-green-500 text-white w-8 h-8 rounded-full text-sm font-bold">+</button></div>'; // wire buttons
+    const div = document.createElement('div'); div.className = 'flex justify-between items-center bg-gray-50 rounded-2xl p-3'; div.innerHTML = '<div><div class="font-bold">' + item.name + '</div><div class="text-sm text-gray-600">' + (parseFloat(item.price) || 0).toLocaleString() + ' F × ' + item.quantite + '</div></div><div class="flex items-center gap-2"><button class="bg-red-500 text-white w-8 h-8 rounded-full text-sm font-bold">-</button><span class="font-bold text-lg w-8 text-center">' + item.quantite + '</span><button class="bg-green-500 text-white w-8 h-8 rounded-full text-sm font-bold">+</button></div>'; // wire buttons
     c.appendChild(div);
     // attach handlers to +/- buttons
     const btns = div.querySelectorAll('button'); if (btns && btns.length >= 2) { btns[0].addEventListener('click', function () { modifierQuantitePanier(item.id, -1); }); btns[1].addEventListener('click', function () { modifierQuantitePanier(item.id, 1); }); }
-    totalPrix += (item.price || 0) * item.quantite;
+    totalPrix += (parseFloat(item.price) || 0) * (parseInt(item.quantite) || 0);
   }); if (total) total.textContent = totalPrix.toLocaleString() + ' F';
 }
 
@@ -202,7 +202,7 @@ export function imprimerRecu(paymentMethod = "especes") {
 
   let lignes = appData.panier.map(item => {
 
-    const prix = item.price || 0;
+    const prix = parseFloat(item.price) || 0;
     const qte = item.quantite || 0;
     const sousTotal = prix * qte;
 

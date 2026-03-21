@@ -119,11 +119,19 @@
         body:    JSON.stringify({ refresh_token: refreshToken }),
       }).catch(() => {});
     }
+    // Nettoyer les tokens mais garder les clés d'identification de rôle
+    // pour que la page de login sache si c'était un employé
+    const wasEmployee = localStorage.getItem('employeeRole');
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(RTOKEN_KEY);
+    localStorage.removeItem('pendingUserId');
     window.showNotification?.('Session expirée — reconnexion requise', 'warning');
     setTimeout(() => {
-      window.location.replace('login/login.html?expired=1');
+      // Si c'était un employé, rediriger vers login avec info
+      const redirectUrl = wasEmployee
+        ? '/login/login.html?expired=1&employee=1'
+        : '/login/login.html?expired=1';
+      window.location.replace(redirectUrl);
     }, 1500);
   }
 

@@ -288,3 +288,137 @@ html.dark .history-item { background: #2A2740; }
 .history-item-name { font-size:13px; font-weight:700; color:var(--text); }
 .history-item-date { font-size:11px; color:var(--muted); margin-top:2px; }
 .history-item-amount { font-family:'Sora',sans-serif; font-size:13px; font-weight:800; color:var(--primary); }
+
+/* ═══════════════════════════════════════════════════════════
+   PATCH modules.css — Badges nouveaux statuts + fixes
+   commandes clients / livraisons clients / livreurs
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Badges commandes clients ── */
+.badge-recue        { background:#FEF3C7; color:#92400E; }
+.badge-confirmee    { background:#EFF6FF; color:#1E40AF; }
+.badge-en_livraison { background:#EDE9FE; color:#5B21B6; }
+.badge-livree       { background:#ECFDF5; color:#065F46; }
+.badge-annulee      { background:#FEE2E2; color:#991B1B; }
+
+/* ── Badges livraisons clients ── */
+.badge-creee    { background:#F3F4F6; color:#374151; }
+.badge-assignee { background:#FFFBEB; color:#92400E; }
+.badge-en_route { background:#EFF6FF; color:#1E40AF; }
+.badge-probleme { background:#FEE2E2; color:#991B1B; }
+
+html.dark .badge-recue        { background:#451A03; color:#FDE68A; }
+html.dark .badge-confirmee    { background:#1E3A5F; color:#93C5FD; }
+html.dark .badge-en_livraison { background:#2E1065; color:#C4B5FD; }
+html.dark .badge-livree       { background:#064E3B; color:#6EE7B7; }
+html.dark .badge-annulee      { background:#7F1D1D; color:#FCA5A5; }
+html.dark .badge-creee        { background:#1F2937; color:#D1D5DB; }
+html.dark .badge-assignee     { background:#451A03; color:#FDE68A; }
+html.dark .badge-en_route     { background:#1E3A5F; color:#93C5FD; }
+html.dark .badge-probleme     { background:#7F1D1D; color:#FCA5A5; }
+
+/* ── Commande card (commandes clients) ── */
+.commande-card.status-recue        { border-left-color: #F59E0B; }
+.commande-card.status-en_livraison { border-left-color: #8B5CF6; }
+.commande-card.status-livree       { border-left-color: #10B981; }
+
+/* ── Avatar fournisseur (bleu) ── */
+.avatar-fournisseur {
+  background: linear-gradient(135deg, #2563EB, #06B6D4) !important;
+}
+
+/* ── Bouton Commander ── */
+.eb-order {
+  background: #FFFBEB;
+  color: #92400E;
+}
+.eb-order:active { transform: scale(.95); }
+html.dark .eb-order { background: #451A03; color: #FDE68A; }
+
+/* ── Barre CA bleue (fournisseurs) ── */
+.ca-bar.blue { background: linear-gradient(90deg, #3B82F6, #06B6D4) !important; }
+
+/* ── Livreur card ── */
+.deliveryman-card {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 16px rgba(0,0,0,.07);
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+}
+.deliveryman-card:active { transform: scale(.98); box-shadow: 0 1px 8px rgba(0,0,0,.06); }
+
+/* ── Status pills livreurs ── */
+.dm-status-disponible  { background:#ECFDF5; color:#065F46; }
+.dm-status-en_course   { background:#FEF3C7; color:#92400E; }
+.dm-status-injoignable { background:#FEE2E2; color:#991B1B; }
+
+/* ── Fiche produit picker (nouvelle commande) ── */
+.product-pick-btn {
+  border: 2px solid #E5E7EB;
+  border-radius: 14px;
+  padding: 10px 8px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all .15s;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.product-pick-btn:active     { transform: scale(.96); }
+.product-pick-btn.selected   { border-color: var(--primary); background: #EDE9FE; }
+.product-pick-btn .ppn       { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.product-pick-btn .ppp       { font-size: 11px; color: var(--primary); font-weight: 700; }
+html.dark .product-pick-btn  { background: #2A2740; border-color: #3B3760; }
+html.dark .product-pick-btn.selected { background: #3B2078; border-color: #7C3AED; }
+
+/* ── Commandes clients — timeline dots ── */
+.commande-timeline {
+  display: flex;
+  align-items: center;
+  margin: 10px 0 6px;
+  position: relative;
+}
+
+/* ── select in module sheets ── */
+.module-sheet select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 12px;
+  font-size: 13px;
+  font-family: 'Sora', sans-serif;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  cursor: pointer;
+}
+.module-sheet select:focus { border-color: var(--primary); }
+html.dark .module-sheet select { background-color: #2A2740; border-color: #3B3760; color: #E2E0F0; }
+
+/* ── Finance dashboard canvas ── */
+#finance-dashboard-modal canvas {
+  max-height: 150px;
+}
+
+/* ── Client widget dans section Vente ── */
+#cv-client-wrap {
+  margin: 0 0 10px;
+}
+#cv-client-dropdown::-webkit-scrollbar { width: 4px; }
+#cv-client-dropdown::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 2px; }
+
+/* ── Animation pulse pour section active ── */
+@keyframes cvPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,.4); }
+  50%      { box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+}
+#cv-client-box:focus-within {
+  animation: cvPulse 2s infinite;
+}

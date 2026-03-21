@@ -119,14 +119,15 @@ export async function finaliserVenteCredit() {
 
   // Envoyer les ventes une par une
   for (const item of appData.panier) {
+    const realQty = (parseInt(item.quantite) || 1) * (parseInt(item._lot_qty) || 1);
     const venteCredit = {
-      product_id: item.id,
-      quantity: item.quantite,
-      payment_method: "credit", // ✅ Marqué comme crédit
-      client_name: clientName,
-      client_phone: clientPhone,
-      due_date: dueDate,
-      paid: false // ✅ Par défaut non payé
+      product_id:     item.id,
+      quantity:       realQty,
+      payment_method: "credit",
+      client_name:    clientName,
+      client_phone:   clientPhone,
+      due_date:       dueDate,
+      paid:           false,
     };
 
     const created = await postSaleServer(venteCredit);
@@ -188,7 +189,11 @@ export function ajouterAuPanier(produit) {
 export function afficherPanier() {
   const c = document.getElementById('panierItems'); const total = document.getElementById('totalPanier'); if (!c) return; if (!appData || !appData.panier || !appData.panier.length) { c.innerHTML = '<div class="text-gray-500 text-center py-8"><div class="text-4xl mb-2">🛒</div><div>Panier vide</div></div>'; if (total) total.textContent = '0 F'; return; }
   c.innerHTML = ''; var totalPrix = 0; appData.panier.forEach(function (item) {
-    const div = document.createElement('div'); div.className = 'flex justify-between items-center bg-gray-50 rounded-2xl p-3'; div.innerHTML = '<div><div class="font-bold">' + item.name + '</div><div class="text-sm text-gray-600">' + (parseFloat(item.price) || 0).toLocaleString() + ' F × ' + item.quantite + '</div></div><div class="flex items-center gap-2"><button class="bg-red-500 text-white w-8 h-8 rounded-full text-sm font-bold">-</button><span class="font-bold text-lg w-8 text-center">' + item.quantite + '</span><button class="bg-green-500 text-white w-8 h-8 rounded-full text-sm font-bold">+</button></div>'; // wire buttons
+    const isGros   = item._vente_mode === 'gros';
+    const lotQty   = parseInt(item._lot_qty) || 1;
+    const prixLine = (parseFloat(item.price) || 0).toLocaleString();
+    const modeTag  = isGros ? `<span style="font-size:10px;background:#EDE9FE;color:#7C3AED;padding:1px 5px;border-radius:4px;margin-left:4px;">Gros×${lotQty}</span>` : '';
+    const div = document.createElement('div'); div.className = 'flex justify-between items-center bg-gray-50 rounded-2xl p-3'; div.innerHTML = '<div><div class="font-bold">' + item.name + modeTag + '</div><div class="text-sm text-gray-600">' + prixLine + ' F × ' + item.quantite + '</div></div><div class="flex items-center gap-2"><button class="bg-red-500 text-white w-8 h-8 rounded-full text-sm font-bold">-</button><span class="font-bold text-lg w-8 text-center">' + item.quantite + '</span><button class="bg-green-500 text-white w-8 h-8 rounded-full text-sm font-bold">+</button></div>'; // wire buttons
     c.appendChild(div);
     // attach handlers to +/- buttons
     const btns = div.querySelectorAll('button'); if (btns && btns.length >= 2) { btns[0].addEventListener('click', function () { modifierQuantitePanier(item.id, -1); }); btns[1].addEventListener('click', function () { modifierQuantitePanier(item.id, 1); }); }
@@ -196,7 +201,28 @@ export function afficherPanier() {
   }); if (total) total.textContent = totalPrix.toLocaleString() + ' F';
 }
 
-export function modifierQuantitePanier(id, delta) { if (!appData) return; const item = appData.panier.find(function (i) { return i.id === id; }); const produit = appData.produits.find(function (p) { return p.id === id; }); if (item) { item.quantite += delta; if (item.quantite <= 0) appData.panier = appData.panier.filter(function (i) { return i.id !== id; }); else if (produit && item.quantite > produit.stock) { item.quantite = produit.stock; alert('❌ Stock insuffisant!'); } afficherPanier(); saveAppDataLocal(); } }
+export function modifierQuantitePanier(id, delta) {
+  if (!appData) return;
+  const item    = appData.panier.find(i => i._panierKey
+    ? i._panierKey === id
+    : i.id === id);
+  const produit = appData.produits.find(p => p.id === (item?.id || id));
+  if (!item) return;
+
+  const newQty  = item.quantite + delta;
+  const lotQty  = parseInt(item._lot_qty) || 1;
+  const stockOk = newQty * lotQty <= (produit?.stock || 0);
+
+  if (newQty <= 0) {
+    appData.panier = appData.panier.filter(i => i !== item);
+  } else if (!stockOk) {
+    window.showNotification?.('❌ Stock insuffisant !', 'error');
+  } else {
+    item.quantite = newQty;
+  }
+  afficherPanier();
+  saveAppDataLocal();
+}
 
 function genererNumeroRecu() {
 
@@ -358,10 +384,16 @@ export async function finaliserVente(paymentMethod) {
 
   // ✅ Envoi des ventes une par une au backend
   for (const item of appData.panier) {
+    // Pour les lots gros : la quantité réelle en unités = quantite × lot_size
+    const realQty = (parseInt(item.quantite) || 1) * (parseInt(item._lot_qty) || 1);
     const vente = {
-      product_id: item.id,
-      quantity: item.quantite,
-      payment_method: paymentMethod
+      product_id:     item.id,
+      quantity:       realQty,
+      payment_method: paymentMethod,
+      // Envoyer le prix unitaire réel (pas le prix du lot)
+      unit_price:     item._lot_qty > 1
+        ? Math.round((parseFloat(item.price) || 0) / (item._lot_qty || 1))
+        : (parseFloat(item.price) || 0),
     };
     const created = await postSaleServer(vente);
     if (!created) {

@@ -17,7 +17,7 @@ export function showSection(section) {
     'menu','vente','stock','categories','rapports','inventaire','credits',
     'clients','fournisseurs','commandes','livraisons',
     'customerOrders','deliveries','deliverymen',
-    'profil','calendrier'
+    'profil','calendrier','caisse'
   ];
  
   sections.forEach(function (s) {
@@ -54,9 +54,8 @@ export function showSection(section) {
   }
  
   // ── Nouvelles sections ── dispatch event pour les modules autonomes
-  else if (['clients','fournisseurs','commandes','livraisons',
-    'customerOrders','deliveries','deliverymen',
-    'profil','calendrier'].includes(section)) {
+  else if (['clients','fournisseurs','commandes','livraisons','customerOrders','deliveries','deliverymen',
+    'caisse','profil','calendrier'].includes(section)) {
     window.dispatchEvent(new CustomEvent('pageChange', { detail: { key: section } }));
   }
  

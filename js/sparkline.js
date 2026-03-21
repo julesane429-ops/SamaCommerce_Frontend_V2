@@ -237,28 +237,32 @@
 
   // ══════════════════════════════════════
   // OBSERVER LES MISES À JOUR DE DONNÉES
-  // Déclenché quand appData est rechargé (après syncFromServer)
+  // Observer singleton — créé une seule fois, jamais dupliqué
   // ══════════════════════════════════════
+  let _sparkObserver = null;
+
   function watchUpdates() {
-    // Observer #chiffreAffaires : il change après chaque sync
+    if (_sparkObserver) return; // déjà actif
     const el = document.getElementById('chiffreAffaires');
     if (!el) return;
 
     let lastText = '';
+    let debounceTimer = null;
 
-    const observer = new MutationObserver(() => {
+    _sparkObserver = new MutationObserver(() => {
       const t = el.textContent;
       if (t === lastText) return;
       lastText = t;
 
-      // Délai pour laisser countup.js + appData se stabiliser
-      setTimeout(() => {
+      // Debounce — annuler si déclenché plusieurs fois en rafale (countup.js)
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
         const card = document.getElementById('sparkline-card');
         if (card) renderCard(card);
-      }, 750);
+      }, 800);
     });
 
-    observer.observe(el, { characterData: true, childList: true, subtree: true });
+    _sparkObserver.observe(el, { characterData: true, childList: true, subtree: true });
   }
 
   // ══════════════════════════════════════

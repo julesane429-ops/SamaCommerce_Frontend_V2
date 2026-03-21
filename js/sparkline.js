@@ -48,7 +48,7 @@
       const vDate = new Date(raw);
       const vKey  = vDate.toISOString().split('T')[0];
       const day   = days.find(d => d.key === vKey);
-      if (day) day.total += v.total || 0;
+      if (day) day.total += parseFloat(v.total) || 0;
     });
 
     return days;
@@ -83,8 +83,8 @@
     const PAD = 6;
     const n   = days.length;
 
-    const values = days.map(d => d.total);
-    const max    = Math.max(...values, 1);
+    const values = days.map(d => parseFloat(d.total) || 0);
+    const max    = Math.max(...values.filter(v => !isNaN(v)), 1);
     const min    = 0;
 
     // Coordonnées des points

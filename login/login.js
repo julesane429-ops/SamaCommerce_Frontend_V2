@@ -29,6 +29,15 @@ function closeLoginGuide() {
 }
 window.closeLoginGuide = closeLoginGuide;
 
+// ── Sauvegarder le profil commercial après login ───────────────────────────
+// Stocke mode_vente et prix_fixe dans localStorage pour que l'app
+// puisse adapter l'interface de vente sans appel réseau supplémentaire.
+function sauvegarderProfilCommercial(user) {
+  if (!user) return;
+  localStorage.setItem('modeVente', user.mode_vente || 'detail');
+  localStorage.setItem('prixFixe',  String(user.prix_fixe !== false));
+}
+
 async function acceptInviteIfPending(token, authToken) {
   try {
     const res = await fetch(`${API_BASE}/members/accept`, {
@@ -64,25 +73,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const inviteEmail = urlParams.get('email');
 
   // ════════════════════════════════════════
-  // MODE INVITATION — afficher l'écran de choix
+  // MODE INVITATION
   // ════════════════════════════════════════
   if (inviteToken) {
     const welcomeScreen = document.getElementById('invite-welcome');
     const loginTitle    = document.getElementById('login-title');
-    const loginForm     = document.getElementById('login-form-area');
-    const logoWrap      = document.querySelector('.logo-wrap');
 
-    // Montrer l'écran de bienvenue, cacher le formulaire
-    if (welcomeScreen) {
-      welcomeScreen.style.display = 'flex';
-    }
-    if (loginTitle)  loginTitle.style.display  = 'none';
+    if (welcomeScreen) welcomeScreen.style.display = 'flex';
+    if (loginTitle)    loginTitle.style.display    = 'none';
 
-    // Cacher les champs login + bouton + link-row
     ['email', 'password'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.closest('.form-group').style.display = 'none';
     });
+
     const loginBtn = document.getElementById('loginBtn');
     if (loginBtn) loginBtn.style.display = 'none';
     const linkRow = document.querySelector('.link-row');
@@ -90,45 +94,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const demoBtn = document.getElementById('demo-btn');
     if (demoBtn) demoBtn.style.display = 'none';
 
-    // Bouton "Créer mon compte"
     document.getElementById('invite-go-register')?.addEventListener('click', () => {
       let url = `/register/register.html?invite=${inviteToken}`;
       if (inviteEmail) url += `&email=${encodeURIComponent(inviteEmail)}`;
       window.location.href = url;
     });
 
-    // Bouton "J'ai déjà un compte"
     document.getElementById('invite-go-login')?.addEventListener('click', () => {
-      // Cacher l'écran de bienvenue, afficher le formulaire
       if (welcomeScreen) welcomeScreen.style.display = 'none';
-
-      if (loginTitle) {
-        loginTitle.style.display = '';
-        loginTitle.textContent   = 'Connexion — Rejoindre la boutique';
-      }
+      if (loginTitle) { loginTitle.style.display = ''; loginTitle.textContent = 'Connexion — Rejoindre la boutique'; }
       ['email', 'password'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.closest('.form-group').style.display = '';
       });
       if (loginBtn) loginBtn.style.display = '';
-
-      // Pré-remplir l'email si fourni dans le lien
       if (inviteEmail) {
         const emailInput = document.getElementById('email');
         if (emailInput) emailInput.value = decodeURIComponent(inviteEmail);
       }
     });
 
-    // Guide de connexion — cacher si invitation
     const loginGuide = document.getElementById("loginGuideOverlay");
     if (loginGuide) loginGuide.style.display = 'none';
 
   } else {
     // ════════════════════════════════════════
-    // MODE NORMAL — connexion standard
+    // MODE NORMAL
     // ════════════════════════════════════════
-
-    // Redirection auto si déjà connecté
     const existingToken = localStorage.getItem('authToken');
     const existingRole  = localStorage.getItem('userRole')?.toLowerCase();
     if (existingToken && existingRole) {
@@ -144,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ════════════════════════════════════════
-  // BOUTON SE CONNECTER (commun aux deux modes)
+  // BOUTON SE CONNECTER
   // ════════════════════════════════════════
   const loginBtn = document.getElementById('loginBtn');
   if (loginBtn) {
@@ -172,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = JSON.parse(rawText);
         if (!res.ok) { showNotification(data.error || "Identifiants incorrects", "error"); return; }
 
-        // 2FA
+        // 2FA requis
         if (data.twofa_required) {
           showNotification("📧 Un code 2FA vous a été envoyé par email.", "info");
           localStorage.setItem("pendingUserId", data.userId);
@@ -182,11 +174,15 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
+        // ── Succès login ──
         const authToken = data.token;
         const userRole  = (data.user?.role || "user").trim().toLowerCase();
         localStorage.setItem('authToken', authToken);
         localStorage.setItem('userRole',  userRole);
         localStorage.setItem('userId',    data.user?.id);
+
+        // ✅ Stocker le profil commercial pour adapter l'interface de vente
+        sauvegarderProfilCommercial(data.user);
 
         if (inviteToken) {
           await acceptInviteIfPending(inviteToken, authToken);
@@ -206,7 +202,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Libellé du bouton selon le contexte
     if (inviteToken) loginBtn.textContent = 'Me connecter et rejoindre →';
   }
 
@@ -231,12 +226,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Erreur API");
 
+        // ── Succès 2FA ──
         const authToken = data.token;
         const userRole  = (data.user?.role || "user").trim().toLowerCase();
         localStorage.setItem("authToken", authToken);
         localStorage.setItem("userRole",  userRole);
         localStorage.setItem("userId",    data.user?.id);
         localStorage.removeItem("pendingUserId");
+
+        // ✅ Stocker le profil commercial
+        sauvegarderProfilCommercial(data.user);
 
         const pendingInvite = localStorage.getItem("pendingInvite");
         localStorage.removeItem("pendingInvite");

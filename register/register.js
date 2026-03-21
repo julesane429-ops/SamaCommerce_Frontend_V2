@@ -139,7 +139,7 @@
                 showNotification(acceptData.error || "Invitation expirée, contactez le propriétaire.", "warning");
               }
 
-              setTimeout(() => window.location.replace('/index.html'), 1000);
+              setTimeout(() => { window.location.href = '/index.html?newemployee=1'; }, 1000);
             } else {
               // Connexion auto échouée → renvoyer vers login avec le token
               showNotification("Compte créé ! Connectez-vous pour finaliser.", "success");

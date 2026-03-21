@@ -157,11 +157,23 @@ const defaultData = {
 
 // ---------- localStorage helpers ----------
 export function loadAppDataLocal() {
-  const raw = localStorage.getItem('boutique_appData');
+  const raw       = localStorage.getItem('boutique_appData');
+  const currentId = localStorage.getItem('userId');
 
   if (raw) {
     try {
-      Object.assign(appData, JSON.parse(raw));
+      const parsed = JSON.parse(raw);
+      // Vérifier que le cache appartient bien à l'utilisateur connecté
+      // (évite la contamination entre sessions / comptes)
+      const cachedUserId = localStorage.getItem('boutique_cached_userId');
+      if (cachedUserId && currentId && cachedUserId !== currentId) {
+        // Cache d'un autre utilisateur → on l'efface et on repart vide
+        localStorage.removeItem('boutique_appData');
+        localStorage.removeItem('boutique_cached_userId');
+        Object.assign(appData, JSON.parse(JSON.stringify(defaultData)));
+      } else {
+        Object.assign(appData, parsed);
+      }
     } catch (e) {
       Object.assign(appData, JSON.parse(JSON.stringify(defaultData)));
     }
@@ -169,16 +181,44 @@ export function loadAppDataLocal() {
     Object.assign(appData, JSON.parse(JSON.stringify(defaultData)));
   }
 
+  // Normaliser les types numériques depuis le cache (peuvent être strings si vieille version)
   appData.produits.forEach(p => {
-    if (typeof p.priceAchat === 'undefined')
-      p.priceAchat = p.price_achat || 0;
+    if (typeof p.priceAchat === 'undefined') p.priceAchat = parseFloat(p.price_achat) || 0;
+    p.price   = parseFloat(p.price)  || 0;
+    p.stock   = parseInt(p.stock)    || 0;
+    p.priceAchat = parseFloat(p.priceAchat || p.price_achat) || 0;
   });
 
   if (!localStorage.getItem('boutique_outbox'))
     localStorage.setItem('boutique_outbox', JSON.stringify([]));
 }
 
-export function saveAppDataLocal() { localStorage.setItem('boutique_appData', JSON.stringify(appData)); }
+export function saveAppDataLocal() {
+  try {
+    // Ne garder que les 200 dernières ventes en cache local pour éviter QuotaExceededError
+    const dataToSave = Object.assign({}, appData);
+    if (dataToSave.ventes && dataToSave.ventes.length > 200) {
+      dataToSave.ventes  = dataToSave.ventes.slice(0, 200);
+      dataToSave.credits = dataToSave.ventes.filter(v => {
+        const pm = (v.payment_method || '').toLowerCase().trim();
+        return pm === 'credit' || pm === 'crédit';
+      });
+    }
+    localStorage.setItem('boutique_appData', JSON.stringify(dataToSave));
+    const uid = localStorage.getItem('userId');
+    if (uid) localStorage.setItem('boutique_cached_userId', uid);
+  } catch (e) {
+    if (e.name === 'QuotaExceededError') {
+      // Cache plein → effacer et réessayer avec données minimales
+      localStorage.removeItem('boutique_appData');
+      try {
+        const minimal = { produits: appData.produits, categories: appData.categories,
+                          ventes: [], credits: [], panier: [], stats: appData.stats };
+        localStorage.setItem('boutique_appData', JSON.stringify(minimal));
+      } catch (_) {}
+    }
+  }
+}
 
 
 // ---------- Outbox / Background retry ----------

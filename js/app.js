@@ -26,6 +26,28 @@ const API_BASE = document.querySelector('meta[name="api-base"]')?.content;
 document.addEventListener("DOMContentLoaded", async () => {
 
   // ======================
+  // 0️⃣ Vérifier le token JWT (ne jamais faire confiance à localStorage.userRole seul)
+  // ======================
+  const _token = localStorage.getItem('authToken');
+  if (!_token) { window.location.replace('/login/login.html'); return; }
+  try {
+    const _payload = JSON.parse(atob(_token.split('.')[1]));
+    const _now     = Math.floor(Date.now() / 1000);
+    if (_payload.exp && _payload.exp < _now) {
+      localStorage.removeItem('authToken');
+      window.location.replace('/login/login.html?expired=1');
+      return;
+    }
+    // Synchroniser le rôle depuis le token (source de vérité) et non localStorage
+    const _roleFromToken = (_payload.role || 'user').toLowerCase();
+    localStorage.setItem('userRole', _roleFromToken);
+  } catch (_) {
+    localStorage.removeItem('authToken');
+    window.location.replace('/login/login.html');
+    return;
+  }
+
+  // ======================
   // 1️⃣ Chargement local
   // ======================
   loadAppDataLocal();
@@ -47,7 +69,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ======================
   // 2️⃣ Sync serveur initial
   // ======================
+  // Afficher le syncBanner si la sync prend plus de 600ms (réseau lent)
+  const _syncTimer = setTimeout(() => {
+    const banner = document.getElementById('syncBanner');
+    if (banner) {
+      banner.textContent = '🔄 Chargement des données…';
+      banner.style.display = 'block';
+    }
+  }, 600);
+
   await syncFromServer();
+  clearTimeout(_syncTimer);
+
   window.hideSplash?.();
   window.scNotifications?.check();
   updateStats();

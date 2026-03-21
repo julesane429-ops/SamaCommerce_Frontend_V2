@@ -481,19 +481,49 @@
         <div class="modal-title">📦 Nouveau Produit</div>
         <div class="form-group"><label>Nom</label><input id="nomProduit" placeholder="Nom du produit" type="text"></div>
         <div class="form-group"><label>Catégorie</label><select id="categorieProduit"><option value="">Choisir catégorie</option></select></div>
-        <div class="form-group"><label>Prix achat (F CFA)</label><input id="prixAchatProduit" placeholder="Prix achat" type="number"></div>
-        <div class="form-group"><label>Prix vente (F CFA)</label><input id="prixProduit" placeholder="Prix vente" type="number"></div>
-        <div class="form-group"><label>Quantité en stock</label><input id="stockProduit" placeholder="Stock" type="number"></div>
-        <div class="form-group"><label>Description</label><textarea id="descriptionProduit" placeholder="Description (optionnel)" style="height:66px;resize:none;"></textarea></div>
-        <!-- Vente en gros (optionnel) -->
-        <div class="form-group" style="border-top:1px dashed #e5e7eb;padding-top:10px;margin-top:4px;">
-          <label style="color:#2563eb;font-weight:600;">🏭 Vente en gros (optionnel)</label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
-            <div><label style="font-size:12px;color:#6b7280;">Prix du lot (F)</label><input id="prixGrosProduit" placeholder="Ex : 15000" type="number" min="0" style="width:100%;"></div>
-            <div><label style="font-size:12px;color:#6b7280;">Unités / lot</label><input id="quantiteGrosProduit" placeholder="Ex : 50" type="number" min="1" style="width:100%;"></div>
+        <div class="form-group"><label>Prix achat (F CFA)</label><input id="prixAchatProduit" placeholder="Ex: 15000" type="number"></div>
+
+        <!-- Toggle vente mixte -->
+        <div style="background:#F5F3FF;border-radius:14px;padding:12px 14px;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#5B21B6;">📦 Vente mixte (gros & détail)</div>
+              <div style="font-size:11px;color:#7C3AED;">Activer si vous vendez en boite ET à l'unité</div>
+            </div>
+            <label style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;cursor:pointer;">
+              <input type="checkbox" id="isMixedSale" style="opacity:0;width:0;height:0;position:absolute;"
+                onchange="toggleMixedSaleFields('ajout')">
+              <span id="mixedSaleTrack" style="position:absolute;inset:0;border-radius:12px;background:#E5E7EB;transition:background .2s;">
+                <span id="mixedSaleDot" style="position:absolute;left:2px;top:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,.2);"></span>
+              </span>
+            </label>
           </div>
-          <div style="font-size:11px;color:#9ca3af;margin-top:4px;">Laisser vide si vous ne faites pas de gros.</div>
+
+          <!-- Champs vente mixte (cachés par défaut) -->
+          <div id="mixedSaleFields" style="display:none;margin-top:10px;border-top:1px solid #DDD6FE;padding-top:10px;">
+            <div class="form-group" style="margin-bottom:8px;">
+              <label>Unités par lot <span style="font-weight:400;color:#7C3AED;">(ex: 30 bouteilles par boite)</span></label>
+              <input id="lotSizeProduit" placeholder="Ex: 30" type="number" min="2">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <label>Prix vente en GROS (le lot entier)</label>
+              <input id="prixGrosProduit" placeholder="Ex: 17000" type="number">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Prix vente au DÉTAIL (à l'unité)</label>
+              <input id="prixDetailProduit" placeholder="Ex: 350" type="number">
+            </div>
+          </div>
         </div>
+
+        <!-- Prix vente simple (caché si mixte activé) -->
+        <div class="form-group" id="prixVenteSimpleGroup">
+          <label>Prix vente (F CFA)</label>
+          <input id="prixProduit" placeholder="Ex: 800" type="number">
+        </div>
+
+        <div class="form-group"><label>Quantité en stock <span style="font-weight:400;color:var(--muted);" id="stockUnitLabel">(en unités)</span></label><input id="stockProduit" placeholder="Stock" type="number"></div>
+        <div class="form-group"><label>Description</label><textarea id="descriptionProduit" placeholder="Description (optionnel)" style="height:60px;resize:none;"></textarea></div>
         <div class="modal-actions"><button class="btn-cancel" onclick="hideModal()">Annuler</button><button class="btn-confirm" onclick="ajouterProduit()">Ajouter</button></div>
     </div>
     <div class="modal-box hidden" id="modalEditProduit">
@@ -501,18 +531,38 @@
         <div class="form-group"><label>Nom</label><input id="editNomProduit" placeholder="Nom" type="text"></div>
         <div class="form-group"><label>Catégorie</label><select id="editCategorieProduit"><option value="">Choisir catégorie</option></select></div>
         <div class="form-group"><label>Prix achat</label><input id="editPrixAchatProduit" placeholder="Prix achat" type="number"></div>
-        <div class="form-group"><label>Prix vente</label><input id="editPrixProduit" placeholder="Prix vente" type="number"></div>
-        <div class="form-group"><label>Stock</label><input id="editStockProduit" placeholder="Stock" type="number"></div>
-        <div class="form-group"><label>Description</label><textarea id="editDescriptionProduit" placeholder="Description" style="height:66px;resize:none;"></textarea></div>
-        <!-- Vente en gros (optionnel) -->
-        <div class="form-group" style="border-top:1px dashed #e5e7eb;padding-top:10px;margin-top:4px;">
-          <label style="color:#2563eb;font-weight:600;">🏭 Vente en gros (optionnel)</label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
-            <div><label style="font-size:12px;color:#6b7280;">Prix du lot (F)</label><input id="editPrixGrosProduit" placeholder="Ex : 15000" type="number" min="0" style="width:100%;"></div>
-            <div><label style="font-size:12px;color:#6b7280;">Unités / lot</label><input id="editQuantiteGrosProduit" placeholder="Ex : 50" type="number" min="1" style="width:100%;"></div>
+
+        <!-- Toggle vente mixte edit -->
+        <div style="background:#F5F3FF;border-radius:14px;padding:12px 14px;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div style="font-size:13px;font-weight:700;color:#5B21B6;">📦 Vente mixte</div>
+            <label style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;cursor:pointer;">
+              <input type="checkbox" id="editIsMixedSale" style="opacity:0;width:0;height:0;position:absolute;"
+                onchange="toggleMixedSaleFields('edit')">
+              <span id="editMixedSaleTrack" style="position:absolute;inset:0;border-radius:12px;background:#E5E7EB;transition:background .2s;">
+                <span id="editMixedSaleDot" style="position:absolute;left:2px;top:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,.2);"></span>
+              </span>
+            </label>
           </div>
-          <div style="font-size:11px;color:#9ca3af;margin-top:4px;">Laisser vide pour supprimer le tarif gros.</div>
+          <div id="editMixedSaleFields" style="display:none;margin-top:10px;border-top:1px solid #DDD6FE;padding-top:10px;">
+            <div class="form-group" style="margin-bottom:8px;">
+              <label>Unités par lot</label>
+              <input id="editLotSizeProduit" placeholder="Ex: 30" type="number" min="2">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <label>Prix vente GROS (lot entier)</label>
+              <input id="editPrixGrosProduit" placeholder="Ex: 17000" type="number">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Prix vente DÉTAIL (unité)</label>
+              <input id="editPrixDetailProduit" placeholder="Ex: 350" type="number">
+            </div>
+          </div>
         </div>
+
+        <div class="form-group" id="editPrixVenteSimpleGroup"><label>Prix vente</label><input id="editPrixProduit" placeholder="Prix vente" type="number"></div>
+        <div class="form-group"><label>Stock (en unités)</label><input id="editStockProduit" placeholder="Stock" type="number"></div>
+        <div class="form-group"><label>Description</label><textarea id="editDescriptionProduit" placeholder="Description" style="height:60px;resize:none;"></textarea></div>
         <div class="modal-actions"><button class="btn-cancel" onclick="hideModal()">Annuler</button><button class="btn-confirm" onclick="mettreAJourProduit()">Mettre à jour</button></div>
     </div>
     <div class="modal-box hidden" id="modalAjoutCategorie">
@@ -630,6 +680,27 @@ function updateNavUI(section) {
     }
 }
 
+// ── Vente mixte : toggle champs gros/détail ──
+function toggleMixedSaleFields(mode) {
+  const prefix = mode === 'edit' ? 'edit' : '';
+  const cb       = document.getElementById(prefix ? 'editIsMixedSale' : 'isMixedSale');
+  const track    = document.getElementById(prefix ? 'editMixedSaleTrack' : 'mixedSaleTrack');
+  const dot      = track?.querySelector('span');
+  const fields   = document.getElementById(prefix ? 'editMixedSaleFields' : 'mixedSaleFields');
+  const simple   = document.getElementById(prefix ? 'editPrixVenteSimpleGroup' : 'prixVenteSimpleGroup');
+  const label    = document.getElementById('stockUnitLabel');
+
+  if (!cb) return;
+  const on = cb.checked;
+
+  if (track) track.style.background = on ? '#7C3AED' : '#E5E7EB';
+  if (dot)   dot.style.left          = on ? '22px'   : '2px';
+  if (fields) fields.style.display   = on ? 'block'  : 'none';
+  if (simple) simple.style.display   = on ? 'none'   : '';
+  if (label)  label.textContent      = on ? '(en unités — ex: 300 bouteilles si 10 boites×30)' : '(en unités)';
+}
+window.toggleMixedSaleFields = toggleMixedSaleFields;
+
 function navTo(section) { closePlusSheet(); window.showSection?.(section); }
 function openPlusSheet()  { document.getElementById('plusSheet').style.display = 'flex'; }
 function closePlusSheet() { document.getElementById('plusSheet').style.display = 'none'; }
@@ -702,6 +773,7 @@ window.closePlusSheet = closePlusSheet;
 
 <!-- Finitions -->
 <script src="js/i18n.js"></script>
+<script src="js/perf-sync.js"></script>
 <script src="js/realtime-sync.js"></script>
 <script src="js/pin-security.js"></script>
 <script src="js/theme.js"></script>

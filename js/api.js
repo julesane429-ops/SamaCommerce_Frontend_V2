@@ -15,17 +15,17 @@ import { showSection } from "./utils.js";
 import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier, afficherPanier, modifierQuantitePanier, finaliserVente, tryRenderSalesHistory, ouvrirModal, marquerRembourse, purgeSalesHistoryClones, filtrerVentesParPeriode, modifierVente } from "./ventes.js";
 
 // api.js
-// URL de base de ton serveur API
+// URL de base du serveur API
 export const API_BASE = "https://samacommerce-backend-v2.onrender.com";
 
-// Expose toutes les fonctions sur window si nécessaire
-window.authfetch = authfetch;
-window.postSaleServer = postSaleServer;
+// Expose les fonctions sur window pour les modules non-ES6
+window.authfetch        = authfetch;
+window.postSaleServer   = postSaleServer;
 window.postCategoryServer = postCategoryServer;
-window.postProductServer = postProductServer;
-window.syncFromServer = syncFromServer;
+window.postProductServer  = postProductServer;
+window.syncFromServer   = syncFromServer;
 
-
+// ── authfetch : fetch avec Authorization header + détection token expiré ──
 export function authfetch(url, options = {}) {
   const token = localStorage.getItem('authToken');
   if (!token) {
@@ -58,10 +58,10 @@ export function authfetch(url, options = {}) {
     return res;
   });
 }
+
+// ── postSaleServer ─────────────────────────────────────────────────────────
 export async function postSaleServer(sale) {
   try {
-    // sale peut contenir : product_id, quantity, payment_method
-    // et éventuellement client_name, client_phone, due_date, paid
     const res = await authfetch(API_BASE + '/sales', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -83,12 +83,13 @@ export async function postSaleServer(sale) {
   }
 }
 
+// ── postCategoryServer ─────────────────────────────────────────────────────
 export async function postCategoryServer(category) {
   try {
     const res = await authfetch(API_BASE + '/categories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(category) // category = { name: "..." }
+      body: JSON.stringify(category)
     });
 
     if (!res.ok) {
@@ -104,6 +105,7 @@ export async function postCategoryServer(category) {
   }
 }
 
+// ── postProductServer ──────────────────────────────────────────────────────
 export async function postProductServer(product) {
   try {
     const res = await authfetch(API_BASE + '/products', {
@@ -123,7 +125,7 @@ export async function postProductServer(product) {
   }
 }
 
-// ---------- Sync with server (read only) ----------
+// ── syncFromServer ─────────────────────────────────────────────────────────
 export async function syncFromServer() {
   const syncBanner = document.getElementById('syncBanner');
   if (syncBanner) syncBanner.style.display = 'block';
@@ -132,7 +134,6 @@ export async function syncFromServer() {
     console.warn('Mode hors ligne : données locales utilisées.');
     if (syncBanner) syncBanner.style.display = 'none';
     afficherInventaire();
-
     return;
   }
 
@@ -145,7 +146,7 @@ export async function syncFromServer() {
       authfetch(API_BASE + '/sales?limit=500'),
     ]).then(results => results.map(r => r.status === 'fulfilled' ? r.value : { ok: false }));
 
-    // --- Catégories ---
+    // ── Catégories ──
     if (resCat.ok) {
       const cats = await resCat.json();
       const defaultCategoryStyles = [
@@ -159,15 +160,18 @@ export async function syncFromServer() {
       appData.categories = cats.map((c, index) => {
         const style = defaultCategoryStyles[index % defaultCategoryStyles.length];
         return {
-          id: parseInt(c.id),
-          name: c.name,
-          emoji: c.emoji || '🏷️',
+          id:     parseInt(c.id),
+          name:   c.name,
+          emoji:  c.emoji  || '🏷️',
           couleur: c.couleur || style.couleur
         };
       });
     }
 
-    // --- Produits ---
+    // ── Produits ──
+    // CORRECTION #9 : image_url n'était pas inclus dans le mapping.
+    // Les photos de produits disparaissaient après chaque rechargement de page
+    // car appData.produits ne contenait jamais le champ image_url.
     if (resProd.ok) {
       const prods = await resProd.json();
       appData.produits = prods.map(p => ({
@@ -179,67 +183,68 @@ export async function syncFromServer() {
         stock:       parseInt(p.stock)         || 0,
         vendu:       0,
         priceAchat:  parseFloat(p.price_achat) || 0,
-        description: p.description || ''
+        description: p.description             || '',
+        // ✅ image_url ajouté : les photos de produits sont maintenant
+        //    conservées après rechargement de l'application
+        image_url:   p.image_url               || null,
       }));
     }
 
-    // --- Ventes ---
+    // ── Ventes ──
     let ventesAll = [];
     if (resSales.ok) {
       ventesAll = await resSales.json();
 
-      // ⚡ Normalisation des ventes/crédits
+      // Normalisation des ventes / crédits
       appData.ventes = ventesAll.map(v => ({
         ...v,
-        total:    parseFloat(v.total)    || 0,
-        price:    parseFloat(v.price)    || 0,
-        quantity: parseInt(v.quantity)   || 0,
+        total:       parseFloat(v.total)       || 0,
+        price:       parseFloat(v.price)       || 0,
+        quantity:    parseInt(v.quantity)      || 0,
         amount_paid: parseFloat(v.amount_paid) || 0,
-        created_at: v.created_at ? new Date(v.created_at) : null,
-        due_date:   v.due_date   ? new Date(v.due_date)   : null,
+        created_at:  v.created_at ? new Date(v.created_at) : null,
+        due_date:    v.due_date   ? new Date(v.due_date)   : null,
         paid: v.paid === true || v.paid === 'true'
       }));
 
-      // 🔗 Rattacher les ventes à chaque produit
+      // Rattacher les ventes à chaque produit
       appData.produits.forEach(prod => {
         prod.ventes = appData.ventes.filter(v =>
           parseInt(v.product_id) === prod.id
         );
       });
 
-      // Filtrer les crédits — uniquement les references, pas de duplication complète
+      // Filtrer les crédits
       appData.credits = appData.ventes.filter(v => {
         const pm = (v.payment_method || '').toLowerCase().trim();
         return pm === 'credit' || pm === 'crédit';
       });
 
-      // ✅ Debug complet
       console.log("🛒 Toutes les ventes normalisées :", appData.ventes);
       console.log("📦 Crédits filtrés :", appData.credits);
       console.log("💳 Méthodes de paiement distinctes :",
         [...new Set(appData.ventes.map(v => (v.payment_method || '').trim()))]);
     }
 
-
-    // --- Stats ventes du jour ---
+    // ── Stats ventes du jour ──
     if (resStats.ok) {
       const statsArray = await resStats.json();
-      const today = new Date().toISOString().split('T')[0];
-      const todayStat = statsArray.find(s => s.date.startsWith(today));
+      const today      = new Date().toISOString().split('T')[0];
+      const todayStat  = statsArray.find(s => s.date.startsWith(today));
 
-      appData.stats.ventesJour = todayStat ? parseInt(todayStat.total_montant, 10) : 0;
+      appData.stats.ventesJour      = todayStat ? parseInt(todayStat.total_montant, 10) : 0;
       appData.stats.chiffreAffaires = appData.stats.ventesJour;
-      appData.stats.historique = statsArray;
+      appData.stats.historique      = statsArray;
     }
 
-    // --- Recalcul vendu + articles vendus ---
+    // ── Recalcul vendu + articles vendus aujourd'hui ──
     const today = new Date().toISOString().split('T')[0];
     appData.produits.forEach(prod => { prod.vendu = 0; });
     let totalQteToday = 0;
 
     ventesAll.forEach(v => {
       const prodId = parseInt(v.product_id);
-      const qte = v.quantity || 0;
+      const qte    = v.quantity || 0;
 
       const prod = appData.produits.find(p => p.id === prodId);
       if (prod) prod.vendu += qte;
@@ -252,7 +257,7 @@ export async function syncFromServer() {
 
     appData.stats.articlesVendus = totalQteToday;
 
-    // --- Sauvegarde ---
+    // ── Sauvegarde locale ──
     saveAppDataLocal();
     console.log('✅ Sync from server done');
 
@@ -266,5 +271,4 @@ export async function syncFromServer() {
   afficherCredits();
 
   await updateHeader();
-
 }

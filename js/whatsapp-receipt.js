@@ -45,8 +45,8 @@
           date:          new Date(),
           numero:        genNumero(),
           boutique:      getBoutique(),
-          clientName:    null,
-          clientPhone:   null,
+          clientName:    window.clientVente?.getSelected()?.name  || null,
+          clientPhone:   window.clientVente?.getSelected()?.phone || null,
         };
         // Afficher la modale de partage
         setTimeout(() => showShareModal(), 600);

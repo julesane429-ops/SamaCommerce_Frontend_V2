@@ -124,6 +124,15 @@
         window.updateStats?.();
         window.verifierStockFaible?.();
 
+        // Rafraîchir les modules ouverts
+        const sect   = document.querySelector('.section-page:not(.hidden)');
+        const sectId = sect?.id?.replace('Section','');
+        if (sectId === 'customerOrders') window.loadCustomerOrders?.();
+        if (sectId === 'deliveries')     window.loadDeliveries?.();
+        if (sectId === 'deliverymen')    window.loadDeliverymen?.();
+        if (sectId === 'clients')        window.loadClients?.();
+        if (sectId === 'fournisseurs')   window.loadFournisseurs?.();
+
         // Notifier si de nouvelles ventes viennent d'un autre appareil
         const newVentes = (window.appData?.ventes?.length || 0);
         const oldVentes = parseInt(lastSalesKey || '0');

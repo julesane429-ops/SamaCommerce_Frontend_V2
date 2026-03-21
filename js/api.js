@@ -142,7 +142,7 @@ export async function syncFromServer() {
       authfetch(API_BASE + '/categories'),
       authfetch(API_BASE + '/products'),
       authfetch(API_BASE + '/stats/ventes-par-jour'),
-      authfetch(API_BASE + '/sales'),
+      authfetch(API_BASE + '/sales?limit=500'),
     ]).then(results => results.map(r => r.status === 'fulfilled' ? r.value : { ok: false }));
 
     // --- Catégories ---
@@ -207,10 +207,10 @@ export async function syncFromServer() {
         );
       });
 
-      // ✅ filtre les crédits (tolère casse + accents + espaces)
+      // Filtrer les crédits — uniquement les references, pas de duplication complète
       appData.credits = appData.ventes.filter(v => {
-        const pm = (v.payment_method || "").toLowerCase().trim();
-        return pm === "credit" || pm === "crédit";
+        const pm = (v.payment_method || '').toLowerCase().trim();
+        return pm === 'credit' || pm === 'crédit';
       });
 
       // ✅ Debug complet

@@ -1,28 +1,35 @@
 // ventes.js
-import { appData, chartVentesByDay, chartTopProduits, chartPaiements, chartStocksFaibles, creditChart, _lastSalesKey, _isRenderingSalesHistory, chartVentesJourInstance, deferredPrompt, installBtn, currentSection, chartCredits, getIsRenderingSalesHistory, setIsRenderingSalesHistory, getLastSalesKey, setLastSalesKey } from "./state.js";
-import { afficherRapports, updateStats, afficherStatsCredits } from "./rapports.js";
+import { appData,chartVentesByDay, chartTopProduits, chartPaiements, chartStocksFaibles, creditChart, _lastSalesKey, _isRenderingSalesHistory, chartVentesJourInstance, deferredPrompt, installBtn, currentSection, chartCredits,getIsRenderingSalesHistory, setIsRenderingSalesHistory,getLastSalesKey, setLastSalesKey } from "./state.js";
+import { afficherRapports, updateStats, afficherStatsCredits  } from "./rapports.js";
 import { afficherInventaire, setupSearchInputs, remplirSelectProduitsCredit } from "./inventaire.js";
 import { updateCharts, initCreditChart } from "./charts.js";
-import { authfetch, postCategoryServer, postProductServer, syncFromServer, getModeVente, isPrixLibre } from "./api.js";
+import { authfetch, postCategoryServer, postProductServer, syncFromServer } from "./api.js";
 import { API_BASE } from "./api.js";
 import { getCurrentUserId, logout } from "./auth.js";
-import { selectEmoji, supprimerCategorie, ajouterCategorie, remplirSelectCategories, afficherFiltresCategories } from "./categories.js";
-import { renderCreditsHistory, marquerCreditPaye, confirmerRemboursement, remplirProduitsCredit } from "./credits.js";
+import { selectEmoji, supprimerCategorie, ajouterCategorie,remplirSelectCategories, afficherFiltresCategories } from "./categories.js";
+import { renderCreditsHistory,marquerCreditPaye, confirmerRemboursement, remplirProduitsCredit } from "./credits.js";
 import { loadAppDataLocal, saveAppDataLocal, enqueueOutbox, processOutboxOne, processOutboxAll, updateHeader, getExpirationDate } from "./index.js";
 import { showModal, hideModal, ouvrirModalEdit, showModalCredit, hideModalCredit, ouvrirModalRemboursement, hideModalRemboursement, showModalById, hideModalById, closePremiumModal, closeContactModal, closeGuide } from "./modal.js";
-import { showNotification, customConfirm } from "./notification.js";
+import { showNotification, customConfirm,  } from "./notification.js";
 import { handleAddProductClick } from "./premium.js";
 import { supprimerProduit, mettreAJourProduit, ajouterProduit, filtrerProduits, modifierStock } from "./produits.js";
-import { afficherCategories, afficherProduits, afficherCategoriesVente, afficherProduitsCategorie, verifierStockFaible, afficherCredits } from "./ui.js";
+import { afficherCategories, afficherProduits, afficherCategoriesVente,afficherProduitsCategorie, verifierStockFaible, afficherCredits } from "./ui.js";
 import { showSection } from "./utils.js";
 
-// ── Annuler une vente ──────────────────────────────────────────────────────
+// ✅ Annuler une vente
 export async function annulerVente(id) {
   const ok = await confirm('❓ Annuler cette vente ?');
-  if (!ok) { showNotification("❌ Annulation annulée", "warning"); return; }
+  if (!ok) {
+    showNotification("❌ Annulation annulée", "warning");
+    return;
+  }
+
   try {
     const res = await authfetch(API_BASE + '/sales/' + id, { method: 'DELETE' });
-    if (!res.ok) { showNotification("❌ Erreur lors de l'annulation.", 'error'); return; }
+    if (!res.ok) {
+      showNotification('❌ Erreur lors de l\'annulation de la vente.', 'error');
+      return;
+    }
     showNotification('✅ Vente annulée.', 'success');
     await syncFromServer();
     afficherRapports();
@@ -33,18 +40,36 @@ export async function annulerVente(id) {
   }
 }
 
-// ── Modifier une vente ─────────────────────────────────────────────────────
 export async function modifierVente(id) {
   const vente = appData.ventes.find(v => Number(v.id) === Number(id));
-  if (!vente) { showNotification("❌ Vente introuvable", 'error'); return; }
+  if (!vente) {
+    showNotification("❌ Vente introuvable", 'error');
+    return;
+  }
 
-  let newQuantity = prompt(`Quantité actuelle: ${vente.quantity}\n👉 Nouvelle quantité (vide = pas de changement) :`);
-  let newPayment  = prompt(`Paiement actuel: ${vente.payment_method}\n👉 Nouveau mode de paiement (vide = pas de changement) :`);
+  // Demande la nouvelle quantité (laisser vide = pas de changement)
+  let newQuantity = prompt(
+    `Quantité actuelle: ${vente.quantity}\n👉 Nouvelle quantité (laisser vide pour ne pas changer) :`
+  );
 
+  // Demande le nouveau mode de paiement
+  let newPayment = prompt(
+    `Paiement actuel: ${vente.payment_method}\n👉 Nouveau mode de paiement (especes, wave, orange...) (laisser vide pour ne pas changer) :`
+  );
+
+  // Préparer le corps de la requête
   const body = {};
-  if (newQuantity && !isNaN(newQuantity)) body.quantity = Number(newQuantity);
-  if (newPayment && newPayment.trim())    body.payment_method = newPayment.trim();
-  if (!Object.keys(body).length) { showNotification("⚠️ Aucun changement effectué.", 'warning'); return; }
+  if (newQuantity && !isNaN(newQuantity)) {
+    body.quantity = Number(newQuantity);
+  }
+  if (newPayment && newPayment.trim() !== "") {
+    body.payment_method = newPayment.trim();
+  }
+
+  if (Object.keys(body).length === 0) {
+    showNotification("⚠️ Aucun changement effectué.", 'warning');
+    return;
+  }
 
   try {
     const res = await authfetch(API_BASE + "/sales/" + id, {
@@ -52,233 +77,75 @@ export async function modifierVente(id) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
+
     if (!res.ok) {
-      const err = await res.json();
-      showNotification("❌ Erreur : " + (err.error || res.status), 'error'); return;
+      const errData = await res.json();
+      showNotification("❌ Erreur lors de la modification : " + (errData.error || res.status), 'error');
+      return;
     }
-    showNotification("✅ Vente modifiée.", 'success');
+
+    const updated = await res.json();
+    showNotification("✅ Vente modifiée avec succès !", 'success');
+    console.log("Vente mise à jour :", updated);
+
+    // Recharge les données depuis le serveur
     syncFromServer();
+
   } catch (e) {
-    showNotification("❌ Erreur réseau", 'error');
+    console.error("Erreur modifierVente:", e);
+    showNotification("❌ Erreur réseau ou serveur", 'error');
   }
 }
 
-// ── Ajouter au panier ──────────────────────────────────────────────────────
-// Accepte un objet enrichi { ...produit, sale_type, nb_lots, prix_negocie }
-export function ajouterAuPanier(produit, opts = {}) {
-  if (!appData) return;
-
-  const sale_type    = opts.sale_type    || 'detail';
-  const nb_lots      = opts.nb_lots      || null;
-  const prix_negocie = opts.prix_negocie || null;
-
-  // Pour le gros, 1 "item panier" = 1 unité de lot (les nb_lots sont saisis à la vente)
-  const exist = appData.panier.find(i =>
-    i.id === produit.id && i.sale_type === sale_type
-  );
-
-  if (exist) {
-    if (sale_type === 'gros') {
-      // Incrémenter les lots
-      const newLots = (exist.nb_lots || 1) + 1;
-      const stockNecessaire = newLots * (produit.quantite_gros || 1);
-      if (stockNecessaire > produit.stock) {
-        showNotification('❌ Stock insuffisant pour ce nombre de lots !', 'error'); return;
-      }
-      exist.nb_lots = newLots;
-      exist.quantite = newLots * (produit.quantite_gros || 1);
-    } else {
-      if (exist.quantite < produit.stock) exist.quantite++;
-      else { showNotification('❌ Stock insuffisant !', 'error'); return; }
-    }
-  } else {
-    const newItem = Object.assign({}, produit, {
-      quantite:      sale_type === 'gros' ? (produit.quantite_gros || 1) : 1,
-      sale_type,
-      nb_lots:       sale_type === 'gros' ? 1 : null,
-      prix_negocie
-    });
-    appData.panier.push(newItem);
-  }
-
-  afficherPanier();
-  saveAppDataLocal();
-}
-
-// ── Afficher le panier ─────────────────────────────────────────────────────
-export function afficherPanier() {
-  const c     = document.getElementById('panierItems');
-  const total = document.getElementById('totalPanier');
-  if (!c) return;
-
-  if (!appData?.panier?.length) {
-    c.innerHTML = '<div class="text-gray-500 text-center py-8"><div class="text-4xl mb-2">🛒</div><div>Panier vide</div></div>';
-    if (total) total.textContent = '0 F';
+// ✅ Finaliser une vente à crédit
+export async function finaliserVenteCredit() {
+  if (!appData.panier.length) {
+    showNotification("❌ Panier vide.", "error");
     return;
   }
 
-  c.innerHTML = '';
-  let totalPrix = 0;
-
-  appData.panier.forEach(item => {
-    const isGros      = item.sale_type === 'gros';
-    const prixAffiche = item.prix_negocie != null
-      ? item.prix_negocie
-      : (isGros ? (item.price_gros || 0) : (item.price || 0));
-
-    const montantItem = isGros
-      ? prixAffiche * (item.nb_lots || 1)
-      : prixAffiche * (item.quantite || 1);
-
-    totalPrix += montantItem;
-
-    const modeLabel  = isGros ? `🏭 Gros ×${item.nb_lots || 1} lot(s)` : '🛍️ Détail';
-    const negoLabel  = item.prix_negocie != null ? ` <span class="text-orange-500 text-xs">(négocié)</span>` : '';
-    const qteLabel   = isGros
-      ? `${item.nb_lots || 1} lot × ${prixAffiche.toLocaleString('fr-FR')} F`
-      : `${prixAffiche.toLocaleString('fr-FR')} F × ${item.quantite}`;
-
-    const div = document.createElement('div');
-    div.className = 'flex justify-between items-center bg-gray-50 rounded-2xl p-3 mb-2';
-    div.innerHTML = `
-      <div class="flex-1">
-        <div class="font-bold">${item.name}</div>
-        <div class="text-xs text-gray-500">${modeLabel}${negoLabel}</div>
-        <div class="text-sm text-gray-600">${qteLabel} = <strong>${montantItem.toLocaleString('fr-FR')} F</strong></div>
-      </div>
-      <div class="flex items-center gap-2 ml-2">
-        <button class="bg-red-500 text-white w-8 h-8 rounded-full text-sm font-bold">−</button>
-        <span class="font-bold text-lg w-8 text-center">${isGros ? (item.nb_lots || 1) : item.quantite}</span>
-        <button class="bg-green-500 text-white w-8 h-8 rounded-full text-sm font-bold">+</button>
-      </div>`;
-
-    const btns = div.querySelectorAll('button');
-    btns[0].addEventListener('click', () => modifierQuantitePanier(item.id, item.sale_type, -1));
-    btns[1].addEventListener('click', () => modifierQuantitePanier(item.id, item.sale_type, +1));
-    c.appendChild(div);
-  });
-
-  if (total) total.textContent = totalPrix.toLocaleString('fr-FR') + ' F';
-}
-
-// ── Modifier la quantité dans le panier ───────────────────────────────────
-export function modifierQuantitePanier(id, sale_type, delta) {
-  if (!appData) return;
-  const item    = appData.panier.find(i => i.id === id && i.sale_type === (sale_type || 'detail'));
-  const produit = appData.produits.find(p => p.id === id);
-  if (!item) return;
-
-  if (item.sale_type === 'gros') {
-    const newLots = (item.nb_lots || 1) + delta;
-    if (newLots <= 0) { appData.panier = appData.panier.filter(i => !(i.id === id && i.sale_type === 'gros')); }
-    else {
-      const stockNecessaire = newLots * (item.quantite_gros || 1);
-      if (produit && stockNecessaire > produit.stock) { showNotification('❌ Stock insuffisant !', 'error'); return; }
-      item.nb_lots  = newLots;
-      item.quantite = newLots * (item.quantite_gros || 1);
-    }
-  } else {
-    item.quantite += delta;
-    if (item.quantite <= 0) { appData.panier = appData.panier.filter(i => !(i.id === id && i.sale_type === 'detail')); }
-    else if (produit && item.quantite > produit.stock) { item.quantite = produit.stock; showNotification('❌ Stock insuffisant !', 'error'); }
-  }
-
-  afficherPanier();
-  saveAppDataLocal();
-}
-
-// ── Construire la liste de ventes depuis le panier ─────────────────────────
-function panierToVentes(paymentMethod, overrides = {}) {
-  return appData.panier.map(item => {
-    const isGros      = item.sale_type === 'gros';
-    const prixNegocie = item.prix_negocie != null ? item.prix_negocie : null;
-
-    const vente = {
-      product_id:     item.id,
-      payment_method: paymentMethod,
-      sale_type:      item.sale_type || 'detail',
-      ...overrides
-    };
-
-    if (isGros) {
-      vente.nb_lots = item.nb_lots || 1;
-    } else {
-      vente.quantity = item.quantite;
-    }
-
-    if (prixNegocie != null) {
-      vente.prix_negocie = prixNegocie;
-    }
-
-    return vente;
-  });
-}
-
-// ── Finaliser une vente normale ────────────────────────────────────────────
-export async function finaliserVente(paymentMethod) {
-  if (paymentMethod === "credit") { showModalCredit(); return; }
-  if (!appData.panier.length) { showNotification('❌ Panier vide.', 'error'); return; }
-
-  const ventes = panierToVentes(paymentMethod);
-
-  for (const vente of ventes) {
-    const result = await postSaleServer(vente);
-    if (!result.ok) {
-      showNotification('❌ ' + (result.error || "Erreur lors de l'enregistrement."), 'error');
-      return;
-    }
-  }
-
-  showNotification('✅ Vente enregistrée.', 'success');
-
-  document.getElementById("btnPrintReceipt")?.classList.remove("hidden");
-  imprimerRecu(paymentMethod);
-  document.getElementById("btnPrintReceipt")?.classList.add("hidden");
-
-  appData.panier = [];
-  saveAppDataLocal();
-  await syncFromServer();
-  updateStats();
-  afficherCategoriesVente();
-  afficherProduits();
-  afficherCategories();
-  afficherRapports();
-  afficherInventaire();
-  afficherCredits();
-  hideModal();
-}
-
-// ── Finaliser une vente à crédit ───────────────────────────────────────────
-export async function finaliserVenteCredit() {
-  if (!appData.panier.length) { showNotification("❌ Panier vide.", "error"); return; }
-
-  const clientName  = document.getElementById("creditClientName")?.value.trim();
+  // Récupérer les infos du formulaire crédit
+  const clientName = document.getElementById("creditClientName")?.value.trim();
   const clientPhone = document.getElementById("creditClientPhone")?.value.trim();
-  const dueDate     = document.getElementById("creditDueDate")?.value || null;
+  const dueDateInput = document.getElementById("creditDueDate");
+  const dueDate = dueDateInput?.value || null;
+
+  console.log("Infos crédit saisies :", { clientName, clientPhone, dueDate });
 
   if (!clientName || !clientPhone || !dueDate) {
-    showNotification("⚠️ Merci de remplir toutes les informations du crédit.", "warning"); return;
+    showNotification("⚠️ Merci de remplir toutes les informations du crédit.", "warning");
+    return;
   }
 
-  const ventes = panierToVentes("credit", {
-    client_name:  clientName,
-    client_phone: clientPhone,
-    due_date:     dueDate,
-    paid:         false
-  });
+  // Envoyer les ventes une par une
+  for (const item of appData.panier) {
+    const venteCredit = {
+      product_id: item.id,
+      quantity: item.quantite,
+      payment_method: "credit", // ✅ Marqué comme crédit
+      client_name: clientName,
+      client_phone: clientPhone,
+      due_date: dueDate,
+      paid: false // ✅ Par défaut non payé
+    };
 
-  for (const vente of ventes) {
-    const result = await postSaleServer(vente);
-    if (!result.ok) {
-      showNotification('❌ ' + (result.error || "Erreur lors de l'enregistrement du crédit."), 'error');
+    const created = await postSaleServer(venteCredit);
+    if (!created) {
+      showNotification("❌ Erreur lors de l'enregistrement de la vente à crédit.", "error");
       return;
     }
   }
 
   showNotification("✅ Vente à crédit enregistrée.", "success");
+
+  // Vider le panier local
   appData.panier = [];
   saveAppDataLocal();
+
+  // Recharger toutes les données depuis le serveur
   await syncFromServer();
+
+  // Rafraîchir toute l'UI
   updateStats();
   afficherCategoriesVente();
   afficherProduits();
@@ -287,114 +154,286 @@ export async function finaliserVenteCredit() {
   afficherInventaire();
   afficherCredits();
   verifierStockFaible();
+
+  // Ne ferme QUE le modal crédit
   hideModalCredit();
 }
 
-// ── postSaleServer (local, pour finaliserVente/Credit) ────────────────────
-async function postSaleServer(sale) {
-  try {
-    const res = await authfetch(API_BASE + '/sales', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(sale)
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      return { ok: false, error: err.error || 'Erreur' };
+export function ajouterAuPanier(produit) {
+  if (!appData) return;
+  // Clé unique pour différencier gros vs détail du même produit
+  const panierKey = produit.id + '_' + (produit._vente_mode || 'normal');
+  const lotQty    = produit._lot_qty || 1; // nb d'unités consommées par 1 ajout au panier
+
+  const exist = appData.panier.find(i => i._panierKey === panierKey);
+  if (exist) {
+    // Vérifier le stock disponible en tenant compte des unités par lot
+    const stockNeeded = (exist.quantite + 1) * lotQty;
+    if (stockNeeded > (produit.stock || 0)) {
+      window.showNotification?.('❌ Stock insuffisant !', 'error');
+      return;
     }
-    return { ok: true, data: await res.json() };
-  } catch (e) {
-    return { ok: false, error: 'Erreur réseau' };
+    exist.quantite++;
+  } else {
+    if (lotQty > (produit.stock || 0)) {
+      window.showNotification?.('❌ Stock insuffisant !', 'error');
+      return;
+    }
+    appData.panier.push(Object.assign({}, produit, { quantite: 1, _panierKey: panierKey }));
   }
+  afficherPanier();
+  saveAppDataLocal();
 }
 
-// ── Imprimer le reçu ───────────────────────────────────────────────────────
+export function afficherPanier() {
+  const c = document.getElementById('panierItems'); const total = document.getElementById('totalPanier'); if (!c) return; if (!appData || !appData.panier || !appData.panier.length) { c.innerHTML = '<div class="text-gray-500 text-center py-8"><div class="text-4xl mb-2">🛒</div><div>Panier vide</div></div>'; if (total) total.textContent = '0 F'; return; }
+  c.innerHTML = ''; var totalPrix = 0; appData.panier.forEach(function (item) {
+    const div = document.createElement('div'); div.className = 'flex justify-between items-center bg-gray-50 rounded-2xl p-3'; div.innerHTML = '<div><div class="font-bold">' + item.name + '</div><div class="text-sm text-gray-600">' + (parseFloat(item.price) || 0).toLocaleString() + ' F × ' + item.quantite + '</div></div><div class="flex items-center gap-2"><button class="bg-red-500 text-white w-8 h-8 rounded-full text-sm font-bold">-</button><span class="font-bold text-lg w-8 text-center">' + item.quantite + '</span><button class="bg-green-500 text-white w-8 h-8 rounded-full text-sm font-bold">+</button></div>'; // wire buttons
+    c.appendChild(div);
+    // attach handlers to +/- buttons
+    const btns = div.querySelectorAll('button'); if (btns && btns.length >= 2) { btns[0].addEventListener('click', function () { modifierQuantitePanier(item.id, -1); }); btns[1].addEventListener('click', function () { modifierQuantitePanier(item.id, 1); }); }
+    totalPrix += (parseFloat(item.price) || 0) * (parseInt(item.quantite) || 0);
+  }); if (total) total.textContent = totalPrix.toLocaleString() + ' F';
+}
+
+export function modifierQuantitePanier(id, delta) { if (!appData) return; const item = appData.panier.find(function (i) { return i.id === id; }); const produit = appData.produits.find(function (p) { return p.id === id; }); if (item) { item.quantite += delta; if (item.quantite <= 0) appData.panier = appData.panier.filter(function (i) { return i.id !== id; }); else if (produit && item.quantite > produit.stock) { item.quantite = produit.stock; alert('❌ Stock insuffisant!'); } afficherPanier(); saveAppDataLocal(); } }
+
 function genererNumeroRecu() {
+
   const date = new Date();
+
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
-  let compteur = parseInt(localStorage.getItem("compteurRecu") || '0') + 1;
+
+  let compteur = localStorage.getItem("compteurRecu") || 0;
+  compteur++;
+
   localStorage.setItem("compteurRecu", compteur);
-  return `RC-${y}${m}${d}-${String(compteur).padStart(4, "0")}`;
+
+  return `RC-${y}${m}${d}-${String(compteur).padStart(4,"0")}`;
+
 }
 
 export function imprimerRecu(paymentMethod = "especes") {
+
   if (!appData.panier.length) return;
+
   const numeroRecu = genererNumeroRecu();
   const date = new Date().toLocaleString("fr-FR");
+
   let total = 0;
 
-  const lignes = appData.panier.map(item => {
-    const isGros      = item.sale_type === 'gros';
-    const prix        = item.prix_negocie != null
-      ? item.prix_negocie
-      : (isGros ? (item.price_gros || 0) : (item.price || 0));
-    const sousTotal   = isGros
-      ? prix * (item.nb_lots || 1)
-      : prix * (item.quantite || 1);
+  let lignes = appData.panier.map(item => {
+
+    const prix = parseFloat(item.price) || 0;
+    const qte = item.quantite || 0;
+    const sousTotal = prix * qte;
+
     total += sousTotal;
 
-    const label = isGros
-      ? `${item.name} (Gros ×${item.nb_lots || 1} lot)`
-      : item.name;
+    return `
+      <tr>
+        <td>${item.name}</td>
+        <td style="text-align:center">${qte}</td>
+        <td style="text-align:right">${sousTotal.toLocaleString()} F</td>
+      </tr>
+    `;
 
-    return `<tr><td>${label}</td><td style="text-align:center">${isGros ? item.nb_lots || 1 : item.quantite}</td><td style="text-align:right">${sousTotal.toLocaleString()} F</td></tr>`;
   }).join("");
 
-  const contenu = `<html><head><title>Reçu</title><style>body{font-family:monospace;width:300px;margin:auto}h2{text-align:center;margin-bottom:5px}.center{text-align:center}table{width:100%;font-size:12px;margin-top:10px}td{padding:3px 0}.total{font-weight:bold;font-size:16px;text-align:right;margin-top:10px}hr{border-top:1px dashed black}</style></head><body><h2>🧾 REÇU</h2><div class="center">Reçu N° : ${numeroRecu}</div><div class="center">${date}</div><hr><table>${lignes}</table><hr><div class="total">TOTAL : ${total.toLocaleString()} F</div><div class="center">Paiement : ${paymentMethod}</div><br><div class="center">Merci pour votre achat 🙏</div></body></html>`;
+  const contenu = `
+  <html>
+  <head>
+  <title>Reçu</title>
+
+  <style>
+
+  body{
+    font-family: monospace;
+    width:300px;
+    margin:auto;
+  }
+
+  h2{
+    text-align:center;
+    margin-bottom:5px;
+  }
+
+  .center{
+    text-align:center;
+  }
+
+  table{
+    width:100%;
+    font-size:12px;
+    margin-top:10px;
+  }
+
+  td{
+    padding:3px 0;
+  }
+
+  .total{
+    font-weight:bold;
+    font-size:16px;
+    text-align:right;
+    margin-top:10px;
+  }
+
+  hr{
+    border-top:1px dashed black;
+  }
+
+  </style>
+
+  </head>
+
+  <body>
+
+  <h2>🧾 REÇU</h2>
+
+  <div class="center">
+  Reçu N° : ${numeroRecu}
+  </div>
+
+  <div class="center">
+  ${date}
+  </div>
+
+  <hr>
+
+  <table>
+  ${lignes}
+  </table>
+
+  <hr>
+
+  <div class="total">
+  TOTAL : ${total.toLocaleString()} F
+  </div>
+
+  <div class="center">
+  Paiement : ${paymentMethod}
+  </div>
+
+  <br>
+
+  <div class="center">
+  Merci pour votre achat 🙏
+  </div>
+
+  </body>
+  </html>
+  `;
 
   const win = window.open("", "PRINT", "height=600,width=400");
+
   win.document.write(contenu);
   win.document.close();
+
   win.focus();
   win.print();
+
   win.close();
+
   document.getElementById("btnPrintReceipt")?.classList.add("hidden");
+
 }
+
 
 window.imprimerRecu = imprimerRecu;
 
-// ── Historique des ventes ──────────────────────────────────────────────────
+export async function finaliserVente(paymentMethod) {
+  if (paymentMethod === "credit") {
+    // ⚡ On ne passe plus ici, on ouvre le formulaire Crédit
+    showModalCredit();
+    return;
+  }
+
+  if (!appData.panier.length) {
+    showNotification('❌ Panier vide.', "error");
+    return;
+  }
+
+  // ✅ Envoi des ventes une par une au backend
+  for (const item of appData.panier) {
+    const vente = {
+      product_id: item.id,
+      quantity: item.quantite,
+      payment_method: paymentMethod
+    };
+    const created = await postSaleServer(vente);
+    if (!created) {
+      showNotification('❌ Erreur lors de l\'enregistrement de la vente.', "error");
+      return;
+    }
+  }
+
+  showNotification('✅ Vente enregistrée.', "success");
+
+  document.getElementById("btnPrintReceipt")?.classList.remove("hidden");
+
+  imprimerRecu(paymentMethod);
+
+  document.getElementById("btnPrintReceipt")?.classList.add("hidden");
+
+  // 🔄 Vider le panier local
+  appData.panier = [];
+  saveAppDataLocal();
+
+  // 🔄 Recharger toutes les données depuis le serveur
+  await syncFromServer();
+
+  // 🔄 Rafraîchir toute l'UI
+  updateStats();
+  afficherCategoriesVente();
+  afficherProduits();
+  afficherCategories();
+  afficherRapports();
+  afficherInventaire();
+  afficherCredits(); // ⚡ Ajout pour que la section crédits soit à jour
+
+  hideModal();
+}
+// Remplit le tbody unique sans jamais créer de nouvelle table
 export function renderSalesHistory(ventes) {
   purgeSalesHistoryClones();
+
   const tbody = document.getElementById('salesHistoryBody');
   if (!tbody) return;
 
   const periode = document.getElementById('periodeRapports')?.value || 'tout';
-  const key     = `${periode}|${ventes?.length || 0}|${appData.produits?.length || 0}`;
+  const key = `${periode}|${ventes?.length || 0}|${appData.produits?.length || 0}`;
+
   if (key === getLastSalesKey()) return;
-  setLastSalesKey(key);
+  setLastSalesKey(key); // ✅ utilise le setter
+
   tbody.innerHTML = '';
 
-  if (!Array.isArray(ventes) || !ventes.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 p-4">Aucune vente</td></tr>`;
+  if (!Array.isArray(ventes) || ventes.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-500 p-4">Aucune vente</td></tr>`;
     return;
   }
 
   for (const v of ventes) {
-    const prod    = (appData.produits || []).find(p => Number(p.id) === Number(v.product_id));
-    const montant = Number.isFinite(Number(v.total)) ? Number(v.total) : 0;
-    const isGros  = v.sale_type === 'gros';
-    const modeTag = isGros
-      ? `<span class="text-xs bg-blue-100 text-blue-700 px-1 rounded">Gros ×${v.nb_lots || 1}</span>`
-      : `<span class="text-xs bg-gray-100 text-gray-600 px-1 rounded">Détail</span>`;
-    const negoTag = v.prix_negocie != null
-      ? `<span class="text-xs bg-orange-100 text-orange-600 px-1 rounded ml-1">Négocié</span>`
-      : '';
+    const prod = (appData.produits || []).find(p => Number(p.id) === Number(v.product_id));
+    const unit = Number(v.price ?? 0);
+    const qty = Number(v.quantity ?? 0);
+    const montant = Number.isFinite(Number(v.total)) ? Number(v.total) : (unit * qty);
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="p-2 border">${new Date(v.date || v.created_at).toLocaleString()}</td>
       <td class="p-2 border">${prod ? prod.name : 'Inconnu'}</td>
       <td class="p-2 border">${v.quantity ?? 0}</td>
-      <td class="p-2 border">${montant.toLocaleString()} F</td>
+      <td class="p-2 border">${(Number.isFinite(montant) ? montant : 0).toLocaleString()} F</td>
       <td class="p-2 border">${v.payment_method || ''}</td>
-      <td class="p-2 border">${modeTag}${negoTag}</td>
       <td class="p-2 border text-center">
         <button class="bg-yellow-500 text-white px-2 py-1 rounded text-xs" onclick="modifierVente(${v.id})">✏️</button>
         <button class="bg-red-500 text-white px-2 py-1 rounded text-xs" onclick="annulerVente(${v.id})">🗑️</button>
-      </td>`;
+      </td>
+    `;
     tbody.appendChild(tr);
   }
 }
@@ -405,7 +444,7 @@ export function tryRenderSalesHistory(ventesFiltrees) {
   try {
     if (!appData?.ventes?.length || !appData?.produits?.length) {
       const tbody = document.getElementById('salesHistoryBody');
-      if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 p-4">Chargement…</td></tr>`;
+      if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-500 p-4">Chargement…</td></tr>`;
     } else {
       renderSalesHistory(ventesFiltrees);
     }
@@ -415,9 +454,10 @@ export function tryRenderSalesHistory(ventesFiltrees) {
 }
 
 export function ouvrirModal(vente) {
-  document.getElementById("venteId").value         = vente.id;
-  document.getElementById("venteQuantite").value   = vente.quantity;
-  document.getElementById("ventePaiement").value   = vente.payment_method;
+  document.getElementById("venteId").value = vente.id;
+  document.getElementById("venteQuantite").value = vente.quantity;
+  document.getElementById("ventePaiement").value = vente.payment_method;
+
   document.getElementById("modalModifierVente").classList.remove("hidden");
   document.getElementById("modalModifierVente").classList.add("flex");
 }
@@ -432,23 +472,27 @@ export function marquerRembourse(venteId) {
   document.getElementById("modalRemboursement").classList.remove("hidden");
 }
 
+// Supprime toute table "fantôme" créée ailleurs que #salesHistory
 export function purgeSalesHistoryClones() {
   const reports = document.getElementById('rapportsSection');
-  const keep    = document.getElementById('salesHistory');
+  const keep = document.getElementById('salesHistory');
   if (!reports || !keep) return;
+
   reports.querySelectorAll('h1,h2,h3,h4').forEach(h => {
     if (/Historique des ventes/i.test(h.textContent) && !keep.contains(h)) {
       const box = h.closest('div');
       if (box && box !== keep) box.remove();
     }
   });
+
   reports.querySelectorAll('table').forEach(t => {
     if (keep.contains(t)) return;
-    const headers  = Array.from(t.querySelectorAll('th')).map(th => th.textContent.trim().toLowerCase());
+    const headers = Array.from(t.querySelectorAll('th')).map(th => th.textContent.trim().toLowerCase());
     const expected = ['date', 'produit', 'qté', 'montant', 'paiement', 'actions'];
     if (expected.every(h => headers.includes(h))) {
       const box = t.closest('div');
-      if (box && box !== keep) box.remove(); else t.remove();
+      if (box && box !== keep) box.remove();
+      else t.remove();
     }
   });
 }
@@ -458,12 +502,20 @@ export function filtrerVentesParPeriode(ventes, periode) {
   return ventes.filter(v => {
     const dateVente = new Date(v.date || v.created_at || v.timestamp);
     if (isNaN(dateVente)) return false;
-    if (periode === 'jour')    return dateVente.toISOString().slice(0, 10) === now.toISOString().slice(0, 10);
-    if (periode === 'semaine') {
-      const debut = new Date(now); debut.setDate(now.getDate() - now.getDay()); debut.setHours(0,0,0,0);
-      return dateVente >= debut && dateVente <= now;
+
+    if (periode === 'jour') {
+      return dateVente.toISOString().slice(0, 10) === now.toISOString().slice(0, 10);
     }
-    if (periode === 'mois') return dateVente.getMonth() === now.getMonth() && dateVente.getFullYear() === now.getFullYear();
-    return true;
+    if (periode === 'semaine') {
+      const debutSemaine = new Date(now);
+      debutSemaine.setDate(now.getDate() - now.getDay()); // dimanche comme début
+      debutSemaine.setHours(0, 0, 0, 0);
+      return dateVente >= debutSemaine && dateVente <= now;
+    }
+    if (periode === 'mois') {
+      return dateVente.getMonth() === now.getMonth() &&
+        dateVente.getFullYear() === now.getFullYear();
+    }
+    return true; // "tout"
   });
 }

@@ -413,153 +413,161 @@
             </div>
 
 
-            <!-- ══════════ SECTION FOURNISSEURS ══════════ -->
-            <div class="section-page hidden" id="fournisseursSection">
-                <div class="page-header" style="margin-top:6px;">
-                    <h2>🏭 Fournisseurs</h2>
-                    <button class="btn-primary" id="fournisseursAddBtn">+ Ajouter</button>
-                </div>
+            <!-- ═══════════════════════════════════════════════════════════
+     PATCH COMPLET — server.js + utils.js + index.html
 
-                <!-- Alertes automatiques -->
-                <div id="fournisseursAutoAlerts"></div>
+     ── 1. PATCH server.js ──
+     Ajouter après les autres routes :
+═══════════════════════════════════════════════════════════ -->
+            <!--
+const customerOrdersRoutes = require('./routes/customerOrders');
+const { deliveries: deliveriesRoutes, deliverymen: deliverymenRoutes } = require('./routes/deliveries');
 
-                <!-- Stats -->
-                <div id="fournisseursStats"></div>
+app.use('/customer-orders', customerOrdersRoutes);
+app.use('/deliveries',      deliveriesRoutes);
+app.use('/deliverymen',     deliverymenRoutes);
+// fournisseurs.js est déjà monté, remplacer par la v2
+-->
 
-                <!-- Tri -->
-                <div class="module-chips" id="fournisseursSortChips"></div>
+            <!-- ── 2. PATCH utils.js ── Ajouter les nouvelles sections dans showSection() -->
+            <!--
+const sections = [
+  'menu','vente','stock','categories','rapports','inventaire','credits',
+  'clients','fournisseurs','commandes','livraisons',
+  'customerOrders','deliveries','deliverymen',   ← AJOUTER
+  'profil','calendrier'
+];
 
-                <!-- Recherche -->
-                <div style="position:relative;margin-bottom:12px;">
-                    <span
-                        style="position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;">🔍</span>
-                    <input type="search" id="fournisseursSearch" class="search-bar" style="padding-left:40px;margin:0;"
-                        placeholder="Rechercher un fournisseur…">
-                </div>
+else if (['clients','fournisseurs','customerOrders','deliveries','deliverymen','profil','calendrier'].includes(section)) {
+  window.dispatchEvent(new CustomEvent('pageChange', { detail: { key: section } }));
+}
+-->
 
-                <!-- Liste cartes -->
-                <div id="fournisseursList"></div>
-            </div>
+            <!-- ── 3. Sections HTML à ajouter dans scroll-content ── -->
 
 
-            <!-- ══════════ SECTION COMMANDES ══════════ -->
-            <div class="section-page hidden" id="commandesSection">
+            <!-- ══════════ SECTION COMMANDES CLIENTS ══════════ -->
+            <div class="section-page hidden" id="customerOrdersSection">
                 <div class="page-header" style="margin-top:6px;">
                     <h2>📦 Commandes</h2>
-                    <button class="btn-primary" id="commandesAddBtn">+ Créer</button>
+                    <button class="btn-primary" id="customerOrdersAddBtn">+ Nouvelle</button>
                 </div>
-
-                <!-- Alertes automatiques -->
-                <div id="commandesAutoAlerts"></div>
-
-                <!-- Stats -->
-                <div id="commandesStats"></div>
-
-                <!-- Chips statut -->
-                <div id="commandesStatusChips"></div>
-
-                <!-- Liste cartes -->
-                <div id="commandesList"></div>
+                <div id="customerOrdersStats"></div>
+                <div id="customerOrdersChips"></div>
+                <div id="customerOrdersList"></div>
             </div>
 
 
             <!-- ══════════ SECTION LIVRAISONS ══════════ -->
-            <div class="section-page hidden" id="livraisonsSection">
+            <div class="section-page hidden" id="deliveriesSection">
                 <div class="page-header" style="margin-top:6px;">
                     <h2>🚚 Livraisons</h2>
-                    <button class="btn-primary" id="livraisonsAddBtn">+ Créer</button>
+                    <button class="btn-primary" id="deliveriesAddBtn"
+                        style="background:#F3F4F6;color:var(--muted);">ℹ️</button>
                 </div>
-
-                <!-- Alertes automatiques -->
-                <div id="livraisonsAutoAlerts"></div>
-
-                <!-- Stats -->
-                <div id="livraisonsStats"></div>
-
-                <!-- Chips statut -->
-                <div id="livraisonsStatusChips"></div>
-
-                <!-- Liste cartes -->
-                <div id="livraisonsList"></div>
+                <div id="deliveriesStats"></div>
+                <div id="deliveriesChips"></div>
+                <div id="deliveriesList"></div>
             </div>
 
+
+            <!-- ══════════ SECTION LIVREURS ══════════ -->
+            <div class="section-page hidden" id="deliverymenSection">
+                <div class="page-header" style="margin-top:6px;">
+                    <h2>🛵 Livreurs</h2>
+                    <button class="btn-primary" id="deliverymenAddBtn">+ Ajouter</button>
+                </div>
+                <div id="deliverymenStats"></div>
+                <div id="deliverymenList"></div>
+            </div>
+
+
             <!-- ══════════ SECTION CALENDRIER ══════════ -->
-<div class="section-page hidden" id="calendrierSection">
- 
-  <div class="page-header" style="margin-top:6px;">
-    <h2>📅 Échéances</h2>
-    <button class="btn-primary" onclick="window.initCalendrierSection && (window.calendrierSection?._init=false, window.initCalendrierSection())" id="cal-refresh">🔄</button>
-  </div>
- 
-  <!-- Stats du mois -->
-  <div id="cal-month-stats"></div>
- 
-  <!-- Navigation mois -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-    <button id="cal-prev" style="
+            <div class="section-page hidden" id="calendrierSection">
+
+                <div class="page-header" style="margin-top:6px;">
+                    <h2>📅 Échéances</h2>
+                    <button class="btn-primary"
+                        onclick="window.initCalendrierSection && (window.calendrierSection?._init=false, window.initCalendrierSection())"
+                        id="cal-refresh">🔄</button>
+                </div>
+
+                <!-- Stats du mois -->
+                <div id="cal-month-stats"></div>
+
+                <!-- Navigation mois -->
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                    <button id="cal-prev" style="
       background:var(--surface);border:1.5px solid #E5E7EB;
       width:38px;height:38px;border-radius:11px;font-size:18px;
       cursor:pointer;display:flex;align-items:center;justify-content:center;
       box-shadow:0 1px 6px rgba(0,0,0,.06);">‹</button>
- 
-    <div style="text-align:center;">
-      <div id="cal-month-title" style="font-family:'Sora',sans-serif;font-size:16px;font-weight:800;color:var(--text);"></div>
-      <button id="cal-today-btn" style="background:none;border:none;font-size:11px;color:var(--primary);font-weight:700;cursor:pointer;padding:2px 0;">Aujourd'hui</button>
-    </div>
- 
-    <button id="cal-next" style="
+
+                    <div style="text-align:center;">
+                        <div id="cal-month-title"
+                            style="font-family:'Sora',sans-serif;font-size:16px;font-weight:800;color:var(--text);">
+                        </div>
+                        <button id="cal-today-btn"
+                            style="background:none;border:none;font-size:11px;color:var(--primary);font-weight:700;cursor:pointer;padding:2px 0;">Aujourd'hui</button>
+                    </div>
+
+                    <button id="cal-next" style="
       background:var(--surface);border:1.5px solid #E5E7EB;
       width:38px;height:38px;border-radius:11px;font-size:18px;
       cursor:pointer;display:flex;align-items:center;justify-content:center;
       box-shadow:0 1px 6px rgba(0,0,0,.06);">›</button>
-  </div>
- 
-  <!-- Légende -->
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-    <div style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted);">
-      <div style="width:8px;height:8px;border-radius:50%;background:#EF4444;"></div> Crédit
-    </div>
-    <div style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted);">
-      <div style="width:8px;height:8px;border-radius:50%;background:#F59E0B;"></div> Commande
-    </div>
-    <div style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted);">
-      <div style="width:8px;height:8px;border-radius:50%;background:#3B82F6;"></div> Livraison
-    </div>
-  </div>
- 
-  <!-- Grille calendrier -->
-  <div id="cal-grid" style="
+                </div>
+
+                <!-- Légende -->
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+                    <div
+                        style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted);">
+                        <div style="width:8px;height:8px;border-radius:50%;background:#EF4444;"></div> Crédit
+                    </div>
+                    <div
+                        style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted);">
+                        <div style="width:8px;height:8px;border-radius:50%;background:#F59E0B;"></div> Commande
+                    </div>
+                    <div
+                        style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted);">
+                        <div style="width:8px;height:8px;border-radius:50%;background:#3B82F6;"></div> Livraison
+                    </div>
+                </div>
+
+                <!-- Grille calendrier -->
+                <div id="cal-grid" style="
     display:grid;
     grid-template-columns:repeat(7,1fr);
     gap:4px;
     margin-bottom:18px;
     position:relative;
   "></div>
- 
-  <!-- Séparateur -->
-  <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:800;color:var(--text);margin-bottom:10px;">
-    📋 Échéances du mois
-  </div>
- 
-  <!-- Liste échéances -->
-  <div id="cal-event-list"></div>
-</div>
- 
+
+                <!-- Séparateur -->
+                <div
+                    style="font-family:'Sora',sans-serif;font-size:14px;font-weight:800;color:var(--text);margin-bottom:10px;">
+                    📋 Échéances du mois
+                </div>
+
+                <!-- Liste échéances -->
+                <div id="cal-event-list"></div>
+            </div>
+
 
             <!-- ══════════ SECTION PROFIL ══════════ -->
-<div class="section-page hidden" id="profilSection">
-  <div class="page-header" style="margin-top:6px;">
-    <h2>👤 Mon Profil</h2>
-    <button class="btn-primary" onclick="window.loadProfile()">🔄</button>
-  </div>
-  <div id="profilContent">
-    <!-- Rempli dynamiquement par profil.js -->
-    <div style="text-align:center;padding:40px 0;color:var(--muted);">
-      <div style="font-size:32px;margin-bottom:8px;">⏳</div>
-      <div>Chargement du profil…</div>
-    </div>
-  </div>
-</div>
+            <div class="section-page hidden" id="profilSection">
+                <div class="page-header" style="margin-top:6px;">
+                    <h2>👤 Mon Profil</h2>
+                    <button class="btn-primary" onclick="window.loadProfile()">🔄</button>
+                </div>
+                <div id="profilContent">
+                    <!-- Rempli dynamiquement par profil.js -->
+                    <div style="text-align:center;padding:40px 0;color:var(--muted);">
+                        <div style="font-size:32px;margin-bottom:8px;">⏳</div>
+                        <div>Chargement du profil…</div>
+                    </div>
+                </div>
+            </div>
 
         </div><!-- end scroll-content -->
 
@@ -619,46 +627,49 @@
                 </div>
                 <span class="sheet-chevron">›</span>
             </button>
-            <button class="sheet-item" onclick="closePlusSheet();navTo('fournisseurs');">
-                <div class="sheet-icon" style="background:#ECFDF5;">🏭</div>
+            <button class="sheet-item" onclick="closePlusSheet();navTo('customerOrders');">
+                <div class="sheet-icon" style="background:#FEF3C7;">📦</div>
                 <div>
-                    <h3>Fournisseurs</h3>
-                    <p>Gérer vos fournisseurs</p>
+                    <h3>Commandes clients</h3>
+                    <p>Gérer les commandes à livrer</p>
                 </div>
                 <span class="sheet-chevron">›</span>
             </button>
-            <button class="sheet-item" onclick="closePlusSheet();navTo('commandes');">
-                <div class="sheet-icon" style="background:#FEF9C3;">📦</div>
-                <div>
-                    <h3>Commandes</h3>
-                    <p>Suivi des commandes fournisseur</p>
-                </div>
-                <span class="sheet-chevron">›</span>
-            </button>
-            <button class="sheet-item" onclick="closePlusSheet();navTo('livraisons');">
-                <div class="sheet-icon" style="background:#ECFDF5;">🚚</div>
+
+            <button class="sheet-item" onclick="closePlusSheet();navTo('deliveries');">
+                <div class="sheet-icon" style="background:#EFF6FF;">🚚</div>
                 <div>
                     <h3>Livraisons</h3>
-                    <p>Suivi des livraisons</p>
+                    <p>Suivi des livraisons en cours</p>
+                </div>
+                <span class="sheet-chevron">›</span>
+            </button>
+
+            <button class="sheet-item" onclick="closePlusSheet();navTo('deliverymen');">
+                <div class="sheet-icon" style="background:#FEF9C3;">🛵</div>
+                <div>
+                    <h3>Livreurs</h3>
+                    <p>Gérer vos coursiers</p>
                 </div>
                 <span class="sheet-chevron">›</span>
             </button>
             <button class="sheet-item" onclick="closePlusSheet();navTo('calendrier');">
-  <div class="sheet-icon" style="background:#EFF6FF;">📅</div>
-  <div>
-    <h3>Échéances</h3>
-    <p>Crédits · Commandes · Livraisons</p>
-  </div>
-  <span class="sheet-chevron">›</span>
-</button>
+                <div class="sheet-icon" style="background:#EFF6FF;">📅</div>
+                <div>
+                    <h3>Échéances</h3>
+                    <p>Crédits · Commandes · Livraisons</p>
+                </div>
+                <span class="sheet-chevron">›</span>
+            </button>
             <button class="sheet-item" onclick="closePlusSheet();navTo('profil');">
-  <div class="sheet-icon" style="background:#EDE9FE;">👤</div>
-  <div>
-    <h3>Mon Profil</h3>
-    <p>Boutique · Mot de passe · Plan</p>
-  </div>
-  <span class="sheet-chevron">›</span>
-</button>
+                <div class="sheet-icon" style="background:#EDE9FE;">👤</div>
+                <div>
+                    <h3>Mon Profil</h3>
+                    <p>Boutique · Mot de passe · Plan</p>
+                </div>
+                <span class="sheet-chevron">›</span>
+            </button>
+            
         </div>
     </div>
 
@@ -890,7 +901,7 @@
             const map = { menu: 'nav-menu', stock: 'nav-stock', rapports: 'nav-rapports' };
             if (map[section]) document.getElementById(map[section])?.classList.add('active');
             else if (['categories', 'inventaire', 'credits', 'clients',
-                'fournisseurs', 'commandes', 'livraisons','profil','calendrier'].includes(section)) document.getElementById('nav-plus')?.classList.add('active');
+                'fournisseurs', 'commandes', 'livraisons', 'profil', 'calendrier'].includes(section)) document.getElementById('nav-plus')?.classList.add('active');
         }
         function navTo(section) {
             closePlusSheet();
@@ -934,10 +945,10 @@
     <script src="js/end-of-day.js"></script>
     <script src="js/extras.js"></script>
     <script src="js/offline-cache.js"></script>
-    
+
     <script src="js/customerOrders.js"></script>
-<script src="js/deliveries.js"></script>
-    
+    <script src="js/deliveries.js"></script>
+
     <script src="js/clients.js"></script>
     <script src="js/fournisseurs.js"></script>
     <script src="js/commandes.js"></script>
@@ -951,18 +962,18 @@
     <script src="js/reappro.js"></script>
     <script src="js/reappro-prediction.js"></script>
     <script src="js/client-pdf.js"></script>
-     <script src="js/calendar.js"></script>
+    <script src="js/calendar.js"></script>
     <script src="js/ticket58.js"></script>
     <script src="js/onboarding.js"></script>
-<script src="js/badge-widget.js"></script>
-<script src="js/product-share.js"></script>
-    <script src="js/i18n.js"></script>          
-<script src="js/realtime-sync.js"></script>
-<script src="js/pin-security.js"></script>
-<script src="js/theme.js"></script>
-<script src="js/export-excel.js"></script>
-<script src="js/whatsapp-reminders.js"></script>
-<script src="js/product-photos.js"></script>
+    <script src="js/badge-widget.js"></script>
+    <script src="js/product-share.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/realtime-sync.js"></script>
+    <script src="js/pin-security.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/export-excel.js"></script>
+    <script src="js/whatsapp-reminders.js"></script>
+    <script src="js/product-photos.js"></script>
 </body>
 
 </html>

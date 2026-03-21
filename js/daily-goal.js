@@ -263,21 +263,28 @@
   }
 
   // ══════════════════════════════════════
-  // OBSERVER #chiffreAffaires pour mise à jour auto
+  // OBSERVER #chiffreAffaires — singleton + debounce
   // ══════════════════════════════════════
+  let _goalObserver   = null;
+  let _goalDebounce   = null;
+
   function watchCA() {
+    if (_goalObserver) return; // déjà actif, ne pas créer un deuxième
     const el = document.getElementById('chiffreAffaires');
     if (!el) return;
 
     let lastText = el.textContent;
-    const observer = new MutationObserver(() => {
+
+    _goalObserver = new MutationObserver(() => {
       const newText = el.textContent;
       if (newText === lastText) return;
       lastText = newText;
-      // Délai court pour laisser countup.js finir son animation
-      setTimeout(updateCard, 700);
+      // Debounce — countup.js déclenche plusieurs mutations en rafale
+      clearTimeout(_goalDebounce);
+      _goalDebounce = setTimeout(updateCard, 800);
     });
-    observer.observe(el, { characterData: true, childList: true, subtree: true });
+
+    _goalObserver.observe(el, { characterData: true, childList: true, subtree: true });
   }
 
   // ══════════════════════════════════════

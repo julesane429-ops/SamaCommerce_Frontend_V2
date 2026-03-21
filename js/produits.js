@@ -125,7 +125,7 @@ export async function ajouterProduit() {
     return;
   }
   if (isMixed && (!priceGros || !priceDetail || isNaN(lotSize) || lotSize < 2)) {
-    showNotification('❌ Pour la vente mixte : saisissez les unités par lot, le prix gros et le prix detail.', 'error');
+    showNotification(`Vente mixte : saisissez les unites par lot, le prix gros et le prix detail.`, 'error');
     return;
   }
 
@@ -155,7 +155,7 @@ export async function ajouterProduit() {
     afficherInventaire();
     hideModal();
   } else {
-    showNotification('❌ Erreur lors de l\'ajout du produit.', "error");
+    showNotification('Erreur ajout produit.', 'error');
   }
 }
 

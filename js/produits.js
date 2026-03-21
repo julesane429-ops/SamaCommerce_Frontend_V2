@@ -122,29 +122,59 @@ export async function ajouterProduit() {
   }
 }
 
-export function filtrerProduits(categorieId) { document.querySelectorAll('.filtre-btn').forEach(function (btn) { btn.classList.remove('bg-blue-500', 'text-white'); btn.classList.add('bg-gray-200'); }); if (window.event && window.event.target) { var t = window.event.target; t.classList.add('bg-blue-500', 'text-white'); t.classList.remove('bg-gray-200'); } afficherProduits(categorieId); }
+export function filtrerProduits(categorieId) {
+  document.querySelectorAll('.filtre-btn').forEach(function (btn) {
+    btn.classList.remove('bg-blue-500', 'text-white');
+    btn.classList.add('bg-gray-200');
+  });
+  if (window.event && window.event.target) {
+    var t = window.event.target;
+    t.classList.add('bg-blue-500', 'text-white');
+    t.classList.remove('bg-gray-200');
+  }
+  // Normaliser en number pour que === fonctionne correctement
+  const id = categorieId === 'tous' ? 'tous' : parseInt(categorieId);
+  afficherProduits(id);
+}
 
 export function modifierStock(id, delta) {
   var produit = appData.produits.find(function (p) { return p.id === id; });
-  if (produit && produit.stock + delta >= 0) {
-    produit.stock += delta;
+  if (produit) {
+    // S'assurer que stock est bien un number avant l'opération
+    const stockActuel = parseInt(produit.stock) || 0;
+    const newStock    = stockActuel + delta;
+    if (newStock < 0) return; // pas de stock négatif
+    produit.stock = newStock;
+
+    // Mettre à jour le compteur dans la carte sans tout re-rendre
+    const cards = document.querySelectorAll('.produit-card');
+    cards.forEach(card => {
+      const minusBtn = card.querySelector('.btn-mod-stock-minus');
+      if (minusBtn) {
+        // Identifier la carte par le listener — on re-render uniquement cette carte
+        // Pour l'instant on update juste le badge visible
+        const countEl = card.querySelector('.stock-count');
+        if (countEl && card._produitId === id) countEl.textContent = newStock;
+      }
+    });
+
+    // Re-render complet (nécessaire pour mettre à jour la couleur de bordure stock)
     afficherProduits();
     updateStats();
     saveAppDataLocal();
 
-    // ✅ on envoie bien "price_achat"
     authfetch(API_BASE + '/products/' + id, {
-      method: 'PATCH', // PATCH plutôt que PUT pour ne mettre à jour que les champs modifiés
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name: produit.name,
-        price: produit.price,
-        price_achat: produit.priceAchat || produit.price_achat || 0,
-        stock: produit.stock,
-        description: produit.description
+        name:        produit.name,
+        price:       parseFloat(produit.price)                          || 0,
+        price_achat: parseFloat(produit.priceAchat || produit.price_achat) || 0,
+        stock:       newStock,
+        description: produit.description || ''
       })
     }).then(function (r) {
-      if (!r.ok) console.warn('update failed');
-    }).catch(function () { });
+      if (!r.ok) console.warn('modifierStock: update failed', r.status);
+    }).catch(function () {});
   }
 }

@@ -11,7 +11,7 @@ export function updateStats() {
   const chiffreEl = document.getElementById('chiffreAffaires'); if (chiffreEl) chiffreEl.textContent = (appData.stats.chiffreAffaires || 0).toLocaleString() + ' F';
   const articlesEl = document.getElementById('articlesVendus');
   if (articlesEl) articlesEl.textContent = appData.stats.articlesVendus || 0;
-  const stockTotalEl = document.getElementById('stockTotal'); if (stockTotalEl) stockTotalEl.textContent = appData.produits.reduce(function (t, p) { return t + (p.stock || 0); }, 0);
+  const stockTotalEl = document.getElementById('stockTotal'); if (stockTotalEl) stockTotalEl.textContent = appData.produits.reduce(function (t, p) { return t + (parseInt(p.stock) || 0); }, 0);
 }
 
 export function afficherRapports() {
@@ -123,22 +123,22 @@ export function afficherRapports() {
   const totalJour = filtrerVentesParPeriode(appData.ventes, 'jour')
     .reduce((s, v) => {
       if (!v.paid) return s;
-      return s + (v.total || (v.price || 0) * (v.quantity || 0));
+      return s + (parseFloat(v.total) || (parseFloat(v.price) || 0) * (parseInt(v.quantity) || 0));
     }, 0);
   const totalSemaine = filtrerVentesParPeriode(appData.ventes, 'semaine')
     .reduce((s, v) => {
       if (!v.paid) return s;
-      return s + (v.total || (v.price || 0) * (v.quantity || 0));
+      return s + (parseFloat(v.total) || (parseFloat(v.price) || 0) * (parseInt(v.quantity) || 0));
     }, 0);
   const totalMois = filtrerVentesParPeriode(appData.ventes, 'mois')
     .reduce((s, v) => {
       if (!v.paid) return s;
-      return s + (v.total || (v.price || 0) * (v.quantity || 0));
+      return s + (parseFloat(v.total) || (parseFloat(v.price) || 0) * (parseInt(v.quantity) || 0));
     }, 0);
   const totalTout = filtrerVentesParPeriode(appData.ventes, 'tout')
     .reduce((s, v) => {
       if (!v.paid) return s;
-      return s + (v.total || (v.price || 0) * (v.quantity || 0));
+      return s + (parseFloat(v.total) || (parseFloat(v.price) || 0) * (parseInt(v.quantity) || 0));
     }, 0);
 
   // --- Injection DOM ---

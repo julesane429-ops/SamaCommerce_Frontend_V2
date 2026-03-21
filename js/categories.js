@@ -95,7 +95,7 @@ export function remplirSelectCategories() {
   select.innerHTML = '<option value="">Choisir catégorie</option>';
   appData.categories.forEach(function (categ) {
     var opt = document.createElement('option');
-    opt.value = categ.id;
+    opt.value = parseInt(categ.id);
     opt.textContent = (categ.emoji ? categ.emoji + ' ' : '') + categ.name;
     select.appendChild(opt);
   });
@@ -105,4 +105,3 @@ export function afficherFiltresCategories() {
   const container = document.getElementById('filtreCategories'); if (!container) return; container.innerHTML = ''; var btnAll = document.createElement('button'); btnAll.className = 'filtre-btn bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap'; btnAll.textContent = 'Tous'; btnAll.addEventListener('click', function () { filtrerProduits('tous'); }); container.appendChild(btnAll);
   appData.categories.forEach(function (c) { var button = document.createElement('button'); button.className = 'filtre-btn bg-gray-200 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap'; button.textContent = (c.emoji ? c.emoji + ' ' : '') + c.name; button.addEventListener('click', function () { filtrerProduits(c.id); }); container.appendChild(button); });
 }
-

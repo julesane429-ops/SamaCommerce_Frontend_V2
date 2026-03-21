@@ -59,81 +59,122 @@ document.addEventListener('DOMContentLoaded', () => {
   const inviteToken = urlParams.get('invite');
   const inviteEmail = urlParams.get('email');
 
-  // ── Bandeau invitation + mise à jour du lien "Créer un compte" ──
+  // ════════════════════════════════════════
+  // MODE INVITATION — afficher l'écran de choix
+  // ════════════════════════════════════════
   if (inviteToken) {
-    // Bandeau informatif
-    const banner = document.createElement('div');
-    banner.style.cssText = `
-      background:linear-gradient(135deg,#EDE9FE,#FCE7F3);
-      border-radius:12px;padding:12px 14px;
-      text-align:center;font-size:13px;font-weight:700;
-      color:#7C3AED;margin-bottom:16px;line-height:1.4;
-    `;
-    banner.innerHTML = `🔗 Vous avez été invité à rejoindre une boutique.<br>
-      <span style="font-weight:500;font-size:12px;">Connectez-vous ou créez un compte pour accepter.</span>`;
-    const title = document.querySelector('.section-title');
-    if (title) title.after(banner);
+    const welcomeScreen = document.getElementById('invite-welcome');
+    const loginTitle    = document.getElementById('login-title');
+    const loginForm     = document.getElementById('login-form-area');
+    const logoWrap      = document.querySelector('.logo-wrap');
 
-    // Pré-remplir l'email si fourni dans le lien
-    if (inviteEmail) {
-      const emailInput = document.getElementById('email');
-      if (emailInput) emailInput.value = decodeURIComponent(inviteEmail);
+    // Montrer l'écran de bienvenue, cacher le formulaire
+    if (welcomeScreen) {
+      welcomeScreen.style.display = 'flex';
+    }
+    if (loginTitle)  loginTitle.style.display  = 'none';
+
+    // Cacher les champs login + bouton + link-row
+    ['email', 'password'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.closest('.form-group').style.display = 'none';
+    });
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) loginBtn.style.display = 'none';
+    const linkRow = document.querySelector('.link-row');
+    if (linkRow) linkRow.style.display = 'none';
+    const demoBtn = document.getElementById('demo-btn');
+    if (demoBtn) demoBtn.style.display = 'none';
+
+    // Bouton "Créer mon compte"
+    document.getElementById('invite-go-register')?.addEventListener('click', () => {
+      let url = `/register/register.html?invite=${inviteToken}`;
+      if (inviteEmail) url += `&email=${encodeURIComponent(inviteEmail)}`;
+      window.location.href = url;
+    });
+
+    // Bouton "J'ai déjà un compte"
+    document.getElementById('invite-go-login')?.addEventListener('click', () => {
+      // Cacher l'écran de bienvenue, afficher le formulaire
+      if (welcomeScreen) welcomeScreen.style.display = 'none';
+
+      if (loginTitle) {
+        loginTitle.style.display = '';
+        loginTitle.textContent   = 'Connexion — Rejoindre la boutique';
+      }
+      ['email', 'password'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.closest('.form-group').style.display = '';
+      });
+      if (loginBtn) loginBtn.style.display = '';
+
+      // Pré-remplir l'email si fourni dans le lien
+      if (inviteEmail) {
+        const emailInput = document.getElementById('email');
+        if (emailInput) emailInput.value = decodeURIComponent(inviteEmail);
+      }
+    });
+
+    // Guide de connexion — cacher si invitation
+    const loginGuide = document.getElementById("loginGuideOverlay");
+    if (loginGuide) loginGuide.style.display = 'none';
+
+  } else {
+    // ════════════════════════════════════════
+    // MODE NORMAL — connexion standard
+    // ════════════════════════════════════════
+
+    // Redirection auto si déjà connecté
+    const existingToken = localStorage.getItem('authToken');
+    const existingRole  = localStorage.getItem('userRole')?.toLowerCase();
+    if (existingToken && existingRole) {
+      redirectAccordingToRole(existingRole);
+      return;
     }
 
-    // ⚡ Mettre à jour le lien "Créer un compte" pour passer le token
-    const registerLink = document.querySelector('.link-row a[href*="register"]');
-    if (registerLink) {
-      const registerUrl = new URL(registerLink.href, window.location.origin);
-      registerUrl.searchParams.set('invite', inviteToken);
-      if (inviteEmail) registerUrl.searchParams.set('email', inviteEmail);
-      registerLink.href = registerUrl.toString();
-      registerLink.textContent = "Créer mon compte →";
+    const loginGuide = document.getElementById("loginGuideOverlay");
+    if (loginGuide) {
+      if (localStorage.getItem("loginGuideClosed") === "true") loginGuide.style.display = "none";
+      loginGuide.querySelectorAll(".closeGuideBtn")?.forEach(btn => btn.addEventListener("click", closeLoginGuide));
     }
   }
 
-  // ── Redirection automatique si déjà connecté (sauf si invitation) ──
-  const existingToken = localStorage.getItem('authToken');
-  const existingRole  = localStorage.getItem('userRole')?.toLowerCase();
-  if (existingToken && existingRole && !inviteToken) {
-    redirectAccordingToRole(existingRole);
-    return;
-  }
-
-  // ── Guide de connexion ──
-  const loginGuide = document.getElementById("loginGuideOverlay");
-  if (loginGuide) {
-    if (localStorage.getItem("loginGuideClosed") === "true") loginGuide.style.display = "none";
-    loginGuide.querySelectorAll(".closeGuideBtn")?.forEach(btn => btn.addEventListener("click", closeLoginGuide));
-  }
-
-  // ── Bouton "Se connecter" ──
+  // ════════════════════════════════════════
+  // BOUTON SE CONNECTER (commun aux deux modes)
+  // ════════════════════════════════════════
   const loginBtn = document.getElementById('loginBtn');
   if (loginBtn) {
     loginBtn.addEventListener('click', async () => {
       const username = document.getElementById('email')?.value.trim();
       const password = document.getElementById('password')?.value.trim();
 
-      if (!username || !password) { showNotification('Veuillez remplir tous les champs.', "warning"); return; }
+      if (!username || !password) {
+        showNotification('Veuillez remplir tous les champs.', "warning");
+        return;
+      }
 
       loginBtn.disabled    = true;
       loginBtn.textContent = 'Connexion en cours…';
 
       try {
         const res = await fetch(`${API_BASE}/auth/login`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password }),
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ username, password }),
         });
+
         const rawText = await res.text();
         if (rawText.trim().startsWith("<")) { showNotification("Erreur serveur inattendue.", "error"); return; }
         const data = JSON.parse(rawText);
         if (!res.ok) { showNotification(data.error || "Identifiants incorrects", "error"); return; }
 
-        // 2FA requis
+        // 2FA
         if (data.twofa_required) {
           showNotification("📧 Un code 2FA vous a été envoyé par email.", "info");
           localStorage.setItem("pendingUserId", data.userId);
           localStorage.setItem("pendingInvite",  inviteToken || '');
           document.getElementById("twofaSection")?.classList.remove("hidden");
+          loginBtn.style.display = 'none';
           return;
         }
 
@@ -157,12 +198,17 @@ document.addEventListener('DOMContentLoaded', () => {
         showNotification("Erreur de connexion au serveur.", "error");
       } finally {
         loginBtn.disabled    = false;
-        loginBtn.textContent = 'Se connecter →';
+        loginBtn.textContent = inviteToken ? 'Me connecter et rejoindre →' : 'Se connecter →';
       }
     });
+
+    // Libellé du bouton selon le contexte
+    if (inviteToken) loginBtn.textContent = 'Me connecter et rejoindre →';
   }
 
-  // ── Bouton "Vérifier le code 2FA" ──
+  // ════════════════════════════════════════
+  // VÉRIFICATION 2FA
+  // ════════════════════════════════════════
   const verify2faBtn = document.getElementById("verify2faBtn");
   if (verify2faBtn) {
     verify2faBtn.addEventListener("click", async () => {

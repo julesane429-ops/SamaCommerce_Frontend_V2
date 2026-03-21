@@ -84,7 +84,8 @@ export function afficherProduits(categorieFilter) {
   }
 
   if (categorieFilter !== 'tous') {
-    produits = produits.filter(p => p.category_id === categorieFilter);
+    const catId = parseInt(categorieFilter);
+    produits = produits.filter(p => parseInt(p.category_id) === catId);
   }
 
   produits.forEach(function (produit) {

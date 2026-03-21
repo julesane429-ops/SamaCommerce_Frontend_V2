@@ -95,7 +95,11 @@ export function afficherProduits(categorieFilter) {
     const stockLevel = produit.stock <= 5 ? 'critical' : produit.stock < 10 ? 'low' : 'ok';
     const stockLabel = stockLevel === 'critical' ? '🔴' : stockLevel === 'low' ? '🟠' : '🟢';
 
-    const marge = (produit.price || 0) - (produit.priceAchat || produit.price_achat || 0);
+    // Marge : pour un produit mixte, la marge principale est sur le lot gros
+    const priceAchat = parseFloat(produit.priceAchat || produit.price_achat) || 0;
+    const marge = produit.is_mixed_sale && produit.price_gros
+      ? (produit.price_gros || 0) - priceAchat
+      : (produit.price || 0) - priceAchat;
     const margeSign = marge >= 0 ? '+' : '';
 
     const div = document.createElement('div');
@@ -106,7 +110,9 @@ export function afficherProduits(categorieFilter) {
           ${categorie ? (categorie.emoji + ' ' + categorie.name) : '📦 Sans catégorie'}
         </div>
         <div class="produit-stock-pill stock-pill-${stockLevel}">
-          ${stockLabel} ${produit.stock || 0}
+          ${stockLabel} ${produit.is_mixed_sale && produit.lot_size > 1
+            ? `${Math.floor((produit.stock||0)/produit.lot_size)} lots · ${produit.stock||0} u.`
+            : produit.stock || 0}
         </div>
       </div>
 
@@ -114,9 +120,21 @@ export function afficherProduits(categorieFilter) {
         <div class="produit-name">${produit.name}</div>
         ${produit.description ? `<div class="produit-desc">${produit.description}</div>` : ''}
         <div class="produit-prices">
-          <div class="produit-price-main">${(produit.price || 0).toLocaleString('fr-FR')} F</div>
-          <div class="produit-price-achat">Achat: ${(produit.priceAchat || produit.price_achat || 0).toLocaleString('fr-FR')} F</div>
-          <div class="produit-marge ${marge >= 0 ? 'marge-pos' : 'marge-neg'}">Marge: ${margeSign}${marge.toLocaleString('fr-FR')} F</div>
+          ${produit.is_mixed_sale && produit.lot_size > 1 ? `
+            <div style="width:100%;margin-bottom:4px;">
+              <span style="font-size:10px;font-weight:700;color:#7C3AED;text-transform:uppercase;">📦 Gros lot×${produit.lot_size}</span>
+              <span style="font-size:15px;font-weight:800;color:#7C3AED;margin-left:6px;">${(produit.price_gros||0).toLocaleString('fr-FR')} F</span>
+            </div>
+            <div style="width:100%;">
+              <span style="font-size:10px;font-weight:700;color:#10B981;text-transform:uppercase;">🧴 Détail</span>
+              <span style="font-size:15px;font-weight:800;color:#10B981;margin-left:6px;">${(produit.price_detail||produit.price||0).toLocaleString('fr-FR')} F</span>
+            </div>
+            <div class="produit-price-achat" style="margin-top:4px;">Achat lot: ${(produit.priceAchat || produit.price_achat || 0).toLocaleString('fr-FR')} F</div>
+          ` : `
+            <div class="produit-price-main">${(produit.price || 0).toLocaleString('fr-FR')} F</div>
+            <div class="produit-price-achat">Achat: ${(produit.priceAchat || produit.price_achat || 0).toLocaleString('fr-FR')} F</div>
+            <div class="produit-marge ${marge >= 0 ? 'marge-pos' : 'marge-neg'}">Marge: ${margeSign}${marge.toLocaleString('fr-FR')} F</div>
+          `}
         </div>
       </div>
 

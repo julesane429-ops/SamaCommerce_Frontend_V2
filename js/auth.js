@@ -22,6 +22,19 @@ export function getCurrentUserId() {
     return id ? parseInt(id, 10) : null;
 }
 export function logout() {
-    localStorage.removeItem('authToken');
+    // Nettoyer toutes les clés de session (employé + propriétaire)
+    const KEYS_TO_CLEAR = [
+        'authToken', 'userRole', 'userId',
+        'inviteBoutiqueId', 'inviteBoutiqueName', 'employeeRole',
+        'sc_refresh_token', 'pendingUserId', 'pendingInvite',
+        'boutique_appData', 'boutique_cached_userId', 'boutique_outbox'
+    ];
+    KEYS_TO_CLEAR.forEach(k => localStorage.removeItem(k));
+
+    // Demander au Service Worker de vider le cache pages
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHE' });
+    }
+
     window.location.replace('/login/login.html');
 }

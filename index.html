@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -21,15 +20,12 @@
     <link rel="stylesheet" href="css/dark-mode.css">
     <link rel="stylesheet" href="css/sparkline.css">
     <link rel="stylesheet" href="css/end-of-day.css">
-    <!-- SheetJS pour l'export Excel (amélioration 1) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="css/extras.css">
     <link rel="stylesheet" href="css/modules.css">
     <link rel="stylesheet" href="css/responsive.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -41,939 +37,639 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="stylesheet" href="css/splash.css">
-    <script src="js/splash.js"></script>
     <link rel="stylesheet" href="css/index.css">
     <link rel="icon" href="/pwa/icons/icon-192.png" type="image/png">
+    <script src="js/splash.js"></script>
 </head>
 
 <body>
-    <div id="syncBanner" style="display:none;">🔄 Synchronisation en cours…</div>
-    <div class="app-container">
-        <div class="top-header">
-            <div class="header-inner">
-                <button id="backBtn" style="display:none;">←</button>
-                <div class="header-center">
-                    <div id="appHeader">🏪 Sama Commerce</div>
-                    <div class="header-sub">Ventes aujourd'hui : <span class="pulse" id="ventesToday">0</span></div>
+<div id="syncBanner" style="display:none;">🔄 Synchronisation en cours…</div>
+<div class="app-container">
+
+    <!-- HEADER -->
+    <div class="top-header">
+        <div class="header-inner">
+            <button id="backBtn" style="display:none;">←</button>
+            <div class="header-center">
+                <div id="appHeader">🏪 Sama Commerce</div>
+                <div class="header-sub">Ventes aujourd'hui : <span class="pulse" id="ventesToday">0</span></div>
+            </div>
+            <div class="header-icon">💰</div>
+        </div>
+    </div>
+
+    <!-- STATS FLOTTANTES -->
+    <div class="today-float">
+        <div class="ts g"><div class="v pulse" id="chiffreAffaires">0 F</div><div class="l">Encaissé</div></div>
+        <div class="ts b"><div class="v" id="articlesVendus">0</div><div class="l">Vendus</div></div>
+        <div class="ts o"><div class="v" id="stockTotal">0</div><div class="l">En stock</div></div>
+    </div>
+
+    <div class="scroll-content">
+
+        <!-- ══ MENU ══ -->
+        <div class="section-page" id="menuSection">
+            <div class="top-actions" style="margin-top:12px;">
+                <button class="btn-logout" onclick="logout()">🔓 Déconnexion</button>
+                <button id="installBtn" class="hidden">📲 Installer</button>
+            </div>
+            <div id="userGuide">
+                <div class="guide-content">
+                    <div class="guide-title">👋 Bienvenue !</div>
+                    <ol class="guide-list">
+                        <li>Allez dans <strong>Catégories</strong> pour organiser vos produits</li>
+                        <li>Allez dans <strong>Stock</strong> pour gérer vos produits</li>
+                        <li>Appuyez sur <strong>Vendre</strong> pour commencer</li>
+                        <li>Consultez <strong>Chiffres</strong> pour voir vos gains</li>
+                        <li>L'<strong>Inventaire</strong> affiche vos bénéfices en détail</li>
+                        <li>Utilisez <strong>Crédits</strong> pour gérer les dettes clients</li>
+                        <li>Les alertes stock faible apparaissent ici</li>
+                        <li>Gratuit jusqu'à 5 produits — version Pro pour plus</li>
+                    </ol>
                 </div>
-                <div class="header-icon">💰</div>
+                <button id="btnCloseGuide">✕</button>
+            </div>
+            <div id="alertesStock" style="display:none;">
+                <div class="alert-title">⚠️ Stock presque épuisé</div>
+                <div id="produitsStockFaible"></div>
+            </div>
+            <div class="section-label">Actions rapides</div>
+            <div class="action-grid">
+                <button class="action-btn ab-green big-button" data-section="vente"><div class="ai">💳</div><div class="at">VENDRE</div><div class="as">Vendre un article</div></button>
+                <button class="action-btn ab-blue big-button" data-section="stock"><div class="ai">📦</div><div class="at">STOCK</div><div class="as">Gérer produits</div></button>
+                <button class="action-btn ab-purple big-button" data-section="categories"><div class="ai">🏷️</div><div class="at">CATÉGORIES</div><div class="as">Organiser</div></button>
+                <button class="action-btn ab-orange big-button" data-section="rapports"><div class="ai">📈</div><div class="at">CHIFFRES</div><div class="as">Voir gains</div></button>
+                <button class="action-btn ab-teal big-button" data-section="inventaire"><div class="ai">📋</div><div class="at">INVENTAIRE</div><div class="as">Voir bénéfices</div></button>
+                <button class="action-btn ab-pink big-button" data-section="credits"><div class="ai">📝</div><div class="at">CRÉDITS</div><div class="as">Gérer dettes</div></button>
             </div>
         </div>
-        <div class="today-float">
-            <div class="ts g">
-                <div class="v pulse" id="chiffreAffaires">0 F</div>
-                <div class="l">Encaissé</div>
+
+        <!-- ══ VENTE ══ -->
+        <div class="section-page hidden" id="venteSection">
+            <div class="page-header" style="margin-top:6px;"><h2>💳 Vendre</h2></div>
+            <div class="card">
+                <div class="card-title">🛒 Panier</div>
+                <div id="panierItems" style="min-height:80px;">
+                    <div style="text-align:center;padding:24px 0;color:var(--muted);">
+                        <div style="font-size:36px;margin-bottom:6px;">🛒</div>
+                        <div style="font-size:13px;font-weight:500;">Votre panier est vide</div>
+                    </div>
+                </div>
             </div>
-            <div class="ts b">
-                <div class="v" id="articlesVendus">0</div>
-                <div class="l">Vendus</div>
-            </div>
-            <div class="ts o">
-                <div class="v" id="stockTotal">0</div>
-                <div class="l">En stock</div>
-            </div>
+            <div class="total-bar"><span class="tbl">TOTAL</span><span class="tba" id="totalPanier">0 F</span></div>
+            <button class="btn-encaisser" onclick="showModal('paiement')">💰 ENCAISSER</button>
+            <button id="btnPrintReceipt" onclick="imprimerRecu()" style="display:none;width:100%;margin-top:10px;padding:12px;background:#EFF6FF;color:var(--blue);border:none;border-radius:13px;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">🧾 Imprimer le reçu</button>
+            <div class="section-label" style="margin-top:16px;">Choisir produits</div>
+            <div id="categoriesVente" style="display:grid;grid-template-columns:1fr 1fr;gap:9px;"></div>
         </div>
-        <div class="scroll-content">
 
-            <!-- MENU -->
-            <div class="section-page" id="menuSection">
-                <div class="top-actions" style="margin-top:12px;">
-                    <button class="btn-logout" onclick="logout()">🔓 Déconnexion</button>
-                    <button id="installBtn" class="hidden">📲 Installer</button>
-                </div>
-                <div id="userGuide">
-                    <div class="guide-content">
-                        <div class="guide-title">👋 Bienvenue !</div>
-                        <ol class="guide-list">
-                            <li>Allez dans <strong>Catégories</strong> pour organiser vos produits</li>
-                            <li>Allez dans <strong>Stock</strong> pour gérer vos produits</li>
-                            <li>Appuyez sur <strong>Vendre</strong> pour commencer</li>
-                            <li>Consultez <strong>Chiffres</strong> pour voir vos gains</li>
-                            <li>L'<strong>Inventaire</strong> affiche vos bénéfices en détail</li>
-                            <li>Utilisez <strong>Crédits</strong> pour gérer les dettes clients</li>
-                            <li>Les alertes stock faible apparaissent ici</li>
-                            <li>Gratuit jusqu'à 5 produits — version Pro pour plus</li>
-                        </ol>
-                    </div>
-                    <button id="btnCloseGuide">✕</button>
-                </div>
-                <div id="alertesStock" style="display:none;">
-                    <div class="alert-title">⚠️ Stock presque épuisé</div>
-                    <div id="produitsStockFaible"></div>
-                </div>
-                <div class="section-label">Actions rapides</div>
-                <div class="action-grid">
-                    <button class="action-btn ab-green big-button" data-section="vente">
-                        <div class="ai">💳</div>
-                        <div class="at">VENDRE</div>
-                        <div class="as">Vendre un article</div>
-                    </button>
-                    <button class="action-btn ab-blue big-button" data-section="stock">
-                        <div class="ai">📦</div>
-                        <div class="at">STOCK</div>
-                        <div class="as">Gérer produits</div>
-                    </button>
-                    <button class="action-btn ab-purple big-button" data-section="categories">
-                        <div class="ai">🏷️</div>
-                        <div class="at">CATÉGORIES</div>
-                        <div class="as">Organiser</div>
-                    </button>
-                    <button class="action-btn ab-orange big-button" data-section="rapports">
-                        <div class="ai">📈</div>
-                        <div class="at">CHIFFRES</div>
-                        <div class="as">Voir gains</div>
-                    </button>
-                    <button class="action-btn ab-teal big-button" data-section="inventaire">
-                        <div class="ai">📋</div>
-                        <div class="at">INVENTAIRE</div>
-                        <div class="as">Voir bénéfices</div>
-                    </button>
-                    <button class="action-btn ab-pink big-button" data-section="credits">
-                        <div class="ai">📝</div>
-                        <div class="at">CRÉDITS</div>
-                        <div class="as">Gérer dettes</div>
-                    </button>
+        <!-- ══ STOCK ══ -->
+        <div class="section-page hidden" id="stockSection">
+            <div class="page-header" style="margin-top:6px;">
+                <h2>📦 Mon Stock</h2>
+                <button class="btn-primary" onclick="handleAddProductClick()">+ Ajouter</button>
+            </div>
+            <div id="filtreCategories"><button class="filtre-btn bg-blue-500 text-white" onclick="filtrerProduits('tous')">Tous</button></div>
+            <div id="listeProduits"></div>
+        </div>
+
+        <!-- ══ CATEGORIES ══ -->
+        <div class="section-page hidden" id="categoriesSection">
+            <div class="page-header" style="margin-top:6px;">
+                <h2>🏷️ Catégories</h2>
+                <button class="btn-primary" onclick="showModal('ajoutCategorie')">+ Ajouter</button>
+            </div>
+            <input type="text" id="searchCategorie" class="search-bar" placeholder="🔍 Rechercher une catégorie…">
+            <div id="listeCategories"></div>
+        </div>
+
+        <!-- ══ RAPPORTS ══ -->
+        <div class="section-page hidden" id="rapportsSection">
+            <div class="page-header" style="margin-top:6px;">
+                <h2>📈 Chiffres</h2>
+                <button class="btn-pdf" id="btnPdfRapports">📄 PDF</button>
+            </div>
+            <div class="period-row">
+                <label for="periodeRapports">Période :</label>
+                <select id="periodeRapports">
+                    <option value="jour">Aujourd'hui</option>
+                    <option value="semaine">Cette semaine</option>
+                    <option value="mois">Ce mois</option>
+                    <option value="tout">Tout</option>
+                </select>
+            </div>
+            <div class="stat-2x2">
+                <div class="st st-g"><div class="sv" id="recettesJour">0 F</div><div class="sl">Aujourd'hui</div></div>
+                <div class="st st-b"><div class="sv" id="recettesSemaine">0 F</div><div class="sl">Cette semaine</div></div>
+                <div class="st st-y"><div class="sv" id="recettesMois">0 F</div><div class="sl">Ce mois</div></div>
+                <div class="st st-p"><div class="sv" id="recettesTout">0 F</div><div class="sl">Tout</div></div>
+            </div>
+            <div class="metric-2x2">
+                <div class="mc"><div class="ml">💰 CA encaissé</div><div class="mv" id="caEncaisse" style="color:var(--green);">0 F</div></div>
+                <div class="mc"><div class="ml">⏳ En attente</div><div class="mv" id="caEnAttente" style="color:var(--orange);">0 F</div></div>
+                <div class="mc"><div class="ml">💳 Crédits</div><div class="mv" id="creditsEnCours" style="color:var(--red);">0 F</div></div>
+                <div class="mc"><div class="ml">📊 Recouvrement</div><div class="mv" id="tauxRecouvrement" style="color:var(--blue);">0 %</div></div>
+            </div>
+            <div class="card"><div class="card-title">🧾 Journal comptable</div><div id="journalComptable"></div></div>
+            <div class="card"><div class="card-title">💳 Paiements</div><div id="rapportsPaiements"></div></div>
+            <div class="card"><div class="card-title">🔥 Produits Populaires</div><div id="produitsPopulaires"></div></div>
+            <div class="card">
+                <div class="card-title">📊 Graphiques</div>
+                <div class="chart-wrap"><canvas id="chartVentesByDay"></canvas></div>
+                <div class="chart-wrap"><canvas id="chartTopProduits"></canvas></div>
+                <div class="chart-wrap"><canvas id="chartPaiements"></canvas></div>
+                <div class="chart-wrap"><canvas id="chartStocksFaibles"></canvas></div>
+                <div style="height:280px;"><canvas id="chartVentesJour"></canvas></div>
+            </div>
+            <div class="card" id="salesHistory">
+                <div class="card-title">📜 Historique des ventes</div>
+                <div style="overflow-x:auto;">
+                    <table class="hist-table">
+                        <thead><tr><th>Date</th><th>Produit</th><th>Qté</th><th>Montant</th><th>Paiement</th><th>Actions</th></tr></thead>
+                        <tbody id="salesHistoryBody"></tbody>
+                    </table>
                 </div>
             </div>
+            <div id="creditsStats" class="card" style="display:none;"></div>
+        </div>
 
-            <!-- VENTE -->
-            <div class="section-page hidden" id="venteSection">
-                <div class="page-header" style="margin-top:6px;">
-                    <h2>💳 Vendre</h2>
-                </div>
-                <div class="card">
-                    <div class="card-title">🛒 Panier</div>
-                    <div id="panierItems" style="min-height:80px;">
-                        <div style="text-align:center;padding:24px 0;color:var(--muted);">
-                            <div style="font-size:36px;margin-bottom:6px;">🛒</div>
-                            <div style="font-size:13px;font-weight:500;">Votre panier est vide</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="total-bar"><span class="tbl">TOTAL</span><span class="tba" id="totalPanier">0 F</span></div>
-                <button class="btn-encaisser" onclick="showModal('paiement')">💰 ENCAISSER</button>
-                <button id="btnPrintReceipt" onclick="imprimerRecu()"
-                    style="display:none;width:100%;margin-top:10px;padding:12px;background:#EFF6FF;color:var(--blue);border:none;border-radius:13px;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">🧾
-                    Imprimer le reçu</button>
-                <div class="section-label" style="margin-top:16px;">Choisir produits</div>
-                <div id="categoriesVente" style="display:grid;grid-template-columns:1fr 1fr;gap:9px;"></div>
+        <!-- ══ INVENTAIRE ══ -->
+        <div class="section-page hidden" id="inventaireSection">
+            <div class="page-header" style="margin-top:6px;">
+                <h2>📦 Inventaire</h2>
+                <button class="btn-pdf" id="btnPdfInventaire">📄 PDF</button>
             </div>
-
-            <!-- STOCK -->
-            <div class="section-page hidden" id="stockSection">
-                <div class="page-header" style="margin-top:6px;">
-                    <h2>📦 Mon Stock</h2><button class="btn-primary" onclick="handleAddProductClick()">+
-                        Ajouter</button>
-                </div>
-                <div id="filtreCategories"><button class="filtre-btn bg-blue-500 text-white"
-                        onclick="filtrerProduits('tous')">Tous</button></div>
-                <div id="listeProduits"></div>
-            </div>
-
-            <!-- CATEGORIES -->
-            <div class="section-page hidden" id="categoriesSection">
-                <div class="page-header" style="margin-top:6px;">
-                    <h2>🏷️ Catégories</h2><button class="btn-primary" onclick="showModal('ajoutCategorie')">+
-                        Ajouter</button>
-                </div>
-                <input type="text" id="searchCategorie" class="search-bar" placeholder="🔍 Rechercher une catégorie…">
-                <div id="listeCategories"></div>
-            </div>
-
-            <!-- RAPPORTS -->
-            <div class="section-page hidden" id="rapportsSection">
-                <div class="page-header" style="margin-top:6px;">
-                    <h2>📈 Chiffres</h2><button class="btn-pdf" id="btnPdfRapports">📄 PDF</button>
-                </div>
-                <div class="period-row"><label for="periodeRapports">Période :</label><select id="periodeRapports">
+            <div class="inv-filters">
+                <input type="text" id="searchInventaire" class="search-bar" style="margin:0;" placeholder="🔍 Rechercher un produit…">
+                <div style="display:flex;gap:8px;">
+                    <select id="filterStock" style="flex:1;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:11px;font-size:13px;background:#fff;outline:none;">
+                        <option value="">Tous les stocks</option>
+                        <option value="low">Stock faible (≤5)</option>
+                        <option value="out">Rupture</option>
+                    </select>
+                    <select id="filterPeriode" style="flex:1;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:11px;font-size:13px;background:#fff;outline:none;">
+                        <option value="tout">Tout</option>
                         <option value="jour">Aujourd'hui</option>
                         <option value="semaine">Cette semaine</option>
                         <option value="mois">Ce mois</option>
-                        <option value="tout">Tout</option>
-                    </select></div>
-                <div class="stat-2x2">
-                    <div class="st st-g">
-                        <div class="sv" id="recettesJour">0 F</div>
-                        <div class="sl">Aujourd'hui</div>
-                    </div>
-                    <div class="st st-b">
-                        <div class="sv" id="recettesSemaine">0 F</div>
-                        <div class="sl">Cette semaine</div>
-                    </div>
-                    <div class="st st-y">
-                        <div class="sv" id="recettesMois">0 F</div>
-                        <div class="sl">Ce mois</div>
-                    </div>
-                    <div class="st st-p">
-                        <div class="sv" id="recettesTout">0 F</div>
-                        <div class="sl">Tout</div>
-                    </div>
+                    </select>
                 </div>
-                <div class="metric-2x2">
-                    <div class="mc">
-                        <div class="ml">💰 CA encaissé</div>
-                        <div class="mv" id="caEncaisse" style="color:var(--green);">0 F</div>
-                    </div>
-                    <div class="mc">
-                        <div class="ml">⏳ En attente</div>
-                        <div class="mv" id="caEnAttente" style="color:var(--orange);">0 F</div>
-                    </div>
-                    <div class="mc">
-                        <div class="ml">💳 Crédits</div>
-                        <div class="mv" id="creditsEnCours" style="color:var(--red);">0 F</div>
-                    </div>
-                    <div class="mc">
-                        <div class="ml">📊 Recouvrement</div>
-                        <div class="mv" id="tauxRecouvrement" style="color:var(--blue);">0 %</div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-title">🧾 Journal comptable</div>
-                    <div id="journalComptable"></div>
-                </div>
-                <div class="card">
-                    <div class="card-title">💳 Paiements</div>
-                    <div id="rapportsPaiements"></div>
-                </div>
-                <div class="card">
-                    <div class="card-title">🔥 Produits Populaires</div>
-                    <div id="produitsPopulaires"></div>
-                </div>
-                <div class="card">
-                    <div class="card-title">📊 Graphiques</div>
-                    <div class="chart-wrap"><canvas id="chartVentesByDay"></canvas></div>
-                    <div class="chart-wrap"><canvas id="chartTopProduits"></canvas></div>
-                    <div class="chart-wrap"><canvas id="chartPaiements"></canvas></div>
-                    <div class="chart-wrap"><canvas id="chartStocksFaibles"></canvas></div>
-                    <div style="height:280px;"><canvas id="chartVentesJour"></canvas></div>
-                </div>
-                <div class="card" id="salesHistory">
-                    <div class="card-title">📜 Historique des ventes</div>
-                    <div style="overflow-x:auto;">
-                        <table class="hist-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Produit</th>
-                                    <th>Qté</th>
-                                    <th>Montant</th>
-                                    <th>Paiement</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="salesHistoryBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div id="creditsStats" class="card" style="display:none;"></div>
             </div>
+            <div id="inventaireStats"></div>
+            <div class="card">
+                <canvas id="chartInventaire" height="120"></canvas>
+                <canvas id="chartStockAlert" style="display:none;"></canvas>
+            </div>
+            <div class="card" style="overflow-x:auto;padding:0;">
+                <table class="hist-table" style="min-width:580px;">
+                    <thead><tr><th>Produit</th><th>Achat</th><th>Vente</th><th style="text-align:center;">Stock</th><th style="text-align:center;">Vendues</th><th>Bénéfice</th><th style="text-align:center;">Marge %</th></tr></thead>
+                    <tbody id="inventaireListe"></tbody>
+                </table>
+            </div>
+        </div>
 
-            <!-- INVENTAIRE -->
-            <div class="section-page hidden" id="inventaireSection">
-                <div class="page-header" style="margin-top:6px;">
-                    <h2>📦 Inventaire</h2><button class="btn-pdf" id="btnPdfInventaire">📄 PDF</button>
-                </div>
-                <div class="inv-filters">
-                    <input type="text" id="searchInventaire" class="search-bar" style="margin:0;"
-                        placeholder="🔍 Rechercher un produit…">
-                    <div style="display:flex;gap:8px;">
-                        <select id="filterStock"
-                            style="flex:1;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:11px;font-size:13px;background:#fff;outline:none;">
-                            <option value="">Tous les stocks</option>
-                            <option value="low">Stock faible (≤5)</option>
-                            <option value="out">Rupture</option>
-                        </select>
-                        <select id="filterPeriode"
-                            style="flex:1;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:11px;font-size:13px;background:#fff;outline:none;">
-                            <option value="tout">Tout</option>
-                            <option value="jour">Aujourd'hui</option>
-                            <option value="semaine">Cette semaine</option>
-                            <option value="mois">Ce mois</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="inventaireStats"></div>
-                <div class="card">
-                    <canvas id="chartInventaire" height="120"></canvas>
-                    <canvas id="chartTopProduits" style="display:none;"></canvas>
-                    <canvas id="chartStockAlert" style="display:none;"></canvas>
-                </div>
-                <div class="card" style="overflow-x:auto;padding:0;">
-                    <table class="hist-table" style="min-width:580px;">
-                        <thead>
-                            <tr>
-                                <th>Produit</th>
-                                <th>Achat</th>
-                                <th>Vente</th>
-                                <th style="text-align:center;">Stock</th>
-                                <th style="text-align:center;">Vendues</th>
-                                <th>Bénéfice</th>
-                                <th style="text-align:center;">Marge %</th>
-                            </tr>
-                        </thead>
-                        <tbody id="inventaireListe"></tbody>
+        <!-- ══ CREDITS ══ -->
+        <div class="section-page hidden" id="creditsSection">
+            <div class="page-header" style="margin-top:6px;"><h2>📝 Crédits</h2></div>
+            <div class="cred-tiles">
+                <div class="ct"><div class="cv" id="creditsTotalEncours" style="color:var(--primary);">0 F</div><div class="cl">En cours</div></div>
+                <div class="ct"><div class="cv" id="creditsTotalRembourses" style="color:var(--green);">0 F</div><div class="cl">Remboursé</div></div>
+                <div class="ct"><div class="cv" id="creditsTotalImpaye" style="color:var(--red);">0 F</div><div class="cl">Impayés</div></div>
+            </div>
+            <p id="creditsStatus" style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:4px;">Chargement…</p>
+            <p id="creditsMontant" style="text-align:center;font-size:13px;font-weight:700;margin-bottom:12px;"></p>
+            <div class="card"><canvas id="chartCredits" height="120"></canvas></div>
+            <div class="card">
+                <div class="card-title">➕ Nouvelle vente à crédit</div>
+                <form id="creditForm">
+                    <div class="form-group"><label>👤 Client</label><input type="text" id="creditClient" placeholder="Nom du client"></div>
+                    <div class="form-group"><label>📞 Téléphone</label><input type="tel" id="creditPhone" placeholder="Téléphone"></div>
+                    <div class="form-group"><label>📦 Produit</label><select id="creditProduct"></select></div>
+                    <div class="form-group"><label>🔢 Quantité</label><input type="number" id="creditQuantity" min="1" value="1"></div>
+                    <div class="form-group"><label>📅 Échéance</label><input type="date" id="creditDueDateSection"></div>
+                    <button type="submit" class="btn-encaisser" style="background:linear-gradient(135deg,var(--primary),var(--accent));">💾 Enregistrer à crédit</button>
+                </form>
+            </div>
+            <div class="card">
+                <div class="card-title">📜 Historique des crédits</div>
+                <p id="creditsResume" style="font-size:12px;color:var(--muted);margin-bottom:10px;text-align:center;"></p>
+                <div style="overflow-x:auto;">
+                    <table class="hist-table" style="min-width:560px;">
+                        <thead><tr><th>Date</th><th>Client</th><th>Produit</th><th>Qté</th><th>Montant</th><th>Échéance</th><th>Statut</th><th>Actions</th></tr></thead>
+                        <tbody id="creditsHistoryBody"></tbody>
                     </table>
                 </div>
             </div>
+            <div style="display:none;"><table><tbody id="creditsListe"></tbody></table></div>
+        </div>
 
-            <!-- CREDITS -->
-            <div class="section-page hidden" id="creditsSection">
-                <div class="page-header" style="margin-top:6px;">
-                    <h2>📝 Crédits</h2>
+        <!-- ══ CLIENTS ══ -->
+        <div class="section-page hidden" id="clientsSection">
+            <div class="page-header" style="margin-top:6px;">
+                <h2>👥 Clients</h2>
+                <button class="btn-primary" id="clientsAddBtn">+ Ajouter</button>
+            </div>
+            <div id="clientsAutoAlerts"></div>
+            <div id="clientsStats"></div>
+            <div class="module-chips" id="clientsSortChips"></div>
+            <div style="position:relative;margin-bottom:12px;">
+                <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;">🔍</span>
+                <input type="search" id="clientsSearch" class="search-bar" style="padding-left:40px;margin:0;" placeholder="Rechercher un client…">
+            </div>
+            <div id="clientsList"></div>
+        </div>
+
+        <!-- ══ FOURNISSEURS ══ -->
+        <div class="section-page hidden" id="fournisseursSection">
+            <div class="page-header" style="margin-top:6px;">
+                <h2>🏭 Fournisseurs</h2>
+                <button class="btn-primary" id="fournisseursAddBtn">+ Ajouter</button>
+            </div>
+            <div id="fournisseursAutoAlerts"></div>
+            <div id="fournisseursStats"></div>
+            <div class="module-chips" id="fournisseursSortChips"></div>
+            <div style="position:relative;margin-bottom:12px;">
+                <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;">🔍</span>
+                <input type="search" id="fournisseursSearch" class="search-bar" style="padding-left:40px;margin:0;" placeholder="Rechercher un fournisseur…">
+            </div>
+            <div id="fournisseursList"></div>
+        </div>
+
+        <!-- ══ COMMANDES RÉAPPRO (anciennes commandes fournisseurs) ══ -->
+        <div class="section-page hidden" id="commandesSection">
+            <div class="page-header" style="margin-top:6px;">
+                <h2>📋 Réappro</h2>
+                <button class="btn-primary" id="commandesAddBtn">+ Créer</button>
+            </div>
+            <div id="commandesAutoAlerts"></div>
+            <div id="commandesStats"></div>
+            <div id="commandesStatusChips"></div>
+            <div id="commandesList"></div>
+        </div>
+
+        <!-- ══ LIVRAISONS RÉAPPRO (anciennes livraisons fournisseurs) ══ -->
+        <div class="section-page hidden" id="livraisonsSection">
+            <div class="page-header" style="margin-top:6px;">
+                <h2>📥 Réceptions</h2>
+                <button class="btn-primary" id="livraisonsAddBtn">+ Créer</button>
+            </div>
+            <div id="livraisonsAutoAlerts"></div>
+            <div id="livraisonsStats"></div>
+            <div id="livraisonsStatusChips"></div>
+            <div id="livraisonsList"></div>
+        </div>
+
+        <!-- ══ COMMANDES CLIENTS ══ -->
+        <div class="section-page hidden" id="customerOrdersSection">
+            <div class="page-header" style="margin-top:6px;">
+                <h2>📦 Commandes</h2>
+                <button class="btn-primary" id="customerOrdersAddBtn">+ Nouvelle</button>
+            </div>
+            <div id="customerOrdersStats"></div>
+            <div id="customerOrdersChips"></div>
+            <div id="customerOrdersList"></div>
+        </div>
+
+        <!-- ══ LIVRAISONS CLIENTS ══ -->
+        <div class="section-page hidden" id="deliveriesSection">
+            <div class="page-header" style="margin-top:6px;">
+                <h2>🚚 Livraisons</h2>
+                <button id="deliveriesAddBtn" style="background:#F3F4F6;color:var(--muted);border:none;padding:8px 14px;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;">ℹ️ Auto</button>
+            </div>
+            <div id="deliveriesStats"></div>
+            <div id="deliveriesChips"></div>
+            <div id="deliveriesList"></div>
+        </div>
+
+        <!-- ══ LIVREURS ══ -->
+        <div class="section-page hidden" id="deliverymenSection">
+            <div class="page-header" style="margin-top:6px;">
+                <h2>🛵 Livreurs</h2>
+                <button class="btn-primary" id="deliverymenAddBtn">+ Ajouter</button>
+            </div>
+            <div id="deliverymenStats"></div>
+            <div id="deliverymenList"></div>
+        </div>
+
+        <!-- ══ CALENDRIER ══ -->
+        <div class="section-page hidden" id="calendrierSection">
+            <div class="page-header" style="margin-top:6px;">
+                <h2>📅 Échéances</h2>
+                <button class="btn-primary" id="cal-refresh"
+                    onclick="const s=document.getElementById('calendrierSection');if(s)s._init=false;window.initCalendrierSection?.()">🔄</button>
+            </div>
+            <div id="cal-month-stats"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <button id="cal-prev" style="background:var(--surface);border:1.5px solid #E5E7EB;width:38px;height:38px;border-radius:11px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 6px rgba(0,0,0,.06);">‹</button>
+                <div style="text-align:center;">
+                    <div id="cal-month-title" style="font-family:'Sora',sans-serif;font-size:16px;font-weight:800;color:var(--text);"></div>
+                    <button id="cal-today-btn" style="background:none;border:none;font-size:11px;color:var(--primary);font-weight:700;cursor:pointer;padding:2px 0;">Aujourd'hui</button>
                 </div>
-                <div class="cred-tiles">
-                    <div class="ct">
-                        <div class="cv" id="creditsTotalEncours" style="color:var(--primary);">0 F</div>
-                        <div class="cl">En cours</div>
-                    </div>
-                    <div class="ct">
-                        <div class="cv" id="creditsTotalRembourses" style="color:var(--green);">0 F</div>
-                        <div class="cl">Remboursé</div>
-                    </div>
-                    <div class="ct">
-                        <div class="cv" id="creditsTotalImpaye" style="color:var(--red);">0 F</div>
-                        <div class="cl">Impayés</div>
-                    </div>
-                </div>
-                <p id="creditsStatus" style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:4px;">
-                    Chargement…</p>
-                <p id="creditsMontant" style="text-align:center;font-size:13px;font-weight:700;margin-bottom:12px;"></p>
-                <div class="card"><canvas id="chartCredits" height="120"></canvas></div>
-                <div class="card">
-                    <div class="card-title">➕ Nouvelle vente à crédit</div>
-                    <form id="creditForm">
-                        <div class="form-group"><label>👤 Client</label><input type="text" id="creditClient"
-                                placeholder="Nom du client"></div>
-                        <div class="form-group"><label>📞 Téléphone</label><input type="tel" id="creditPhone"
-                                placeholder="Téléphone"></div>
-                        <div class="form-group"><label>📦 Produit</label><select id="creditProduct"></select></div>
-                        <div class="form-group"><label>🔢 Quantité</label><input type="number" id="creditQuantity"
-                                min="1" value="1"></div>
-                        <div class="form-group"><label>📅 Échéance</label><input type="date" id="creditDueDateSection">
-                        </div>
-                        <button type="submit" class="btn-encaisser"
-                            style="background:linear-gradient(135deg,var(--primary),var(--accent));">💾 Enregistrer à
-                            crédit</button>
-                    </form>
-                </div>
-                <div class="card">
-                    <div class="card-title">📜 Historique des crédits</div>
-                    <p id="creditsResume"
-                        style="font-size:12px;color:var(--muted);margin-bottom:10px;text-align:center;"></p>
-                    <div style="overflow-x:auto;">
-                        <table class="hist-table" style="min-width:560px;">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Client</th>
-                                    <th>Produit</th>
-                                    <th>Qté</th>
-                                    <th>Montant</th>
-                                    <th>Échéance</th>
-                                    <th>Statut</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="creditsHistoryBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div style="display:none;">
-                    <table>
-                        <tbody id="creditsListe"></tbody>
-                    </table>
+                <button id="cal-next" style="background:var(--surface);border:1.5px solid #E5E7EB;width:38px;height:38px;border-radius:11px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 6px rgba(0,0,0,.06);">›</button>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+                <div style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted);"><div style="width:8px;height:8px;border-radius:50%;background:#EF4444;"></div> Crédit</div>
+                <div style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted);"><div style="width:8px;height:8px;border-radius:50%;background:#F59E0B;"></div> Commande</div>
+                <div style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted);"><div style="width:8px;height:8px;border-radius:50%;background:#3B82F6;"></div> Livraison</div>
+            </div>
+            <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:18px;position:relative;"></div>
+            <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:800;color:var(--text);margin-bottom:10px;">📋 Échéances du mois</div>
+            <div id="cal-event-list"></div>
+        </div>
+
+        <!-- ══ PROFIL ══ -->
+        <div class="section-page hidden" id="profilSection">
+            <div class="page-header" style="margin-top:6px;">
+                <h2>👤 Mon Profil</h2>
+                <button class="btn-primary" onclick="window.loadProfile()">🔄</button>
+            </div>
+            <div id="profilContent">
+                <div style="text-align:center;padding:40px 0;color:var(--muted);">
+                    <div style="font-size:32px;margin-bottom:8px;">⏳</div>
+                    <div>Chargement du profil…</div>
                 </div>
             </div>
-            <!-- ══════════ SECTION CLIENTS ══════════ -->
-            <div class="section-page hidden" id="clientsSection">
-                <div class="page-header" style="margin-top:6px;">
-                    <h2>👥 Clients</h2>
-                    <button class="btn-primary" id="clientsAddBtn">+ Ajouter</button>
-                </div>
+        </div>
 
-                <!-- Alertes automatiques -->
-                <div id="clientsAutoAlerts"></div>
+    </div><!-- end scroll-content -->
 
-                <!-- Stats -->
-                <div id="clientsStats"></div>
+    <!-- BOTTOM NAV -->
+    <nav class="bottom-nav" id="bottomNav">
+        <button class="nav-btn active" id="nav-menu" onclick="navTo('menu')"><span class="ni">🏠</span><span class="nl">Accueil</span></button>
+        <button class="nav-btn" id="nav-stock" onclick="navTo('stock')"><span class="ni">📦</span><span class="nl">Stock</span></button>
+        <button class="nav-fab" onclick="navTo('vente')">💳</button>
+        <button class="nav-btn" id="nav-rapports" onclick="navTo('rapports')"><span class="ni">📈</span><span class="nl">Chiffres</span></button>
+        <button class="nav-btn" id="nav-plus" onclick="openPlusSheet()"><span class="ni">☰</span><span class="nl">Plus</span></button>
+    </nav>
+</div>
 
-                <!-- Tri -->
-                <div class="module-chips" id="clientsSortChips"></div>
+<!-- PLUS SHEET -->
+<div id="plusSheet" style="display:none;position:fixed;inset:0;z-index:110;flex-direction:column;justify-content:flex-end;">
+    <div style="position:absolute;inset:0;background:rgba(15,10,40,.45);backdrop-filter:blur(4px);" onclick="closePlusSheet()"></div>
+    <div style="position:relative;background:#fff;border-radius:24px 24px 0 0;padding:10px 18px calc(var(--nav-h) + var(--safe-b) + 10px);max-height:90dvh;overflow-y:auto;">
+        <div style="width:36px;height:4px;background:#E5E7EB;border-radius:2px;margin:0 auto 16px;"></div>
+        <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:800;color:var(--text);margin-bottom:14px;">✨ Plus</div>
 
-                <!-- Recherche -->
-                <div style="position:relative;margin-bottom:12px;">
-                    <span
-                        style="position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;">🔍</span>
-                    <input type="search" id="clientsSearch" class="search-bar" style="padding-left:40px;margin:0;"
-                        placeholder="Rechercher un client…">
-                </div>
+        <button class="sheet-item big-button" onclick="closePlusSheet();navTo('categories');">
+            <div class="sheet-icon" style="background:#EDE9FE;">🏷️</div>
+            <div><h3>Catégories</h3><p>Organiser vos produits</p></div><span class="sheet-chevron">›</span>
+        </button>
+        <button class="sheet-item big-button" onclick="closePlusSheet();navTo('inventaire');">
+            <div class="sheet-icon" style="background:#ECFDF5;">📋</div>
+            <div><h3>Inventaire</h3><p>Suivre vos bénéfices</p></div><span class="sheet-chevron">›</span>
+        </button>
+        <button class="sheet-item big-button" onclick="closePlusSheet();navTo('credits');">
+            <div class="sheet-icon" style="background:#F5F3FF;">📝</div>
+            <div><h3>Crédits</h3><p>Gérer les dettes clients</p></div><span class="sheet-chevron">›</span>
+        </button>
+        <button class="sheet-item" onclick="closePlusSheet();navTo('clients');">
+            <div class="sheet-icon" style="background:#EFF6FF;">👥</div>
+            <div><h3>Clients</h3><p>Gérer vos clients</p></div><span class="sheet-chevron">›</span>
+        </button>
+        <button class="sheet-item" onclick="closePlusSheet();navTo('customerOrders');">
+            <div class="sheet-icon" style="background:#FEF3C7;">📦</div>
+            <div><h3>Commandes clients</h3><p>Gérer les commandes à livrer</p></div><span class="sheet-chevron">›</span>
+        </button>
+        <button class="sheet-item" onclick="closePlusSheet();navTo('deliveries');">
+            <div class="sheet-icon" style="background:#EFF6FF;">🚚</div>
+            <div><h3>Livraisons</h3><p>Suivi des livraisons en cours</p></div><span class="sheet-chevron">›</span>
+        </button>
+        <button class="sheet-item" onclick="closePlusSheet();navTo('deliverymen');">
+            <div class="sheet-icon" style="background:#FEF9C3;">🛵</div>
+            <div><h3>Livreurs</h3><p>Gérer vos coursiers</p></div><span class="sheet-chevron">›</span>
+        </button>
+        <button class="sheet-item" onclick="closePlusSheet();navTo('fournisseurs');">
+            <div class="sheet-icon" style="background:#ECFDF5;">🏭</div>
+            <div><h3>Fournisseurs</h3><p>Contacts & réapprovisionnement</p></div><span class="sheet-chevron">›</span>
+        </button>
+        <button class="sheet-item" onclick="closePlusSheet();navTo('commandes');">
+            <div class="sheet-icon" style="background:#F0FDF4;">📋</div>
+            <div><h3>Réappro fournisseurs</h3><p>Commandes de stock</p></div><span class="sheet-chevron">›</span>
+        </button>
+        <button class="sheet-item" onclick="closePlusSheet();navTo('calendrier');">
+            <div class="sheet-icon" style="background:#EFF6FF;">📅</div>
+            <div><h3>Échéances</h3><p>Crédits · Commandes · Livraisons</p></div><span class="sheet-chevron">›</span>
+        </button>
+        <button class="sheet-item" onclick="closePlusSheet();navTo('profil');">
+            <div class="sheet-icon" style="background:#EDE9FE;">👤</div>
+            <div><h3>Mon Profil</h3><p>Boutique · Mot de passe · Plan</p></div><span class="sheet-chevron">›</span>
+        </button>
+    </div>
+</div>
 
-                <!-- Liste cartes -->
-                <div id="clientsList"></div>
+<!-- MODALES -->
+<div class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4" id="modalOverlay">
+    <div class="modal-box hidden" id="modalAjoutProduit">
+        <div class="modal-title">📦 Nouveau Produit</div>
+        <div class="form-group"><label>Nom</label><input id="nomProduit" placeholder="Nom du produit" type="text"></div>
+        <div class="form-group"><label>Catégorie</label><select id="categorieProduit"><option value="">Choisir catégorie</option></select></div>
+        <div class="form-group"><label>Prix achat (F CFA)</label><input id="prixAchatProduit" placeholder="Prix achat" type="number"></div>
+        <div class="form-group"><label>Prix vente (F CFA)</label><input id="prixProduit" placeholder="Prix vente" type="number"></div>
+        <div class="form-group"><label>Quantité en stock</label><input id="stockProduit" placeholder="Stock" type="number"></div>
+        <div class="form-group"><label>Description</label><textarea id="descriptionProduit" placeholder="Description (optionnel)" style="height:66px;resize:none;"></textarea></div>
+        <div class="modal-actions"><button class="btn-cancel" onclick="hideModal()">Annuler</button><button class="btn-confirm" onclick="ajouterProduit()">Ajouter</button></div>
+    </div>
+    <div class="modal-box hidden" id="modalEditProduit">
+        <div class="modal-title">✏️ Modifier Produit</div>
+        <div class="form-group"><label>Nom</label><input id="editNomProduit" placeholder="Nom" type="text"></div>
+        <div class="form-group"><label>Catégorie</label><select id="editCategorieProduit"><option value="">Choisir catégorie</option></select></div>
+        <div class="form-group"><label>Prix achat</label><input id="editPrixAchatProduit" placeholder="Prix achat" type="number"></div>
+        <div class="form-group"><label>Prix vente</label><input id="editPrixProduit" placeholder="Prix vente" type="number"></div>
+        <div class="form-group"><label>Stock</label><input id="editStockProduit" placeholder="Stock" type="number"></div>
+        <div class="form-group"><label>Description</label><textarea id="editDescriptionProduit" placeholder="Description" style="height:66px;resize:none;"></textarea></div>
+        <div class="modal-actions"><button class="btn-cancel" onclick="hideModal()">Annuler</button><button class="btn-confirm" onclick="mettreAJourProduit()">Mettre à jour</button></div>
+    </div>
+    <div class="modal-box hidden" id="modalAjoutCategorie">
+        <div class="modal-title">🏷️ Nouvelle Catégorie</div>
+        <div class="form-group"><label>Nom</label><input id="nomCategorie" type="text" placeholder="Nom de la catégorie"></div>
+        <div class="form-group"><label>Choisir un emoji</label></div>
+        <div class="emoji-grid">
+            <button class="emoji-btn" onclick="selectEmoji('👕')">👕</button><button class="emoji-btn" onclick="selectEmoji('👖')">👖</button><button class="emoji-btn" onclick="selectEmoji('👗')">👗</button><button class="emoji-btn" onclick="selectEmoji('👔')">👔</button><button class="emoji-btn" onclick="selectEmoji('👟')">👟</button><button class="emoji-btn" onclick="selectEmoji('👠')">👠</button><button class="emoji-btn" onclick="selectEmoji('🎩')">🎩</button><button class="emoji-btn" onclick="selectEmoji('👜')">👜</button><button class="emoji-btn" onclick="selectEmoji('💍')">💍</button><button class="emoji-btn" onclick="selectEmoji('⌚')">⌚</button><button class="emoji-btn" onclick="selectEmoji('💄')">💄</button><button class="emoji-btn" onclick="selectEmoji('💅')">💅</button><button class="emoji-btn" onclick="selectEmoji('🧴')">🧴</button><button class="emoji-btn" onclick="selectEmoji('🪞')">🪞</button><button class="emoji-btn" onclick="selectEmoji('🍎')">🍎</button><button class="emoji-btn" onclick="selectEmoji('🍌')">🍌</button><button class="emoji-btn" onclick="selectEmoji('🥦')">🥦</button><button class="emoji-btn" onclick="selectEmoji('🍞')">🍞</button><button class="emoji-btn" onclick="selectEmoji('🥩')">🥩</button><button class="emoji-btn" onclick="selectEmoji('🍔')">🍔</button><button class="emoji-btn" onclick="selectEmoji('🥤')">🥤</button><button class="emoji-btn" onclick="selectEmoji('📱')">📱</button><button class="emoji-btn" onclick="selectEmoji('💻')">💻</button><button class="emoji-btn" onclick="selectEmoji('🎧')">🎧</button><button class="emoji-btn" onclick="selectEmoji('🎮')">🎮</button><button class="emoji-btn" onclick="selectEmoji('📺')">📺</button><button class="emoji-btn" onclick="selectEmoji('🔋')">🔋</button><button class="emoji-btn" onclick="selectEmoji('🛋️')">🛋️</button><button class="emoji-btn" onclick="selectEmoji('🛏️')">🛏️</button><button class="emoji-btn" onclick="selectEmoji('🪑')">🪑</button><button class="emoji-btn" onclick="selectEmoji('⚽')">⚽</button><button class="emoji-btn" onclick="selectEmoji('🏀')">🏀</button><button class="emoji-btn" onclick="selectEmoji('🥊')">🥊</button><button class="emoji-btn" onclick="selectEmoji('🧸')">🧸</button><button class="emoji-btn" onclick="selectEmoji('🎲')">🎲</button><button class="emoji-btn" onclick="selectEmoji('🔧')">🔧</button><button class="emoji-btn" onclick="selectEmoji('🧰')">🧰</button>
+        </div>
+        <input id="emojiCategorie" type="hidden" value="🏷️">
+        <div class="modal-actions"><button class="btn-cancel" onclick="hideModal()">Annuler</button><button class="btn-confirm" onclick="ajouterCategorie()">Ajouter</button></div>
+    </div>
+    <div class="modal-box hidden" id="modalPaiement">
+        <div class="modal-title">💳 Mode de paiement</div>
+        <button class="pay-btn pay-g" onclick="finaliserVente('especes')"><span>💵</span> Espèces</button>
+        <button class="pay-btn pay-b" onclick="finaliserVente('wave')"><span>📱</span> Wave</button>
+        <button class="pay-btn pay-o" onclick="finaliserVente('orange')"><span>📞</span> Orange Money</button>
+        <button class="pay-btn pay-p" onclick="showModalCredit()"><span>📝</span> Crédit</button>
+        <button class="pay-cancel" onclick="hideModal()">Annuler</button>
+    </div>
+    <div class="modal-box hidden" id="modalCredit">
+        <div class="modal-title">📝 Vente à Crédit</div>
+        <div class="form-group"><label>👤 Nom du client</label><input type="text" id="creditClientName" placeholder="Nom du client"></div>
+        <div class="form-group"><label>📞 Téléphone</label><input type="tel" id="creditClientPhone" placeholder="Téléphone"></div>
+        <div class="form-group"><label>📅 Échéance</label><input type="date" id="creditDueDate"></div>
+        <div class="modal-actions"><button class="btn-cancel" onclick="hideModalCredit()">Annuler</button><button class="btn-confirm" onclick="finaliserVenteCredit()">✅ Enregistrer</button></div>
+    </div>
+    <div id="modalModifierVente" class="modal-box hidden">
+        <div class="modal-title">✏️ Modifier la vente</div>
+        <form id="formModifierVente">
+            <input type="hidden" id="venteId">
+            <div class="form-group"><label>Quantité</label><input type="number" id="venteQuantite" required></div>
+            <div class="form-group"><label>Méthode de paiement</label>
+                <select id="ventePaiement">
+                    <option value="especes">Espèces</option>
+                    <option value="wave">Wave</option>
+                    <option value="orange">Orange Money</option>
+                </select>
             </div>
+            <div class="modal-actions"><button type="button" class="btn-cancel" onclick="fermerModal()">Annuler</button><button type="submit" class="btn-confirm">Enregistrer</button></div>
+        </form>
+    </div>
+</div>
 
+<!-- Remboursement -->
+<div id="modalRemboursement" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4" style="backdrop-filter:blur(5px);">
+    <div class="modal-box">
+        <div class="modal-title">💰 Remboursement</div>
+        <input type="hidden" id="remboursementVenteId">
+        <button class="pay-btn pay-g" onclick="confirmerRemboursement('especes')">💵 Espèces</button>
+        <button class="pay-btn pay-b" onclick="confirmerRemboursement('wave')">📱 Wave</button>
+        <button class="pay-btn pay-o" onclick="confirmerRemboursement('orange')">📞 Orange Money</button>
+        <button class="pay-cancel" onclick="hideModalRemboursement()">❌ Annuler</button>
+    </div>
+</div>
 
-            <!-- ═══════════════════════════════════════════════════════════
-     PATCH COMPLET — server.js + utils.js + index.html
+<!-- Premium -->
+<div id="premiumModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4" style="backdrop-filter:blur(5px);">
+    <div class="modal-box">
+        <div style="background:linear-gradient(135deg,#EDE9FE,#FCE7F3);border-radius:14px;padding:18px;text-align:center;margin-bottom:14px;">
+            <h2 style="font-family:'Sora',sans-serif;font-size:17px;font-weight:800;color:#5B21B6;margin-bottom:7px;">🚀 Passez en Premium</h2>
+            <p style="font-size:13px;color:#4C1D95;line-height:1.5;">Votre plan <strong>Free</strong> permet jusqu'à <strong>5 produits</strong>. Contactez-nous pour débloquer un nombre illimité.</p>
+        </div>
+        <div style="background:#F9FAFB;border-radius:14px;padding:14px;text-align:center;font-size:13px;margin-bottom:14px;">📞 <strong>+221 78 157 10 09</strong> ou <strong>+221 77 348 57 91</strong></div>
+        <button class="btn-confirm" style="width:100%;" onclick="hideModalById('premiumModal');showModalById('contactModal')">Passer en Premium</button>
+    </div>
+</div>
 
-     ── 1. PATCH server.js ──
-     Ajouter après les autres routes :
-═══════════════════════════════════════════════════════════ -->
-            <!--
-const customerOrdersRoutes = require('./routes/customerOrders');
-const { deliveries: deliveriesRoutes, deliverymen: deliverymenRoutes } = require('./routes/deliveries');
+<!-- Contact/Upgrade -->
+<div id="contactModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4" style="backdrop-filter:blur(5px);">
+    <div class="modal-box">
+        <div class="modal-title">🚀 Passer en Premium</div>
+        <form id="upgradeForm">
+            <div class="form-group"><label>Téléphone (WhatsApp)</label><input type="tel" id="phone" placeholder="Numéro WhatsApp" required></div>
+            <div class="form-group"><label>Moyen de paiement</label>
+                <select id="payment_method" required>
+                    <option value="">-- Choisir --</option>
+                    <option value="wave">Wave</option>
+                    <option value="orange">Orange Money</option>
+                    <option value="cash">Espèces</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Montant</label><input type="number" id="amount" value="5000" readonly></div>
+            <input type="hidden" id="expiration">
+            <div class="form-group"><label>Expiration</label><input type="text" id="expiration_display" readonly></div>
+            <button type="submit" class="btn-confirm" style="width:100%;">Envoyer</button>
+        </form>
+        <div style="text-align:center;font-size:12px;color:#6B7280;margin-top:12px;">📞 <strong>+221 78 157 10 09</strong> · <strong>+221 77 348 57 91</strong></div>
+        <button onclick="hideModalById('contactModal')" style="display:block;margin:10px auto 0;background:none;border:none;color:#6B7280;cursor:pointer;font-size:13px;">Annuler</button>
+    </div>
+</div>
 
-app.use('/customer-orders', customerOrdersRoutes);
-app.use('/deliveries',      deliveriesRoutes);
-app.use('/deliverymen',     deliverymenRoutes);
-// fournisseurs.js est déjà monté, remplacer par la v2
--->
+<div id="rapportLoading" style="display:none;"></div>
 
-            <!-- ── 2. PATCH utils.js ── Ajouter les nouvelles sections dans showSection() -->
-            <!--
-const sections = [
-  'menu','vente','stock','categories','rapports','inventaire','credits',
-  'clients','fournisseurs','commandes','livraisons',
-  'customerOrders','deliveries','deliverymen',   ← AJOUTER
-  'profil','calendrier'
-];
+<template id="offline-page">
+    <html><head><meta charset="UTF-8"><title>Hors ligne</title>
+    <style>body{font-family:sans-serif;text-align:center;padding:50px;background:#f9f9f9;}h2{color:#7C3AED;}p{color:#444;}</style></head>
+    <body><h2>⚠️ Hors connexion</h2><p>Vos données locales restent accessibles.</p></body></html>
+</template>
 
-else if (['clients','fournisseurs','customerOrders','deliveries','deliverymen','profil','calendrier'].includes(section)) {
-  window.dispatchEvent(new CustomEvent('pageChange', { detail: { key: section } }));
+<!-- ══ ROUTER ══ -->
+<script>
+function updateNavUI(section) {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    const map = { menu:'nav-menu', stock:'nav-stock', rapports:'nav-rapports' };
+    if (map[section]) {
+        document.getElementById(map[section])?.classList.add('active');
+    } else if ([
+        'categories','inventaire','credits',
+        'clients','fournisseurs','commandes','livraisons',
+        'customerOrders','deliveries','deliverymen',
+        'calendrier','profil'
+    ].includes(section)) {
+        document.getElementById('nav-plus')?.classList.add('active');
+    }
 }
--->
 
-            <!-- ── 3. Sections HTML à ajouter dans scroll-content ── -->
+function navTo(section) { closePlusSheet(); window.showSection?.(section); }
+function openPlusSheet()  { document.getElementById('plusSheet').style.display = 'flex'; }
+function closePlusSheet() { document.getElementById('plusSheet').style.display = 'none'; }
 
+window.addEventListener('load', () => {
+    const orig = window.showSection;
+    if (typeof orig === 'function') {
+        window.showSection = function(section) {
+            orig(section);
+            updateNavUI(section);
+            const sc = document.querySelector('.scroll-content');
+            if (sc) sc.scrollTop = 0;
+        };
+    }
+    updateNavUI('menu');
+});
 
-            <!-- ══════════ SECTION COMMANDES CLIENTS ══════════ -->
-            <div class="section-page hidden" id="customerOrdersSection">
-                <div class="page-header" style="margin-top:6px;">
-                    <h2>📦 Commandes</h2>
-                    <button class="btn-primary" id="customerOrdersAddBtn">+ Nouvelle</button>
-                </div>
-                <div id="customerOrdersStats"></div>
-                <div id="customerOrdersChips"></div>
-                <div id="customerOrdersList"></div>
-            </div>
+window.navTo          = navTo;
+window.openPlusSheet  = openPlusSheet;
+window.closePlusSheet = closePlusSheet;
+</script>
 
+<!-- ══ SCRIPTS — ordre important ══ -->
+<!-- offline-cache EN PREMIER pour intercepter authfetch -->
+<script src="js/offline-cache.js"></script>
 
-            <!-- ══════════ SECTION LIVRAISONS ══════════ -->
-            <div class="section-page hidden" id="deliveriesSection">
-                <div class="page-header" style="margin-top:6px;">
-                    <h2>🚚 Livraisons</h2>
-                    <button class="btn-primary" id="deliveriesAddBtn"
-                        style="background:#F3F4F6;color:var(--muted);">ℹ️</button>
-                </div>
-                <div id="deliveriesStats"></div>
-                <div id="deliveriesChips"></div>
-                <div id="deliveriesList"></div>
-            </div>
+<!-- App core -->
+<script type="module" src="js/app.js"></script>
 
+<!-- UI utils -->
+<script src="js/connection.js"></script>
+<script src="js/countup.js"></script>
+<script src="js/skeleton.js"></script>
+<script src="js/sale-success.js"></script>
+<script src="js/pull-to-refresh.js"></script>
+<script src="js/vente-search.js"></script>
+<script src="js/dark-mode.js"></script>
+<script src="js/daily-goal.js"></script>
+<script src="js/sparkline.js"></script>
+<script src="js/end-of-day.js"></script>
+<script src="js/extras.js"></script>
 
-            <!-- ══════════ SECTION LIVREURS ══════════ -->
-            <div class="section-page hidden" id="deliverymenSection">
-                <div class="page-header" style="margin-top:6px;">
-                    <h2>🛵 Livreurs</h2>
-                    <button class="btn-primary" id="deliverymenAddBtn">+ Ajouter</button>
-                </div>
-                <div id="deliverymenStats"></div>
-                <div id="deliverymenList"></div>
-            </div>
+<!-- Modules métier -->
+<script src="js/clients.js"></script>
+<script src="js/fournisseurs.js"></script>
+<script src="js/commandes.js"></script>
+<script src="js/livraisons.js"></script>
+<script src="js/customerOrders.js"></script>
+<script src="js/deliveries.js"></script>
 
+<!-- Liaisons & rapports -->
+<script src="js/modules-links.js"></script>
+<script src="js/rapports-plus.js"></script>
+<script src="js/notifications.js"></script>
 
-            <!-- ══════════ SECTION CALENDRIER ══════════ -->
-            <div class="section-page hidden" id="calendrierSection">
+<!-- Profil & fonctionnalités avancées -->
+<script src="js/profil.js"></script>
+<script src="js/whatsapp-receipt.js"></script>
+<script src="js/global-search.js"></script>
+<script src="js/reappro.js"></script>
+<script src="js/reappro-prediction.js"></script>
+<script src="js/client-pdf.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/ticket58.js"></script>
+<script src="js/onboarding.js"></script>
+<script src="js/badge-widget.js"></script>
+<script src="js/product-share.js"></script>
 
-                <div class="page-header" style="margin-top:6px;">
-                    <h2>📅 Échéances</h2>
-                    <button class="btn-primary"
-                        onclick="window.initCalendrierSection && (window.calendrierSection?._init=false, window.initCalendrierSection())"
-                        id="cal-refresh">🔄</button>
-                </div>
+<!-- Finitions -->
+<script src="js/i18n.js"></script>
+<script src="js/realtime-sync.js"></script>
+<script src="js/pin-security.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/export-excel.js"></script>
+<script src="js/whatsapp-reminders.js"></script>
+<script src="js/product-photos.js"></script>
 
-                <!-- Stats du mois -->
-                <div id="cal-month-stats"></div>
-
-                <!-- Navigation mois -->
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                    <button id="cal-prev" style="
-      background:var(--surface);border:1.5px solid #E5E7EB;
-      width:38px;height:38px;border-radius:11px;font-size:18px;
-      cursor:pointer;display:flex;align-items:center;justify-content:center;
-      box-shadow:0 1px 6px rgba(0,0,0,.06);">‹</button>
-
-                    <div style="text-align:center;">
-                        <div id="cal-month-title"
-                            style="font-family:'Sora',sans-serif;font-size:16px;font-weight:800;color:var(--text);">
-                        </div>
-                        <button id="cal-today-btn"
-                            style="background:none;border:none;font-size:11px;color:var(--primary);font-weight:700;cursor:pointer;padding:2px 0;">Aujourd'hui</button>
-                    </div>
-
-                    <button id="cal-next" style="
-      background:var(--surface);border:1.5px solid #E5E7EB;
-      width:38px;height:38px;border-radius:11px;font-size:18px;
-      cursor:pointer;display:flex;align-items:center;justify-content:center;
-      box-shadow:0 1px 6px rgba(0,0,0,.06);">›</button>
-                </div>
-
-                <!-- Légende -->
-                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-                    <div
-                        style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted);">
-                        <div style="width:8px;height:8px;border-radius:50%;background:#EF4444;"></div> Crédit
-                    </div>
-                    <div
-                        style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted);">
-                        <div style="width:8px;height:8px;border-radius:50%;background:#F59E0B;"></div> Commande
-                    </div>
-                    <div
-                        style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted);">
-                        <div style="width:8px;height:8px;border-radius:50%;background:#3B82F6;"></div> Livraison
-                    </div>
-                </div>
-
-                <!-- Grille calendrier -->
-                <div id="cal-grid" style="
-    display:grid;
-    grid-template-columns:repeat(7,1fr);
-    gap:4px;
-    margin-bottom:18px;
-    position:relative;
-  "></div>
-
-                <!-- Séparateur -->
-                <div
-                    style="font-family:'Sora',sans-serif;font-size:14px;font-weight:800;color:var(--text);margin-bottom:10px;">
-                    📋 Échéances du mois
-                </div>
-
-                <!-- Liste échéances -->
-                <div id="cal-event-list"></div>
-            </div>
-
-
-            <!-- ══════════ SECTION PROFIL ══════════ -->
-            <div class="section-page hidden" id="profilSection">
-                <div class="page-header" style="margin-top:6px;">
-                    <h2>👤 Mon Profil</h2>
-                    <button class="btn-primary" onclick="window.loadProfile()">🔄</button>
-                </div>
-                <div id="profilContent">
-                    <!-- Rempli dynamiquement par profil.js -->
-                    <div style="text-align:center;padding:40px 0;color:var(--muted);">
-                        <div style="font-size:32px;margin-bottom:8px;">⏳</div>
-                        <div>Chargement du profil…</div>
-                    </div>
-                </div>
-            </div>
-
-        </div><!-- end scroll-content -->
-
-        <!-- BOTTOM NAV -->
-        <nav class="bottom-nav" id="bottomNav">
-            <button class="nav-btn active" id="nav-menu" onclick="navTo('menu')"><span class="ni">🏠</span><span
-                    class="nl">Accueil</span></button>
-            <button class="nav-btn" id="nav-stock" onclick="navTo('stock')"><span class="ni">📦</span><span
-                    class="nl">Stock</span></button>
-            <button class="nav-fab" onclick="navTo('vente')">💳</button>
-            <button class="nav-btn" id="nav-rapports" onclick="navTo('rapports')"><span class="ni">📈</span><span
-                    class="nl">Chiffres</span></button>
-            <button class="nav-btn" id="nav-plus" onclick="openPlusSheet()"><span class="ni">☰</span><span
-                    class="nl">Plus</span></button>
-        </nav>
-    </div>
-
-    <!-- PLUS SHEET -->
-    <div id="plusSheet"
-        style="display:none;position:fixed;inset:0;z-index:110;display:none;flex-direction:column;justify-content:flex-end;">
-        <div style="position:absolute;inset:0;background:rgba(15,10,40,.45);backdrop-filter:blur(4px);"
-            onclick="closePlusSheet()"></div>
-        <div
-            style="position:relative;background:#fff;border-radius:24px 24px 0 0;padding:10px 18px calc(var(--nav-h) + var(--safe-b) + 10px);">
-            <div style="width:36px;height:4px;background:#E5E7EB;border-radius:2px;margin:0 auto 16px;"></div>
-            <div
-                style="font-family:'Sora',sans-serif;font-size:16px;font-weight:800;color:var(--text);margin-bottom:14px;">
-                ✨ Plus</div>
-            <button class="sheet-item big-button" data-section="categories"
-                onclick="closePlusSheet();navTo('categories');">
-                <div class="sheet-icon" style="background:#EDE9FE;">🏷️</div>
-                <div>
-                    <h3>Catégories</h3>
-                    <p>Organiser vos produits</p>
-                </div><span class="sheet-chevron">›</span>
-            </button>
-            <button class="sheet-item big-button" data-section="inventaire"
-                onclick="closePlusSheet();navTo('inventaire');">
-                <div class="sheet-icon" style="background:#ECFDF5;">📋</div>
-                <div>
-                    <h3>Inventaire</h3>
-                    <p>Suivre vos bénéfices</p>
-                </div><span class="sheet-chevron">›</span>
-            </button>
-            <button class="sheet-item big-button" data-section="credits" onclick="closePlusSheet();navTo('credits');">
-                <div class="sheet-icon" style="background:#F5F3FF;">📝</div>
-                <div>
-                    <h3>Crédits</h3>
-                    <p>Gérer les dettes clients</p>
-                </div><span class="sheet-chevron">›</span>
-            </button>
-            <button class="sheet-item" onclick="closePlusSheet();navTo('clients');">
-                <div class="sheet-icon" style="background:#EFF6FF;">👥</div>
-                <div>
-                    <h3>Clients</h3>
-                    <p>Gérer vos clients</p>
-                </div>
-                <span class="sheet-chevron">›</span>
-            </button>
-            <button class="sheet-item" onclick="closePlusSheet();navTo('customerOrders');">
-                <div class="sheet-icon" style="background:#FEF3C7;">📦</div>
-                <div>
-                    <h3>Commandes clients</h3>
-                    <p>Gérer les commandes à livrer</p>
-                </div>
-                <span class="sheet-chevron">›</span>
-            </button>
-
-            <button class="sheet-item" onclick="closePlusSheet();navTo('deliveries');">
-                <div class="sheet-icon" style="background:#EFF6FF;">🚚</div>
-                <div>
-                    <h3>Livraisons</h3>
-                    <p>Suivi des livraisons en cours</p>
-                </div>
-                <span class="sheet-chevron">›</span>
-            </button>
-
-            <button class="sheet-item" onclick="closePlusSheet();navTo('deliverymen');">
-                <div class="sheet-icon" style="background:#FEF9C3;">🛵</div>
-                <div>
-                    <h3>Livreurs</h3>
-                    <p>Gérer vos coursiers</p>
-                </div>
-                <span class="sheet-chevron">›</span>
-            </button>
-            <button class="sheet-item" onclick="closePlusSheet();navTo('calendrier');">
-                <div class="sheet-icon" style="background:#EFF6FF;">📅</div>
-                <div>
-                    <h3>Échéances</h3>
-                    <p>Crédits · Commandes · Livraisons</p>
-                </div>
-                <span class="sheet-chevron">›</span>
-            </button>
-            <button class="sheet-item" onclick="closePlusSheet();navTo('profil');">
-                <div class="sheet-icon" style="background:#EDE9FE;">👤</div>
-                <div>
-                    <h3>Mon Profil</h3>
-                    <p>Boutique · Mot de passe · Plan</p>
-                </div>
-                <span class="sheet-chevron">›</span>
-            </button>
-            
-        </div>
-    </div>
-
-    <!-- MODALES -->
-    <div class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4"
-        id="modalOverlay">
-        <!-- Ajout Produit -->
-        <div class="modal-box hidden" id="modalAjoutProduit">
-            <div class="modal-title">📦 Nouveau Produit</div>
-            <div class="form-group"><label>Nom</label><input id="nomProduit" placeholder="Nom du produit" type="text">
-            </div>
-            <div class="form-group"><label>Catégorie</label><select id="categorieProduit">
-                    <option value="">Choisir catégorie</option>
-                </select></div>
-            <div class="form-group"><label>Prix achat (F CFA)</label><input id="prixAchatProduit"
-                    placeholder="Prix achat" type="number"></div>
-            <div class="form-group"><label>Prix vente (F CFA)</label><input id="prixProduit" placeholder="Prix vente"
-                    type="number"></div>
-            <div class="form-group"><label>Quantité en stock</label><input id="stockProduit" placeholder="Stock"
-                    type="number"></div>
-            <div class="form-group"><label>Description</label><textarea id="descriptionProduit"
-                    placeholder="Description (optionnel)" style="height:66px;resize:none;"></textarea></div>
-            <div class="modal-actions"><button class="btn-cancel" onclick="hideModal()">Annuler</button><button
-                    class="btn-confirm" onclick="ajouterProduit()">Ajouter</button></div>
-        </div>
-        <!-- Edit Produit -->
-        <div class="modal-box hidden" id="modalEditProduit">
-            <div class="modal-title">✏️ Modifier Produit</div>
-            <div class="form-group"><label>Nom</label><input id="editNomProduit" placeholder="Nom" type="text"></div>
-            <div class="form-group"><label>Catégorie</label><select id="editCategorieProduit">
-                    <option value="">Choisir catégorie</option>
-                </select></div>
-            <div class="form-group"><label>Prix achat</label><input id="editPrixAchatProduit" placeholder="Prix achat"
-                    type="number"></div>
-            <div class="form-group"><label>Prix vente</label><input id="editPrixProduit" placeholder="Prix vente"
-                    type="number"></div>
-            <div class="form-group"><label>Stock</label><input id="editStockProduit" placeholder="Stock" type="number">
-            </div>
-            <div class="form-group"><label>Description</label><textarea id="editDescriptionProduit"
-                    placeholder="Description" style="height:66px;resize:none;"></textarea></div>
-            <div class="modal-actions"><button class="btn-cancel" onclick="hideModal()">Annuler</button><button
-                    class="btn-confirm" onclick="mettreAJourProduit()">Mettre à jour</button></div>
-        </div>
-        <!-- Ajout Catégorie -->
-        <div class="modal-box hidden" id="modalAjoutCategorie">
-            <div class="modal-title">🏷️ Nouvelle Catégorie</div>
-            <div class="form-group"><label>Nom</label><input id="nomCategorie" type="text"
-                    placeholder="Nom de la catégorie"></div>
-            <div class="form-group"><label>Choisir un emoji</label></div>
-            <div class="emoji-grid">
-                <button class="emoji-btn" onclick="selectEmoji('👕')">👕</button><button class="emoji-btn"
-                    onclick="selectEmoji('👖')">👖</button><button class="emoji-btn"
-                    onclick="selectEmoji('👗')">👗</button><button class="emoji-btn"
-                    onclick="selectEmoji('👔')">👔</button><button class="emoji-btn"
-                    onclick="selectEmoji('👟')">👟</button><button class="emoji-btn"
-                    onclick="selectEmoji('👠')">👠</button><button class="emoji-btn"
-                    onclick="selectEmoji('🎩')">🎩</button><button class="emoji-btn"
-                    onclick="selectEmoji('👜')">👜</button><button class="emoji-btn"
-                    onclick="selectEmoji('💍')">💍</button><button class="emoji-btn"
-                    onclick="selectEmoji('⌚')">⌚</button><button class="emoji-btn"
-                    onclick="selectEmoji('💄')">💄</button><button class="emoji-btn"
-                    onclick="selectEmoji('💅')">💅</button><button class="emoji-btn"
-                    onclick="selectEmoji('🧴')">🧴</button><button class="emoji-btn"
-                    onclick="selectEmoji('🪞')">🪞</button><button class="emoji-btn"
-                    onclick="selectEmoji('🍎')">🍎</button><button class="emoji-btn"
-                    onclick="selectEmoji('🍌')">🍌</button><button class="emoji-btn"
-                    onclick="selectEmoji('🥦')">🥦</button><button class="emoji-btn"
-                    onclick="selectEmoji('🍞')">🍞</button><button class="emoji-btn"
-                    onclick="selectEmoji('🥩')">🥩</button><button class="emoji-btn"
-                    onclick="selectEmoji('🍔')">🍔</button><button class="emoji-btn"
-                    onclick="selectEmoji('🥤')">🥤</button><button class="emoji-btn"
-                    onclick="selectEmoji('📱')">📱</button><button class="emoji-btn"
-                    onclick="selectEmoji('💻')">💻</button><button class="emoji-btn"
-                    onclick="selectEmoji('🎧')">🎧</button><button class="emoji-btn"
-                    onclick="selectEmoji('🎮')">🎮</button><button class="emoji-btn"
-                    onclick="selectEmoji('📺')">📺</button><button class="emoji-btn"
-                    onclick="selectEmoji('🔋')">🔋</button><button class="emoji-btn"
-                    onclick="selectEmoji('🛋️')">🛋️</button><button class="emoji-btn"
-                    onclick="selectEmoji('🛏️')">🛏️</button><button class="emoji-btn"
-                    onclick="selectEmoji('🪑')">🪑</button><button class="emoji-btn"
-                    onclick="selectEmoji('⚽')">⚽</button><button class="emoji-btn"
-                    onclick="selectEmoji('🏀')">🏀</button><button class="emoji-btn"
-                    onclick="selectEmoji('🥊')">🥊</button><button class="emoji-btn"
-                    onclick="selectEmoji('🧸')">🧸</button><button class="emoji-btn"
-                    onclick="selectEmoji('🎲')">🎲</button><button class="emoji-btn"
-                    onclick="selectEmoji('🔧')">🔧</button><button class="emoji-btn"
-                    onclick="selectEmoji('🧰')">🧰</button>
-            </div>
-            <input id="emojiCategorie" type="hidden" value="🏷️">
-            <div class="modal-actions"><button class="btn-cancel" onclick="hideModal()">Annuler</button><button
-                    class="btn-confirm" onclick="ajouterCategorie()">Ajouter</button></div>
-        </div>
-        <!-- Paiement -->
-        <div class="modal-box hidden" id="modalPaiement">
-            <div class="modal-title">💳 Mode de paiement</div>
-            <button class="pay-btn pay-g" onclick="finaliserVente('especes')"><span>💵</span> Espèces</button>
-            <button class="pay-btn pay-b" onclick="finaliserVente('wave')"><span>📱</span> Wave</button>
-            <button class="pay-btn pay-o" onclick="finaliserVente('orange')"><span>📞</span> Orange Money</button>
-            <button class="pay-btn pay-p" onclick="showModalCredit()"><span>📝</span> Crédit</button>
-            <button class="pay-cancel" onclick="hideModal()">Annuler</button>
-        </div>
-        <!-- Crédit depuis paiement -->
-        <div class="modal-box hidden" id="modalCredit">
-            <div class="modal-title">📝 Vente à Crédit</div>
-            <div class="form-group"><label>👤 Nom du client</label><input type="text" id="creditClientName"
-                    placeholder="Nom du client"></div>
-            <div class="form-group"><label>📞 Téléphone</label><input type="tel" id="creditClientPhone"
-                    placeholder="Téléphone"></div>
-            <div class="form-group"><label>📅 Échéance</label><input type="date" id="creditDueDate"></div>
-            <div class="modal-actions"><button class="btn-cancel" onclick="hideModalCredit()">Annuler</button><button
-                    class="btn-confirm" onclick="finaliserVenteCredit()">✅ Enregistrer</button></div>
-        </div>
-        <!-- Modifier vente -->
-        <div id="modalModifierVente" class="modal-box hidden">
-            <div class="modal-title">✏️ Modifier la vente</div>
-            <form id="formModifierVente">
-                <input type="hidden" id="venteId">
-                <div class="form-group"><label>Quantité</label><input type="number" id="venteQuantite" required></div>
-                <div class="form-group"><label>Méthode de paiement</label><select id="ventePaiement">
-                        <option value="especes">Espèces</option>
-                        <option value="wave">Wave</option>
-                        <option value="orange">Orange Money</option>
-                    </select></div>
-                <div class="modal-actions"><button type="button" class="btn-cancel"
-                        onclick="fermerModal()">Annuler</button><button type="submit"
-                        class="btn-confirm">Enregistrer</button></div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Remboursement -->
-    <div id="modalRemboursement"
-        class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4"
-        style="backdrop-filter:blur(5px);">
-        <div class="modal-box">
-            <div class="modal-title">💰 Remboursement</div><input type="hidden" id="remboursementVenteId"><button
-                class="pay-btn pay-g" onclick="confirmerRemboursement('especes')">💵 Espèces</button><button
-                class="pay-btn pay-b" onclick="confirmerRemboursement('wave')">📱 Wave</button><button
-                class="pay-btn pay-o" onclick="confirmerRemboursement('orange')">📞 Orange Money</button><button
-                class="pay-cancel" onclick="hideModalRemboursement()">❌ Annuler</button>
-        </div>
-    </div>
-
-    <!-- Premium -->
-    <div id="premiumModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4"
-        style="backdrop-filter:blur(5px);">
-        <div class="modal-box">
-            <div
-                style="background:linear-gradient(135deg,#EDE9FE,#FCE7F3);border-radius:14px;padding:18px;text-align:center;margin-bottom:14px;">
-                <h2
-                    style="font-family:'Sora',sans-serif;font-size:17px;font-weight:800;color:#5B21B6;margin-bottom:7px;">
-                    🚀 Passez en Premium</h2>
-                <p style="font-size:13px;color:#4C1D95;line-height:1.5;">Votre plan <strong>Free</strong> permet jusqu'à
-                    <strong>5 produits</strong>. Contactez-nous pour débloquer un nombre illimité.
-                </p>
-            </div>
-            <div
-                style="background:#F9FAFB;border-radius:14px;padding:14px;text-align:center;font-size:13px;margin-bottom:14px;">
-                📞 <strong>+221 78 157 10 09</strong> ou <strong>+221 77 348 57 91</strong></div><button
-                class="btn-confirm" style="width:100%;"
-                onclick="hideModalById('premiumModal'); showModalById('contactModal')">Passer en Premium</button>
-        </div>
-    </div>
-
-    <!-- Contact/Upgrade -->
-    <div id="contactModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4"
-        style="backdrop-filter:blur(5px);">
-        <div class="modal-box">
-            <div class="modal-title">🚀 Passer en Premium</div>
-            <form id="upgradeForm">
-                <div class="form-group"><label>Téléphone (WhatsApp)</label><input type="tel" id="phone"
-                        placeholder="Numéro WhatsApp" required></div>
-                <div class="form-group"><label>Moyen de paiement</label><select id="payment_method" required>
-                        <option value="">-- Choisir --</option>
-                        <option value="wave">Wave</option>
-                        <option value="orange">Orange Money</option>
-                        <option value="cash">Espèces</option>
-                    </select></div>
-                <div class="form-group"><label>Montant</label><input type="number" id="amount" value="5000" readonly>
-                </div><input type="hidden" id="expiration">
-                <div class="form-group"><label>Expiration</label><input type="text" id="expiration_display" readonly>
-                </div><button type="submit" class="btn-confirm" style="width:100%;">Envoyer</button>
-            </form>
-            <div style="text-align:center;font-size:12px;color:#6B7280;margin-top:12px;">📞 <strong>+221 78 157 10
-                    09</strong> · <strong>+221 77 348 57 91</strong></div><button
-                onclick="hideModalById('contactModal')"
-                style="display:block;margin:10px auto 0;background:none;border:none;color:#6B7280;cursor:pointer;font-size:13px;">Annuler</button>
-        </div>
-    </div>
-
-    <div id="rapportLoading" style="display:none;"></div>
-    <template id="offline-page">
-        <!DOCTYPE html>
-        <html lang="fr">
-
-        <head>
-            <meta charset="UTF-8">
-            <title>Hors ligne</title>
-            <style>
-                body {
-                    font-family: sans-serif;
-                    text-align: center;
-                    padding: 50px;
-                    background: #f9f9f9;
-                }
-
-                h2 {
-                    color: #7C3AED;
-                }
-
-                p {
-                    color: #444;
-                }
-            </style>
-        </head>
-
-        <body>
-            <h2>⚠️ Hors connexion</h2>
-            <p>Vos données locales restent accessibles.</p>
-        </body>
-
-        </html>
-    </template>
-
-    <!-- ROUTER -->
-    <script>
-        function updateNavUI(section) {
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            const map = { menu: 'nav-menu', stock: 'nav-stock', rapports: 'nav-rapports' };
-            if (map[section]) document.getElementById(map[section])?.classList.add('active');
-            else if (['categories', 'inventaire', 'credits', 'clients',
-                'fournisseurs', 'commandes', 'livraisons', 'profil', 'calendrier'].includes(section)) document.getElementById('nav-plus')?.classList.add('active');
-        }
-        function navTo(section) {
-            closePlusSheet();
-            if (window.showSection) window.showSection(section);
-        }
-        function openPlusSheet() {
-            const s = document.getElementById('plusSheet');
-            s.style.display = 'flex';
-        }
-        function closePlusSheet() {
-            const s = document.getElementById('plusSheet');
-            s.style.display = 'none';
-        }
-        window.addEventListener('load', () => {
-            const orig = window.showSection;
-            if (typeof orig === 'function') {
-                window.showSection = function (section) {
-                    orig(section);
-                    updateNavUI(section);
-                    const sc = document.querySelector('.scroll-content');
-                    if (sc) sc.scrollTop = 0;
-                };
-            }
-            updateNavUI('menu');
-        });
-        window.navTo = navTo;
-        window.openPlusSheet = openPlusSheet;
-        window.closePlusSheet = closePlusSheet;
-    </script>
-
-    <script type="module" src="js/app.js"></script>
-    <script src="js/connection.js"></script>
-    <script src="js/countup.js"></script>
-    <script src="js/skeleton.js"></script>
-    <script src="js/sale-success.js"></script>
-    <script src="js/pull-to-refresh.js"></script>
-    <script src="js/vente-search.js"></script>
-    <script src="js/dark-mode.js"></script>
-    <script src="js/daily-goal.js"></script>
-    <script src="js/sparkline.js"></script>
-    <script src="js/end-of-day.js"></script>
-    <script src="js/extras.js"></script>
-    <script src="js/offline-cache.js"></script>
-
-    <script src="js/customerOrders.js"></script>
-    <script src="js/deliveries.js"></script>
-
-    <script src="js/clients.js"></script>
-    <script src="js/fournisseurs.js"></script>
-    <script src="js/commandes.js"></script>
-    <script src="js/livraisons.js"></script>
-    <script src="js/modules-links.js"></script>
-    <script src="js/rapports-plus.js"></script>
-    <script src="js/notifications.js"></script>
-    <script src="js/profil.js"></script>
-    <script src="js/whatsapp-receipt.js"></script>
-    <script src="js/global-search.js"></script>
-    <script src="js/reappro.js"></script>
-    <script src="js/reappro-prediction.js"></script>
-    <script src="js/client-pdf.js"></script>
-    <script src="js/calendar.js"></script>
-    <script src="js/ticket58.js"></script>
-    <script src="js/onboarding.js"></script>
-    <script src="js/badge-widget.js"></script>
-    <script src="js/product-share.js"></script>
-    <script src="js/i18n.js"></script>
-    <script src="js/realtime-sync.js"></script>
-    <script src="js/pin-security.js"></script>
-    <script src="js/theme.js"></script>
-    <script src="js/export-excel.js"></script>
-    <script src="js/whatsapp-reminders.js"></script>
-    <script src="js/product-photos.js"></script>
 </body>
-
 </html>

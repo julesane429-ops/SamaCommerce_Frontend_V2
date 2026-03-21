@@ -41,7 +41,11 @@ async function acceptInviteIfPending(token, authToken) {
       showNotification(data.error || "Invitation invalide ou expirée.", "error");
       return false;
     }
-    showNotification(`✅ Vous avez rejoint "${data.boutique?.company_name || 'la boutique'}" !`, "success");
+    if (data.already_member) {
+      showNotification(`✅ Vous êtes déjà membre de "${data.boutique?.company_name || 'la boutique'}" !`, "success");
+    } else {
+      showNotification(`✅ Vous avez rejoint "${data.boutique?.company_name || 'la boutique'}" !`, "success");
+    }
     localStorage.setItem('inviteBoutiqueId',   data.boutique?.id);
     localStorage.setItem('inviteBoutiqueName', data.boutique?.company_name || '');
     localStorage.setItem('employeeRole',       data.role || 'employe');

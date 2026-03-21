@@ -18,16 +18,24 @@
 
   document.addEventListener('DOMContentLoaded', () => {
 
-    // Redirection si déjà connecté
-    if (localStorage.getItem('authToken')) {
+    // ── Lire le token d'invitation AVANT tout check de session ──
+    const urlParams   = new URLSearchParams(window.location.search);
+    const inviteToken = urlParams.get('invite');
+    const inviteEmail = urlParams.get('email');
+
+    // Redirection si déjà connecté — SAUF si une invitation est en cours
+    // (l'employé doit pouvoir créer un nouveau compte même avec une session existante)
+    if (localStorage.getItem('authToken') && !inviteToken) {
       window.location.href = '/index.html';
       return;
     }
 
-    // ── Lire le token d'invitation dans l'URL ──
-    const urlParams   = new URLSearchParams(window.location.search);
-    const inviteToken = urlParams.get('invite');
-    const inviteEmail = urlParams.get('email');
+    // Si déjà connecté ET invitation → déconnecter proprement pour repartir sur un compte neuf
+    if (localStorage.getItem('authToken') && inviteToken) {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userId');
+    }
 
     // Bandeau invitation
     if (inviteToken) {

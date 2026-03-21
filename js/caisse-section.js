@@ -33,10 +33,10 @@
       const d = new Date(v.created_at || v.date);
       return !isNaN(d) && d.toISOString().split('T')[0] === today;
     });
-    const especes = dj.filter(v => v.payment_method === 'especes' && v.paid).reduce((s,v) => s + (+v.total||0), 0);
-    const wave    = dj.filter(v => v.payment_method === 'wave'    && v.paid).reduce((s,v) => s + (+v.total||0), 0);
-    const orange  = dj.filter(v => v.payment_method === 'orange'  && v.paid).reduce((s,v) => s + (+v.total||0), 0);
-    const credits = dj.filter(v => !v.paid).reduce((s,v) => s + (+v.total||0), 0);
+    const especes = dj.filter(v => v.payment_method === 'especes' && v.paid).reduce((s,v) => s + (parseFloat(v.total)||0), 0);
+    const wave    = dj.filter(v => v.payment_method === 'wave'    && v.paid).reduce((s,v) => s + (parseFloat(v.total)||0), 0);
+    const orange  = dj.filter(v => v.payment_method === 'orange'  && v.paid).reduce((s,v) => s + (parseFloat(v.total)||0), 0);
+    const credits = dj.filter(v => !v.paid).reduce((s,v) => s + (parseFloat(v.total)||0), 0);
     return {
       nb_ventes: dj.length, especes, wave, orange, credits,
       total_encaisse: especes + wave + orange,
@@ -68,18 +68,30 @@
  
   function computeWeekLocally() {
     const ventes = window.appData?.ventes || [];
+
+    // Construire un index date→ventes en une seule itération (O(n) au lieu de O(n×7))
+    const index = {};
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 6); cutoff.setHours(0,0,0,0);
+
+    ventes.forEach(v => {
+      const raw = v.created_at || v.date;
+      if (!raw) return;
+      const vd = new Date(raw);
+      if (isNaN(vd) || vd < cutoff) return;
+      const ds = vd.toISOString().split('T')[0];
+      if (!index[ds]) index[ds] = [];
+      index[ds].push(v);
+    });
+
     const days = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0,0,0,0);
       const ds = d.toISOString().split('T')[0];
-      const dv = ventes.filter(v => {
-        const vd = new Date(v.created_at || v.date);
-        return !isNaN(vd) && vd.toISOString().split('T')[0] === ds;
-      });
+      const dv = index[ds] || [];
       days.push({
         date:           ds,
         label:          d.toLocaleDateString('fr-FR', { weekday:'short', day:'2-digit' }),
-        total_encaisse: dv.filter(v => v.paid).reduce((s,v) => s + (+v.total||0), 0),
+        total_encaisse: dv.filter(v => v.paid).reduce((s,v) => s + (parseFloat(v.total)||0), 0),
         nb_ventes:      dv.length,
       });
     }

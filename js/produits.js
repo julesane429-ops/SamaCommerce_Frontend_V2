@@ -1,55 +1,78 @@
-import { appData,chartVentesByDay, chartTopProduits, chartPaiements, chartStocksFaibles, creditChart, _lastSalesKey, _isRenderingSalesHistory, chartVentesJourInstance, deferredPrompt, installBtn, currentSection, chartCredits } from "./state.js";
-import { afficherRapports, updateStats, afficherStatsCredits  } from "./rapports.js";
+import { appData, chartVentesByDay, chartTopProduits, chartPaiements, chartStocksFaibles, creditChart, _lastSalesKey, _isRenderingSalesHistory, chartVentesJourInstance, deferredPrompt, installBtn, currentSection, chartCredits } from "./state.js";
+import { afficherRapports, updateStats, afficherStatsCredits } from "./rapports.js";
 import { afficherInventaire, setupSearchInputs, remplirSelectProduitsCredit } from "./inventaire.js";
 import { updateCharts, initCreditChart } from "./charts.js";
 import { authfetch, postCategoryServer, postProductServer, syncFromServer } from "./api.js";
 import { API_BASE } from "./api.js";
 import { getCurrentUserId, logout } from "./auth.js";
-import { selectEmoji, supprimerCategorie, ajouterCategorie,remplirSelectCategories, afficherFiltresCategories } from "./categories.js";
-import { renderCreditsHistory,marquerCreditPaye, confirmerRemboursement, remplirProduitsCredit } from "./credits.js";
+import { selectEmoji, supprimerCategorie, ajouterCategorie, remplirSelectCategories, afficherFiltresCategories } from "./categories.js";
+import { renderCreditsHistory, marquerCreditPaye, confirmerRemboursement, remplirProduitsCredit } from "./credits.js";
 import { loadAppDataLocal, saveAppDataLocal, enqueueOutbox, processOutboxOne, processOutboxAll, updateHeader, getExpirationDate } from "./index.js";
 import { showModal, hideModal, ouvrirModalEdit, showModalCredit, hideModalCredit, ouvrirModalRemboursement, hideModalRemboursement, showModalById, hideModalById, closePremiumModal, closeContactModal, closeGuide, fermerModal } from "./modal.js";
-import { showNotification, customConfirm,  } from "./notification.js";
+import { showNotification, customConfirm } from "./notification.js";
 import { handleAddProductClick } from "./premium.js";
-import { afficherCategories, afficherProduits, afficherCategoriesVente,afficherProduitsCategorie, verifierStockFaible, afficherCredits } from "./ui.js";
+import { afficherCategories, afficherProduits, afficherCategoriesVente, afficherProduitsCategorie, verifierStockFaible, afficherCredits } from "./ui.js";
 import { showSection } from "./utils.js";
-import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier, afficherPanier, modifierQuantitePanier, finaliserVente, tryRenderSalesHistory, ouvrirModal, marquerRembourse, purgeSalesHistoryClones, filtrerVentesParPeriode, modifierVente  } from "./ventes.js";
+import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier, afficherPanier, modifierQuantitePanier, finaliserVente, tryRenderSalesHistory, ouvrirModal, marquerRembourse, purgeSalesHistoryClones, filtrerVentesParPeriode, modifierVente } from "./ventes.js";
 
-
-
+// ── Supprimer un produit ───────────────────────────────────────────────────
 export async function supprimerProduit(id) {
   const ok = await confirm("❓ Supprimer ce produit ?");
-  if (!ok) {
-    showNotification("❌ Suppression annulée", "warning");
-    return;
-  }
+  if (!ok) { showNotification("❌ Suppression annulée", "warning"); return; }
 
-  // Suppression locale
   appData.produits = appData.produits.filter(p => p.id !== id);
   afficherProduits();
   updateStats();
   saveAppDataLocal();
 
-  // Suppression côté backend
   authfetch(API_BASE + "/products/" + id, { method: "DELETE" })
-    .then(() => {
-      showNotification("✅ Produit supprimé avec succès", "success");
-    })
-    .catch(() => {
-      showNotification("⚠️ Erreur lors de la suppression côté serveur", "error");
-    });
+    .then(() => showNotification("✅ Produit supprimé avec succès", "success"))
+    .catch(() => showNotification("⚠️ Erreur lors de la suppression côté serveur", "error"));
 }
 
+// ── Mettre à jour un produit ───────────────────────────────────────────────
 export async function mettreAJourProduit() {
-  const id = document.getElementById('modalEditProduit').dataset.id;
+  const id = document.getElementById('modalEditProduit')?.dataset.id;
+  if (!id) return;
+
+  // Champs de base
   const produit = {
-    name: document.getElementById('editNomProduit').value,
-    category_id: parseInt(document.getElementById('editCategorieProduit').value),
-    price_achat: parseFloat(document.getElementById('editPrixAchatProduit').value),
-    price: parseFloat(document.getElementById('editPrixProduit').value),
-    stock: parseInt(document.getElementById('editStockProduit').value),
-    description: document.getElementById('editDescriptionProduit').value
+    name:        document.getElementById('editNomProduit')?.value?.trim(),
+    category_id: parseInt(document.getElementById('editCategorieProduit')?.value),
+    price_achat: parseFloat(document.getElementById('editPrixAchatProduit')?.value),
+    price:       parseFloat(document.getElementById('editPrixProduit')?.value),
+    stock:       parseInt(document.getElementById('editStockProduit')?.value),
+    description: document.getElementById('editDescriptionProduit')?.value || ''
   };
+
+  // Champs gros (optionnels — présents seulement si les éléments existent dans le DOM)
+  const elPrixGros    = document.getElementById('editPrixGrosProduit');
+  const elQteGros     = document.getElementById('editQuantiteGrosProduit');
+
+  if (elPrixGros && elQteGros) {
+    const prixGros = elPrixGros.value.trim();
+    const qteGros  = elQteGros.value.trim();
+
+    if (prixGros || qteGros) {
+      // L'utilisateur a renseigné au moins un champ gros — valider la cohérence
+      if (!prixGros || !qteGros) {
+        showNotification('❌ Renseignez le prix ET la quantité pour la vente en gros.', 'error');
+        return;
+      }
+      produit.price_gros    = parseFloat(prixGros);
+      produit.quantite_gros = parseInt(qteGros);
+      if (isNaN(produit.price_gros) || produit.price_gros < 0) {
+        showNotification('❌ Prix gros invalide.', 'error'); return;
+      }
+      if (isNaN(produit.quantite_gros) || produit.quantite_gros < 1) {
+        showNotification('❌ Quantité gros invalide (minimum 1).', 'error'); return;
+      }
+    } else {
+      // Les deux vides → supprimer les tarifs gros
+      produit.price_gros    = null;
+      produit.quantite_gros = null;
+    }
+  }
 
   if (!produit.name || isNaN(produit.price) || isNaN(produit.price_achat) || isNaN(produit.stock)) {
     showNotification('❌ Remplissez tous les champs correctement.', 'error');
@@ -64,7 +87,8 @@ export async function mettreAJourProduit() {
     });
 
     if (!res.ok) {
-      showNotification('❌ Erreur lors de la mise à jour du produit.', 'error');
+      const err = await res.json().catch(() => ({}));
+      showNotification('❌ ' + (err.error || 'Erreur lors de la mise à jour.'), 'error');
       return;
     }
 
@@ -80,34 +104,50 @@ export async function mettreAJourProduit() {
   }
 }
 
+// ── Ajouter un produit ─────────────────────────────────────────────────────
 export async function ajouterProduit() {
-  const name = document.getElementById('nomProduit').value;
-  const category_id = parseInt(document.getElementById('categorieProduit').value);
-  const scentEl = document.getElementById('parfumProduit');
-  const scent = scentEl ? scentEl.value : '';
-  const priceAchat = parseFloat(document.getElementById('prixAchatProduit').value); // ✅ prix achat
-  const price = parseFloat(document.getElementById('prixProduit').value);
-  const stock = parseInt(document.getElementById('stockProduit').value);
+  const name        = document.getElementById('nomProduit')?.value?.trim();
+  const category_id = parseInt(document.getElementById('categorieProduit')?.value);
+  const scent       = document.getElementById('parfumProduit')?.value || '';
+  const priceAchat  = parseFloat(document.getElementById('prixAchatProduit')?.value);
+  const price       = parseFloat(document.getElementById('prixProduit')?.value);
+  const stock       = parseInt(document.getElementById('stockProduit')?.value);
+  const description = document.getElementById('descriptionProduit')?.value || '';
 
-  // Validation
   if (!name || !category_id || isNaN(price) || isNaN(stock) || isNaN(priceAchat)) {
-    showNotification('❌ Remplissez tous les champs correctement.', "error");
+    showNotification('❌ Remplissez tous les champs correctement.', 'error');
     return;
   }
 
-  // ✅ envoyer avec le nom correct pour la BDD
-  const produit = {
-    name: name,
-    category_id: category_id,
-    scent: scent,
-    price: price,
-    price_achat: priceAchat,
-    stock: stock
-  };
+  const produit = { name, category_id, scent, price, price_achat: priceAchat, stock, description };
+
+  // Champs gros optionnels
+  const elPrixGros = document.getElementById('prixGrosProduit');
+  const elQteGros  = document.getElementById('quantiteGrosProduit');
+
+  if (elPrixGros && elQteGros) {
+    const prixGros = elPrixGros.value.trim();
+    const qteGros  = elQteGros.value.trim();
+
+    if (prixGros || qteGros) {
+      if (!prixGros || !qteGros) {
+        showNotification('❌ Renseignez le prix ET la quantité pour la vente en gros.', 'error');
+        return;
+      }
+      produit.price_gros    = parseFloat(prixGros);
+      produit.quantite_gros = parseInt(qteGros);
+      if (isNaN(produit.price_gros) || produit.price_gros < 0) {
+        showNotification('❌ Prix gros invalide.', 'error'); return;
+      }
+      if (isNaN(produit.quantite_gros) || produit.quantite_gros < 1) {
+        showNotification('❌ Quantité gros invalide (minimum 1).', 'error'); return;
+      }
+    }
+  }
 
   const created = await postProductServer(produit);
   if (created) {
-    showNotification('✅ Produit ajouté (serveur).', "success");
+    showNotification('✅ Produit ajouté.', 'success');
     await syncFromServer();
     updateStats();
     verifierStockFaible();
@@ -118,63 +158,45 @@ export async function ajouterProduit() {
     afficherInventaire();
     hideModal();
   } else {
-    showNotification('❌ Erreur lors de l\'ajout du produit.', "error");
+    showNotification("❌ Erreur lors de l'ajout du produit.", 'error');
   }
 }
 
+// ── Filtrer les produits ───────────────────────────────────────────────────
 export function filtrerProduits(categorieId) {
-  document.querySelectorAll('.filtre-btn').forEach(function (btn) {
+  document.querySelectorAll('.filtre-btn').forEach(btn => {
     btn.classList.remove('bg-blue-500', 'text-white');
     btn.classList.add('bg-gray-200');
   });
-  if (window.event && window.event.target) {
-    var t = window.event.target;
-    t.classList.add('bg-blue-500', 'text-white');
-    t.classList.remove('bg-gray-200');
+  if (window.event?.target) {
+    window.event.target.classList.add('bg-blue-500', 'text-white');
+    window.event.target.classList.remove('bg-gray-200');
   }
-  // Normaliser en number pour que === fonctionne correctement
   const id = categorieId === 'tous' ? 'tous' : parseInt(categorieId);
   afficherProduits(id);
 }
 
+// ── Modifier le stock ──────────────────────────────────────────────────────
 export function modifierStock(id, delta) {
-  var produit = appData.produits.find(function (p) { return p.id === id; });
-  if (produit) {
-    // S'assurer que stock est bien un number avant l'opération
-    const stockActuel = parseInt(produit.stock) || 0;
-    const newStock    = stockActuel + delta;
-    if (newStock < 0) return; // pas de stock négatif
-    produit.stock = newStock;
+  const produit = appData.produits.find(p => p.id === id);
+  if (!produit) return;
 
-    // Mettre à jour le compteur dans la carte sans tout re-rendre
-    const cards = document.querySelectorAll('.produit-card');
-    cards.forEach(card => {
-      const minusBtn = card.querySelector('.btn-mod-stock-minus');
-      if (minusBtn) {
-        // Identifier la carte par le listener — on re-render uniquement cette carte
-        // Pour l'instant on update juste le badge visible
-        const countEl = card.querySelector('.stock-count');
-        if (countEl && card._produitId === id) countEl.textContent = newStock;
-      }
-    });
+  const newStock = Math.max(0, (parseInt(produit.stock) || 0) + delta);
+  produit.stock = newStock;
 
-    // Re-render complet (nécessaire pour mettre à jour la couleur de bordure stock)
-    afficherProduits();
-    updateStats();
-    saveAppDataLocal();
+  afficherProduits();
+  updateStats();
+  saveAppDataLocal();
 
-    authfetch(API_BASE + '/products/' + id, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name:        produit.name,
-        price:       parseFloat(produit.price)                          || 0,
-        price_achat: parseFloat(produit.priceAchat || produit.price_achat) || 0,
-        stock:       newStock,
-        description: produit.description || ''
-      })
-    }).then(function (r) {
-      if (!r.ok) console.warn('modifierStock: update failed', r.status);
-    }).catch(function () {});
-  }
+  authfetch(API_BASE + '/products/' + id, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name:        produit.name,
+      price:       parseFloat(produit.price)                              || 0,
+      price_achat: parseFloat(produit.priceAchat || produit.price_achat)  || 0,
+      stock:       newStock,
+      description: produit.description || ''
+    })
+  }).catch(() => {});
 }

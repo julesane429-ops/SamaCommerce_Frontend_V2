@@ -125,7 +125,7 @@ export async function ajouterProduit() {
     return;
   }
   if (isMixed && (!priceGros || !priceDetail || isNaN(lotSize) || lotSize < 2)) {
-    showNotification('❌ Pour la vente mixte : saisissez le nombre d'unités par lot, le prix gros et le prix détail.', 'error');
+    showNotification('❌ Pour la vente mixte : saisissez les unités par lot, le prix gros et le prix detail.', 'error');
     return;
   }
 

@@ -137,13 +137,13 @@ export async function syncFromServer() {
   }
 
   try {
-    // Récupération en parallèle avec authFetch
-    const [resCat, resProd, resStats, resSales] = await Promise.all([
+    // Récupération en parallèle — allSettled pour ne pas tout perdre si 1 endpoint échoue
+    const [resCat, resProd, resStats, resSales] = await Promise.allSettled([
       authfetch(API_BASE + '/categories'),
       authfetch(API_BASE + '/products'),
       authfetch(API_BASE + '/stats/ventes-par-jour'),
       authfetch(API_BASE + '/sales'),
-    ]);
+    ]).then(results => results.map(r => r.status === 'fulfilled' ? r.value : { ok: false }));
 
     // --- Catégories ---
     if (resCat.ok) {
@@ -171,14 +171,14 @@ export async function syncFromServer() {
     if (resProd.ok) {
       const prods = await resProd.json();
       appData.produits = prods.map(p => ({
-        id: parseInt(p.id),
-        name: p.name,
+        id:          parseInt(p.id),
+        name:        p.name,
         category_id: parseInt(p.category_id),
-        scent: p.scent,
-        price: p.price,
-        stock: p.stock,
-        vendu: 0,
-        priceAchat: p.price_achat || 0,
+        scent:       p.scent,
+        price:       parseFloat(p.price)       || 0,
+        stock:       parseInt(p.stock)         || 0,
+        vendu:       0,
+        priceAchat:  parseFloat(p.price_achat) || 0,
         description: p.description || ''
       }));
     }
@@ -191,9 +191,13 @@ export async function syncFromServer() {
       // ⚡ Normalisation des ventes/crédits
       appData.ventes = ventesAll.map(v => ({
         ...v,
+        total:    parseFloat(v.total)    || 0,
+        price:    parseFloat(v.price)    || 0,
+        quantity: parseInt(v.quantity)   || 0,
+        amount_paid: parseFloat(v.amount_paid) || 0,
         created_at: v.created_at ? new Date(v.created_at) : null,
-        due_date: v.due_date ? new Date(v.due_date) : null,
-        paid: v.paid === true || v.paid === "true" // si string "true" => bool
+        due_date:   v.due_date   ? new Date(v.due_date)   : null,
+        paid: v.paid === true || v.paid === 'true'
       }));
 
       // 🔗 Rattacher les ventes à chaque produit

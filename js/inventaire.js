@@ -47,8 +47,8 @@ export function afficherInventaire() {
       return { ...p, vendu };
     })
     .filter(p => {
-      if (filtreStock === "low") return p.stock <= 5 && p.stock > 0;
-      if (filtreStock === "out") return p.stock === 0;
+      if (filtreStock === 'low') return (parseInt(p.stock) || 0) <= 5 && (parseInt(p.stock) || 0) > 0;
+      if (filtreStock === 'out') return (parseInt(p.stock) || 0) === 0;
       return true;
     });
 
@@ -58,11 +58,15 @@ export function afficherInventaire() {
   }
 
   // --- Statistiques mini-cartes ---
-  const totalStock = produitsFiltres.reduce((s, p) => s + (p.stock || 0), 0);
-  const valeurStock = produitsFiltres.reduce((s, p) => s + (p.stock || 0) * (p.priceAchat || p.price_achat || 0), 0);
-  const profitTotal = produitsFiltres.reduce((s, p) => s + ((p.vendu || 0) * ((p.price || 0) - (p.priceAchat || p.price_achat || 0))), 0);
+  const totalStock  = produitsFiltres.reduce((s, p) => s + (parseInt(p.stock) || 0), 0);
+  const valeurStock = produitsFiltres.reduce((s, p) => s + (parseInt(p.stock) || 0) * (parseFloat(p.priceAchat || p.price_achat) || 0), 0);
+  const profitTotal = produitsFiltres.reduce((s, p) => s + ((parseInt(p.vendu) || 0) * ((parseFloat(p.price) || 0) - (parseFloat(p.priceAchat || p.price_achat) || 0))), 0);
   const margeMoyenne = produitsFiltres.length
-    ? (produitsFiltres.reduce((s, p) => s + ((p.vendu || 0) * ((p.price || 0) - (p.priceAchat || p.price_achat || 0)) / ((p.priceAchat || p.price_achat) || 1)), 0) / produitsFiltres.length) * 100
+    ? (produitsFiltres.reduce((s, p) => {
+        const pa = parseFloat(p.priceAchat || p.price_achat) || 1;
+        const pv = parseFloat(p.price) || 0;
+        return s + ((parseInt(p.vendu) || 0) * (pv - pa) / pa);
+      }, 0) / produitsFiltres.length) * 100
     : 0;
 
   const stats = [
@@ -82,10 +86,10 @@ export function afficherInventaire() {
 
   // --- Tableau inventaire ---
   produitsFiltres.forEach(p => {
-    const prixAchat = p.priceAchat || p.price_achat || 0;
-    const prixVente = p.price || 0;
-    const stock = p.stock || 0;
-    const vendu = p.vendu || 0;
+    const prixAchat = parseFloat(p.priceAchat || p.price_achat) || 0;
+    const prixVente = parseFloat(p.price) || 0;
+    const stock     = parseInt(p.stock)   || 0;
+    const vendu     = parseInt(p.vendu)   || 0;
     const profitRealise = vendu * (prixVente - prixAchat);
     const marge = prixAchat > 0 ? ((prixVente - prixAchat) / prixAchat * 100).toFixed(1) : 0;
 

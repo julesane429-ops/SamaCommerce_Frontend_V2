@@ -377,6 +377,20 @@
             <div id="cal-event-list"></div>
         </div>
 
+        <!-- ══ CAISSE ══ -->
+        <div class="section-page hidden" id="caisseSection">
+            <div class="page-header" style="margin-top:6px;">
+                <h2>🧾 Caisse</h2>
+                <button class="btn-primary" onclick="window.loadCaisse?.()">🔄</button>
+            </div>
+            <div id="caisseContent">
+                <div style="text-align:center;padding:40px 0;color:var(--muted);">
+                    <div style="font-size:32px;margin-bottom:8px;">⏳</div>
+                    <div>Chargement…</div>
+                </div>
+            </div>
+        </div>
+
         <!-- ══ PROFIL ══ -->
         <div class="section-page hidden" id="profilSection">
             <div class="page-header" style="margin-top:6px;">
@@ -449,6 +463,10 @@
         <button class="sheet-item" onclick="closePlusSheet();navTo('calendrier');">
             <div class="sheet-icon" style="background:#EFF6FF;">📅</div>
             <div><h3>Échéances</h3><p>Crédits · Commandes · Livraisons</p></div><span class="sheet-chevron">›</span>
+        </button>
+        <button class="sheet-item" onclick="closePlusSheet();navTo('caisse');">
+            <div class="sheet-icon" style="background:#ECFDF5;">🧾</div>
+            <div><h3>Caisse</h3><p>Clôture quotidienne & historique 7 jours</p></div><span class="sheet-chevron">›</span>
         </button>
         <button class="sheet-item" onclick="closePlusSheet();navTo('profil');">
             <div class="sheet-icon" style="background:#EDE9FE;">👤</div>
@@ -588,7 +606,7 @@ function updateNavUI(section) {
         'categories','inventaire','credits',
         'clients','fournisseurs','commandes','livraisons',
         'customerOrders','deliveries','deliverymen',
-        'calendrier','profil'
+        'caisse','calendrier','profil'
     ].includes(section)) {
         document.getElementById('nav-plus')?.classList.add('active');
     }
@@ -671,6 +689,13 @@ window.closePlusSheet = closePlusSheet;
 <script src="js/theme.js"></script>
 <script src="js/export-excel.js"></script>
 <script src="js/whatsapp-reminders.js"></script>
+<script src="js/caisse.js"></script>
+<script src="js/caisse-section.js"></script>
+<script src="js/team.js"></script>
+<script src="js/token-refresh.js"></script>
+<script src="js/returns.js"></script>
+<script src="js/partial-credit.js"></script>
+<script src="js/app-enhancements.js"></script>
 <script src="js/product-photos.js"></script>
 <script src="js/section-guides.js"></script>
 

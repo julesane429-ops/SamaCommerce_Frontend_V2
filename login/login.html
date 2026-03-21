@@ -242,6 +242,61 @@
     }
     .link-row a:hover { text-decoration: underline; }
 
+
+    /* ── Invite welcome screen ── */
+    #invite-welcome {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 8px 0 4px;
+    }
+    .invite-badge {
+      background: linear-gradient(135deg, #EDE9FE, #FCE7F3);
+      border: 1.5px solid #C4B5FD;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 22px;
+      width: 100%;
+    }
+    .invite-badge-icon { font-size: 32px; margin-bottom: 6px; }
+    .invite-badge-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 16px; font-weight: 800; color: var(--primary-dark);
+      margin-bottom: 4px;
+    }
+    .invite-badge-sub { font-size: 12px; color: #6D28D9; line-height: 1.4; }
+
+    .invite-choice-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 14px; font-weight: 700; color: var(--text);
+      margin-bottom: 14px;
+    }
+    .invite-btn-register {
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg, var(--primary), #6366F1);
+      color: #fff; border: none; border-radius: 16px;
+      font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 800;
+      cursor: pointer; box-shadow: 0 6px 22px rgba(79,70,229,.35);
+      transition: transform .15s; margin-bottom: 12px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .invite-btn-register:active { transform: scale(.97); }
+
+    .invite-btn-login {
+      width: 100%; padding: 14px;
+      background: #F5F3FF;
+      color: var(--primary); border: 1.5px solid #C4B5FD; border-radius: 16px;
+      font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: background .15s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .invite-btn-login:active { background: #EDE9FE; }
+
+    .invite-note {
+      font-size: 11px; color: var(--muted); margin-top: 14px; line-height: 1.5;
+    }
+
     /* ── Guide modal ── */
     .guide-overlay {
       position: fixed;
@@ -356,7 +411,31 @@
       <div class="app-tagline">Gérez votre boutique simplement</div>
     </div>
 
-    <div class="section-title">Connexion</div>
+
+    <!-- Invite welcome screen (shown only when ?invite= is in URL) -->
+    <div id="invite-welcome">
+      <div class="invite-badge">
+        <div class="invite-badge-icon">🎉</div>
+        <div class="invite-badge-title">Vous avez été invité !</div>
+        <div class="invite-badge-sub">
+          Un propriétaire de boutique vous invite à rejoindre<br>son équipe sur Sama Commerce.
+        </div>
+      </div>
+      <div class="invite-choice-title">Comment souhaitez-vous continuer ?</div>
+      <button class="invite-btn-register" id="invite-go-register">
+        🆕 Créer mon compte
+        <span style="font-size:11px;opacity:.8;font-weight:500;">(je n'ai pas encore de compte)</span>
+      </button>
+      <button class="invite-btn-login" id="invite-go-login">
+        🔑 J'ai déjà un compte → Me connecter
+      </button>
+      <div class="invite-note">
+        ⏳ Ce lien est valide 72 heures.<br>
+        Votre compte sera lié à la boutique automatiquement.
+      </div>
+    </div>
+
+    <div class="section-title" id="login-title">Connexion</div>
 
     <!-- Email -->
     <div class="form-group">

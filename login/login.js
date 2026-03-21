@@ -1,159 +1,244 @@
-// ⚡ Fonction de redirection selon le rôle
+// login.js
+
+const API_BASE = "https://samacommerce-backend-v2.onrender.com";
+
+// ── Redirection selon le rôle ────────────────────────────────
 function redirectAccordingToRole(role) {
-    console.log("Redirection selon rôle :", role);
-
-    if (role === "admin") {
-        window.location.replace('/admin/admin.html');
-    } else {
-        window.location.replace('/index.html');
-    }
+  if (role === "admin") {
+    window.location.replace('/admin/admin.html');
+  } else {
+    window.location.replace('/index.html');
+  }
 }
 
-// ⚡ Fonction de notification
+// ── Toast notifications ──────────────────────────────────────
 function showNotification(message, type = "info") {
-    // Créer le conteneur si non existant
-    let container = document.getElementById("toast-container");
-    if (!container) {
-        container = document.createElement("div");
-        container.id = "toast-container";
-        document.body.appendChild(container);
+  let container = document.getElementById("toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toast-container";
+    container.style.cssText = "position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;";
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+// ── Fermer guide ─────────────────────────────────────────────
+function closeLoginGuide() {
+  const overlay = document.getElementById('loginGuideOverlay');
+  if (overlay) overlay.style.display = 'none';
+  localStorage.setItem("loginGuideClosed", "true");
+}
+window.closeLoginGuide = closeLoginGuide;
+
+// ── Accepter une invitation après connexion ───────────────────
+async function acceptInviteIfPending(token, authToken) {
+  try {
+    const res = await fetch(`${API_BASE}/members/accept`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': 'Bearer ' + authToken,
+      },
+      body: JSON.stringify({ invite_token: token }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      showNotification(data.error || "Invitation invalide ou expirée.", "error");
+      return false;
     }
 
-    // Créer le toast
-    const toast = document.createElement("div");
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
+    showNotification(
+      `Vous avez rejoint la boutique "${data.boutique?.company_name || ''}" !`,
+      "success"
+    );
 
-    // Ajouter le toast au conteneur
-    container.appendChild(toast);
+    localStorage.setItem('inviteBoutiqueId',   data.boutique?.id);
+    localStorage.setItem('inviteBoutiqueName', data.boutique?.company_name || '');
+    localStorage.setItem('employeeRole',       data.role || 'employe');
 
-    // Retirer après 4s
-    setTimeout(() => {
-        toast.remove();
-    }, 4000);
+    return true;
+  } catch (err) {
+    console.error("Erreur acceptInvite:", err);
+    showNotification("Erreur lors de l'acceptation de l'invitation.", "error");
+    return false;
+  }
 }
 
-function closeLoginGuide() {
-    document.getElementById("loginGuideOverlay").style.display = "none";
-    localStorage.setItem("loginGuideClosed", "true");
-}
-
-// ⚡ Tout le DOM ready
+// ════════════════════════════════════════
+// DOM READY
+// ════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
 
-    // 🔹 Redirection automatique si déjà connecté
-    const token = localStorage.getItem('authToken');
-    const role = localStorage.getItem('userRole')?.toLowerCase();
-    if (token && role) {
-        redirectAccordingToRole(role);
-    }
+  const urlParams   = new URLSearchParams(window.location.search);
+  const inviteToken = urlParams.get('invite');
 
-    // 🔹 Gestion du guide de connexion
-    const loginGuide = document.getElementById("loginGuideOverlay");
-    if (localStorage.getItem("loginGuideClosed") === "true" && loginGuide) {
-        loginGuide.style.display = "none";
-    }
+  // ── Bandeau invitation ─────────────────────────────────────
+  if (inviteToken) {
+    const banner = document.createElement('div');
+    banner.style.cssText = "background:linear-gradient(135deg,#EDE9FE,#FCE7F3);border-radius:12px;padding:10px 14px;text-align:center;font-size:13px;font-weight:700;color:#7C3AED;margin-bottom:16px;";
+    banner.textContent = "Connectez-vous pour rejoindre la boutique qui vous a invité";
+    const card = document.querySelector('.login-card');
+    const title = card?.querySelector('.section-title');
+    if (title) title.after(banner);
 
-    // 🔹 Bouton fermer guide
-    if (loginGuide) {
-        loginGuide.querySelectorAll(".closeGuideBtn")?.forEach(btn => {
-            btn.addEventListener("click", () => {
-                loginGuide.style.display = "none";
-                localStorage.setItem("loginGuideClosed", "true");
-            });
+    const emailParam = urlParams.get('email');
+    if (emailParam) {
+      const emailInput = document.getElementById('email');
+      if (emailInput) emailInput.value = decodeURIComponent(emailParam);
+    }
+  }
+
+  // ── Redirection automatique si déjà connecté ──────────────
+  const existingToken = localStorage.getItem('authToken');
+  const existingRole  = localStorage.getItem('userRole')?.toLowerCase();
+  if (existingToken && existingRole && !inviteToken) {
+    redirectAccordingToRole(existingRole);
+    return;
+  }
+
+  // ── Guide de connexion ─────────────────────────────────────
+  const loginGuide = document.getElementById("loginGuideOverlay");
+  if (loginGuide) {
+    if (localStorage.getItem("loginGuideClosed") === "true") {
+      loginGuide.style.display = "none";
+    }
+    loginGuide.querySelectorAll(".closeGuideBtn")?.forEach(btn => {
+      btn.addEventListener("click", closeLoginGuide);
+    });
+  }
+
+  // ── Bouton "Se connecter" ──────────────────────────────────
+  const loginBtn = document.getElementById('loginBtn');
+  if (loginBtn) {
+    loginBtn.addEventListener('click', async () => {
+      const username = document.getElementById('email')?.value.trim();
+      const password = document.getElementById('password')?.value.trim();
+
+      if (!username || !password) {
+        showNotification('Veuillez remplir tous les champs.', "warning");
+        return;
+      }
+
+      loginBtn.disabled    = true;
+      loginBtn.textContent = 'Connexion en cours…';
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ username, password }),
         });
-    }
 
-    // 🔹 Bouton "Se connecter"
-    const loginBtn = document.getElementById('loginBtn');
-    if (loginBtn) {
-        loginBtn.addEventListener('click', async () => {
-            const username = document.getElementById('email')?.value.trim();
-            const password = document.getElementById('password')?.value.trim();
+        const rawText = await res.text();
 
-            if (!username || !password) {
-                showNotification('Veuillez remplir tous les champs.', "warning");
-                return;
-            }
+        if (rawText.trim().startsWith("<")) {
+          showNotification("Erreur serveur inattendue.", "error");
+          return;
+        }
 
-            try {
-                const res = await fetch(`${API_BASE}/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
+        const data = JSON.parse(rawText);
 
-                const rawText = await res.text();
+        if (!res.ok) {
+          showNotification(data.error || "Identifiants incorrects", "error");
+          return;
+        }
 
-                if (rawText.trim().startsWith("<")) {
-                    showNotification("❌ Le serveur a renvoyé du HTML au lieu d'un JSON (voir console).", "error");
-                    return;
-                }
+        // 2FA requis
+        if (data.twofa_required) {
+          showNotification("Un code 2FA vous a été envoyé par email.", "info");
+          localStorage.setItem("pendingUserId", data.userId);
+          localStorage.setItem("pendingInvite", inviteToken || '');
+          const twofaSection = document.getElementById("twofaSection");
+          if (twofaSection) twofaSection.classList.remove("hidden");
+          return;
+        }
 
-                const data = JSON.parse(rawText);
+        // Connexion réussie
+        const authToken = data.token;
+        const userRole  = (data.user?.role || "user").trim().toLowerCase();
 
-                if (!res.ok) {
-                    showNotification('❌ Erreur : ' + (data.error || "Identifiants incorrects"), "error");
-                    return;
-                }
+        localStorage.setItem('authToken', authToken);
+        localStorage.setItem('userRole',  userRole);
+        localStorage.setItem('userId',    data.user?.id);
 
-                if (data.twofa_required) {
-                    showNotification("Un code 2FA vous a été envoyé par email.", "info");
-                    localStorage.setItem("pendingUserId", data.userId);
-                    const twofaSection = document.getElementById("twofaSection");
-                    if (twofaSection) twofaSection.classList.remove("hidden");
-                    return;
-                }
+        // Accepter l'invitation si présente
+        if (inviteToken) {
+          await acceptInviteIfPending(inviteToken, authToken);
+          window.history.replaceState({}, '', window.location.pathname);
+        } else {
+          showNotification('Connexion réussie.', "success");
+        }
 
-                const userRole = (data.user?.role || "user").trim().toLowerCase();
-                localStorage.setItem('authToken', data.token);
-                localStorage.setItem('userRole', userRole);
-                localStorage.setItem('userId', data.user?.id);
+        setTimeout(() => redirectAccordingToRole(userRole), 800);
 
-                showNotification('✅ Connexion réussie.', "success");
-                setTimeout(() => redirectAccordingToRole(userRole), 200);
+      } catch (err) {
+        console.error("Erreur login:", err);
+        showNotification("Erreur de connexion au serveur.", "error");
+      } finally {
+        loginBtn.disabled    = false;
+        loginBtn.textContent = 'Se connecter →';
+      }
+    });
+  }
 
-            } catch (err) {
-                console.error("Erreur lors de la requête :", err);
-                showNotification("❌ Erreur de connexion au serveur.", "error");
-            }
+  // ── Bouton "Vérifier le code 2FA" ─────────────────────────
+  const verify2faBtn = document.getElementById("verify2faBtn");
+  if (verify2faBtn) {
+    verify2faBtn.addEventListener("click", async () => {
+      const userId = localStorage.getItem("pendingUserId");
+      const code   = document.getElementById("twofaCode")?.value.trim();
+
+      if (!userId || !code) {
+        showNotification("Veuillez entrer le code.", "warning");
+        return;
+      }
+
+      verify2faBtn.disabled    = true;
+      verify2faBtn.textContent = 'Vérification…';
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/verify-2fa`, {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ userId, code }),
         });
-    }
 
-    // 🔹 Bouton "Vérifier le code 2FA"
-    const verify2faBtn = document.getElementById("verify2faBtn");
-    if (verify2faBtn) {
-        verify2faBtn.addEventListener("click", async () => {
-            const userId = localStorage.getItem("pendingUserId");
-            const code = document.getElementById("twofaCode")?.value.trim();
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Erreur API");
 
-            if (!userId || !code) {
-                showNotification("Veuillez entrer le code.", "warning");
-                return;
-            }
+        const authToken = data.token;
+        const userRole  = (data.user?.role || "user").trim().toLowerCase();
 
-            try {
-                const res = await fetch(`${API_BASE}/auth/verify-2fa`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ userId, code })
-                });
+        localStorage.setItem("authToken", authToken);
+        localStorage.setItem("userRole",  userRole);
+        localStorage.setItem("userId",    data.user?.id);
+        localStorage.removeItem("pendingUserId");
 
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || "Erreur API");
+        const pendingInvite = localStorage.getItem("pendingInvite");
+        localStorage.removeItem("pendingInvite");
 
-                const userRole = (data.user?.role || "user").trim().toLowerCase();
-                localStorage.setItem("authToken", data.token);
-                localStorage.setItem("userRole", userRole);
-                localStorage.setItem("userId", data.user?.id);
-                localStorage.removeItem("pendingUserId");
+        if (pendingInvite) {
+          await acceptInviteIfPending(pendingInvite, authToken);
+        } else {
+          showNotification("Connexion réussie avec 2FA.", "success");
+        }
 
-                showNotification("✅ Connexion réussie avec 2FA.", "success");
-                redirectAccordingToRole(userRole);
-            } catch (err) {
-                console.error("Erreur verify2fa:", err);
-                showNotification("❌ Code invalide ou expiré.", "error");
-            }
-        });
-    }
+        redirectAccordingToRole(userRole);
+
+      } catch (err) {
+        console.error("Erreur verify2fa:", err);
+        showNotification("Code invalide ou expiré.", "error");
+      } finally {
+        verify2faBtn.disabled    = false;
+        verify2faBtn.textContent = 'Vérifier le code';
+      }
+    });
+  }
 });

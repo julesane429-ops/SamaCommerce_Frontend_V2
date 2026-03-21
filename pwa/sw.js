@@ -1,6 +1,6 @@
 // ============================================================
 // sw.js — Service Worker Sama Commerce
-// Version 5 — Network First JS/HTML/CSS, Cache First assets
+// Version 5 — Network First pour JS/HTML/CSS, Cache First pour assets
 // ============================================================
 
 const CACHE_STATIC = 'samacommerce-static-v5';
@@ -13,15 +13,8 @@ const STATIC_ASSETS = [
   '/pwa/icons/icon-512.png',
 ];
 
-const NOTIF_ICONS = {
-  credit:    '/pwa/icons/icon-192.png',
-  stock:     '/pwa/icons/icon-192.png',
-  livraison: '/pwa/icons/icon-192.png',
-  default:   '/pwa/icons/icon-192.png',
-};
-
 // ════════════════════════════════════════
-// INSTALL — pré-cache uniquement les assets statiques
+// INSTALL — pré-cache uniquement les assets statiques (images, manifest)
 // ════════════════════════════════════════
 self.addEventListener('install', evt => {
   evt.waitUntil(
@@ -29,10 +22,11 @@ self.addEventListener('install', evt => {
       .then(cache => cache.addAll(STATIC_ASSETS))
       .then(() => self.skipWaiting())
   );
+  console.log('📦 SW v5 installé');
 });
 
 // ════════════════════════════════════════
-// ACTIVATE — purger tous les anciens caches
+// ACTIVATE — supprime tous les anciens caches
 // ════════════════════════════════════════
 self.addEventListener('activate', evt => {
   evt.waitUntil(
@@ -40,10 +34,14 @@ self.addEventListener('activate', evt => {
       .then(keys => Promise.all(
         keys
           .filter(k => k !== CACHE_STATIC && k !== CACHE_PAGES)
-          .map(k => caches.delete(k))
+          .map(k => {
+            console.log('🗑️ Suppression ancien cache :', k);
+            return caches.delete(k);
+          })
       ))
       .then(() => self.clients.claim())
   );
+  console.log('⚡ SW v5 activé');
 });
 
 // ════════════════════════════════════════
@@ -54,10 +52,10 @@ self.addEventListener('fetch', evt => {
 
   const url = evt.request.url;
 
-  // 1. Appels API → toujours réseau, jamais de cache
+  // ── 1. Appels API → toujours réseau, jamais de cache ──
   if (url.startsWith(API_URL)) return;
 
-  // 2. Images et manifest → Cache First
+  // ── 2. Images & manifest → Cache First ──
   const isStaticAsset = /\.(png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf)$/i.test(url)
     || url.includes('/pwa/');
 
@@ -67,7 +65,9 @@ self.addEventListener('fetch', evt => {
         cache.match(evt.request).then(cached => {
           if (cached) return cached;
           return fetch(evt.request).then(resp => {
-            if (resp && resp.status === 200) cache.put(evt.request, resp.clone());
+            if (resp && resp.status === 200) {
+              cache.put(evt.request, resp.clone());
+            }
             return resp;
           });
         })
@@ -76,33 +76,48 @@ self.addEventListener('fetch', evt => {
     return;
   }
 
-  // 3. HTML, JS, CSS → Network First (fraîcheur garantie)
+  // ── 3. HTML, JS, CSS → Network First (fraîcheur garantie) ──
   evt.respondWith(
     fetch(evt.request)
       .then(resp => {
+        // Mise en cache de la réponse fraîche
         if (resp && resp.status === 200 && resp.type === 'basic') {
-          caches.open(CACHE_PAGES).then(c => c.put(evt.request, resp.clone()));
+          const clone = resp.clone();
+          caches.open(CACHE_PAGES).then(cache => cache.put(evt.request, clone));
         }
         return resp;
       })
-      .catch(() =>
-        caches.match(evt.request).then(cached => {
+      .catch(() => {
+        // Réseau indisponible → fallback sur le cache
+        return caches.match(evt.request).then(cached => {
           if (cached) return cached;
+          // Fallback offline générique
           const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
             <title>Hors ligne – Sama Commerce</title>
-            <style>body{font-family:sans-serif;text-align:center;padding:50px;background:#f9f9f9;}
-            h2{color:#7C3AED;}p{color:#444;}</style></head>
-            <body><h2>⚠️ Vous êtes hors connexion</h2>
-            <p>Reconnectez-vous à Internet pour accéder à Sama Commerce.</p></body></html>`;
+            <style>
+              body { font-family: sans-serif; text-align: center; padding: 50px; background: #f9f9f9; }
+              h2 { color: #7C3AED; } p { color: #444; }
+            </style></head>
+            <body>
+              <h2>⚠️ Vous êtes hors connexion</h2>
+              <p>Reconnectez-vous à Internet pour accéder à Sama Commerce.</p>
+            </body></html>`;
           return new Response(html, { headers: { 'Content-Type': 'text/html' } });
-        })
-      )
+        });
+      })
   );
 });
 
 // ════════════════════════════════════════
-// PUSH
+// PUSH — Réception d'une notification push
 // ════════════════════════════════════════
+const NOTIF_ICONS = {
+  credit:    '/pwa/icons/icon-192.png',
+  stock:     '/pwa/icons/icon-192.png',
+  livraison: '/pwa/icons/icon-192.png',
+  default:   '/pwa/icons/icon-192.png',
+};
+
 self.addEventListener('push', evt => {
   let data = { title: 'Sama Commerce', body: 'Vous avez une notification', type: 'default', url: '/' };
   try {
@@ -151,13 +166,9 @@ self.addEventListener('notificationclick', evt => {
 // MESSAGE
 // ════════════════════════════════════════
 self.addEventListener('message', evt => {
-  if (evt.data?.type === 'SKIP_WAITING') self.skipWaiting();
-
-  // Vider le cache pages à la déconnexion pour éviter les données résiduelles
-  if (evt.data?.type === 'CLEAR_CACHE') {
-    caches.delete(CACHE_PAGES).catch(() => {});
+  if (evt.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
-
   if (evt.data?.type === 'LOCAL_NOTIF') {
     const { title, body, tag, url, type } = evt.data;
     self.registration.showNotification(title || 'Sama Commerce', {

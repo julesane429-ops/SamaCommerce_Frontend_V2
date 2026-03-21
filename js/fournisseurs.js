@@ -152,11 +152,119 @@
   }
 
   // ══ COMMANDER RAPIDE ══
-  window._commanderFournisseur = function(id) {
+  window._commanderFournisseur = async function(id) {
     const f = fournisseurs.find(x=>x.id===id);
-    window.navTo?.('commandes');
-    setTimeout(()=>window.openCommandeForm?.(f), 300);
+    if (!f) return;
+
+    // Ouvrir la modale de réappro WhatsApp
+    openReapproModal(f);
   };
+
+  // ══ MODALE RÉAPPRO WHATSAPP ══
+  async function openReapproModal(f) {
+    const bd = document.createElement('div');
+    bd.className = 'module-sheet-backdrop';
+    bd.innerHTML = `
+      <div class="module-sheet">
+        <div class="module-sheet-pill"></div>
+        <div class="module-sheet-title">📦 Commander à ${f.name}</div>
+        <div style="text-align:center;padding:20px 0;color:var(--muted);">
+          <div style="font-size:32px;margin-bottom:8px;">⏳</div>
+          <div style="font-size:13px;">Préparation du message…</div>
+        </div>
+      </div>`;
+    document.body.appendChild(bd);
+    bd.addEventListener('click', e => { if(e.target===bd) bd.remove(); });
+
+    try {
+      // Appeler l'API pour obtenir le message pré-formaté avec produits faibles
+      const today = new Date().toLocaleDateString('fr-FR');
+      const data  = await auth(`${API()}/fournisseurs/${f.id}/reappro-message?date=${encodeURIComponent(today)}`).then(ok_);
+
+      const sheet = bd.querySelector('.module-sheet');
+      sheet.innerHTML = `
+        <div class="module-sheet-pill"></div>
+        <div class="module-sheet-title">📦 Réappro — ${f.name}</div>
+
+        ${data.produits_faibles?.length ? `
+          <div style="background:#FEF3C7;border-radius:14px;padding:12px;margin-bottom:14px;border:1.5px solid #F59E0B;">
+            <div style="font-family:'Sora',sans-serif;font-size:12px;font-weight:800;color:#92400E;margin-bottom:8px;">
+              ⚠️ ${data.produits_faibles.length} produit${data.produits_faibles.length>1?'s':''} en stock faible détecté${data.produits_faibles.length>1?'s':''}
+            </div>
+            ${data.produits_faibles.map(p=>`
+              <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;">
+                <span style="color:#78350F;">${p.name}</span>
+                <span style="color:#D97706;font-weight:700;">Stock : ${p.stock}</span>
+              </div>
+            `).join('')}
+          </div>
+        ` : `
+          <div style="background:#ECFDF5;border-radius:14px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#065F46;font-weight:600;">
+            ✅ Aucun produit en rupture — vous pouvez saisir votre commande manuellement
+          </div>
+        `}
+
+        <!-- Message éditable -->
+        <div class="form-group">
+          <label>📝 Message WhatsApp</label>
+          <textarea id="reappro-msg" style="height:160px;font-size:12px;font-family:monospace;resize:none;">${data.message}</textarea>
+        </div>
+
+        <!-- Date souhaitée -->
+        <div class="form-group">
+          <label>📅 Date souhaitée</label>
+          <input id="reappro-date" type="date" value="${new Date(Date.now()+2*864e5).toISOString().split('T')[0]}">
+        </div>
+
+        <div class="action-row" style="margin-bottom:12px;">
+          <a id="reappro-wa-btn"
+            href="${data.whatsapp_url}"
+            target="_blank"
+            style="
+              flex:2;padding:13px;
+              background:linear-gradient(135deg,#25D366,#128C7E);
+              color:#fff;text-decoration:none;
+              border-radius:14px;font-family:'Sora',sans-serif;
+              font-size:14px;font-weight:700;
+              display:flex;align-items:center;justify-content:center;gap:8px;
+              box-shadow:0 3px 10px rgba(37,211,102,.3);
+            ">
+            💬 Envoyer sur WhatsApp
+          </a>
+          <button id="reappro-copy" class="btn-mod btn-mod-blue" style="flex:1;">📋 Copier</button>
+        </div>
+        <button class="btn-cancel" style="width:100%;" id="reappro-close">Fermer</button>
+      `;
+
+      // Mettre à jour le lien WhatsApp dynamiquement si le message change
+      const msgTA  = sheet.querySelector('#reappro-msg');
+      const dateIn = sheet.querySelector('#reappro-date');
+      const waBtn  = sheet.querySelector('#reappro-wa-btn');
+
+      function updateWaLink() {
+        const msg   = msgTA.value;
+        const phone = (f.phone||'').replace(/\s+/g,'');
+        if (phone) waBtn.href = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+      }
+      msgTA?.addEventListener('input',  updateWaLink);
+      dateIn?.addEventListener('change', () => {
+        const d = dateIn.value ? new Date(dateIn.value).toLocaleDateString('fr-FR') : 'À confirmer';
+        if (msgTA) msgTA.value = msgTA.value.replace(/Date souhaitée : .+/, `Date souhaitée : ${d}`);
+        updateWaLink();
+      });
+
+      sheet.querySelector('#reappro-copy').addEventListener('click', () => {
+        navigator.clipboard.writeText(msgTA.value).then(() => {
+          notify('📋 Message copié', 'success');
+        });
+      });
+      sheet.querySelector('#reappro-close').addEventListener('click', () => bd.remove());
+
+    } catch {
+      notify('Erreur chargement réappro', 'error');
+      bd.remove();
+    }
+  }
 
   // ══ FICHE DÉTAIL ══
   async function openFournisseurDetail(id) {

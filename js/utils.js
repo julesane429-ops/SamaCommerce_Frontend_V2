@@ -19,6 +19,12 @@ export function showSection(section) {
     'customerOrders','deliveries','deliverymen',
     'profil','calendrier','caisse'
   ];
+
+  // Section inconnue → revenir au menu sans erreur
+  if (section && !sections.includes(section)) {
+    console.warn(`showSection: section inconnue "${section}", retour au menu`);
+    section = 'menu';
+  }
  
   sections.forEach(function (s) {
     const el = document.getElementById(s + 'Section');

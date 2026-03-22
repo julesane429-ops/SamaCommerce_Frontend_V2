@@ -55,6 +55,16 @@ export function authfetch(url, options = {}) {
       localStorage.removeItem('authToken');
       return Promise.reject(new Error('401 Unauthorized'));
     }
+    // 402 = abonnement requis ou expiré → afficher la modale Premium
+    if (res.status === 402) {
+      res.clone().json().then(data => {
+        const msg = data?.message || 'Cette fonctionnalité nécessite un abonnement Premium.';
+        window.showNotification?.(msg, 'warning');
+        if (data?.upgrade_required) {
+          setTimeout(() => window.showModalById?.('premiumModal'), 300);
+        }
+      }).catch(() => {});
+    }
     return res;
   });
 }

@@ -553,37 +553,69 @@
 
 <!-- Premium -->
 <div id="premiumModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4" style="backdrop-filter:blur(5px);">
-    <div class="modal-box">
-        <div style="background:linear-gradient(135deg,#EDE9FE,#FCE7F3);border-radius:14px;padding:18px;text-align:center;margin-bottom:14px;">
-            <h2 style="font-family:'Sora',sans-serif;font-size:17px;font-weight:800;color:#5B21B6;margin-bottom:7px;">🚀 Passez en Premium</h2>
-            <p style="font-size:13px;color:#4C1D95;line-height:1.5;">Votre plan <strong>Free</strong> permet jusqu'à <strong>5 produits</strong>. Contactez-nous pour débloquer un nombre illimité.</p>
+    <div class="modal-box" style="max-width:360px;">
+        <div style="background:linear-gradient(135deg,#5B21B6,#7C3AED,#EC4899);border-radius:16px;padding:20px;text-align:center;margin-bottom:16px;position:relative;overflow:hidden;">
+            <div style="position:absolute;top:-15px;right:-15px;width:70px;height:70px;background:rgba(255,255,255,.1);border-radius:50%;"></div>
+            <div style="font-size:36px;margin-bottom:8px;">⭐</div>
+            <h2 style="font-family:'Sora',sans-serif;font-size:18px;font-weight:800;color:#fff;margin-bottom:6px;">Passez en Premium</h2>
+            <div style="font-size:22px;font-weight:800;color:#FCD34D;margin-bottom:4px;">5 000 FCFA <span style="font-size:14px;font-weight:600;color:rgba(255,255,255,.8);">/ mois</span></div>
+            <div style="font-size:12px;color:rgba(255,255,255,.7);">Paiement mobile ou espèces</div>
         </div>
-        <div style="background:#F9FAFB;border-radius:14px;padding:14px;text-align:center;font-size:13px;margin-bottom:14px;">📞 <strong>+221 78 157 10 09</strong> ou <strong>+221 77 348 57 91</strong></div>
-        <button class="btn-confirm" style="width:100%;" onclick="hideModalById('premiumModal');showModalById('contactModal')">Passer en Premium</button>
+        <div style="margin-bottom:16px;">
+            <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;">Ce que vous débloquez :</div>
+            <div style="display:flex;flex-direction:column;gap:7px;font-size:13px;color:var(--text);">
+                <div>✅ <strong>Produits illimités</strong> (vs 5 en Free)</div>
+                <div>✅ <strong>Équipe</strong> — jusqu'à 3 employés</div>
+                <div>✅ <strong>Export Excel</strong> — historique complet</div>
+                <div>✅ <strong>Photos produits</strong></div>
+                <div>✅ <strong>Rapports avancés</strong> — analyse financière</div>
+                <div>✅ <strong>Rappels WhatsApp</strong> automatiques</div>
+                <div>✅ <strong>Support prioritaire</strong></div>
+            </div>
+        </div>
+        <button class="btn-confirm" style="width:100%;background:linear-gradient(135deg,#7C3AED,#EC4899);font-size:15px;"
+            onclick="hideModalById('premiumModal');showModalById('contactModal')">
+            🚀 Souscrire maintenant
+        </button>
+        <div style="text-align:center;font-size:12px;color:#6B7280;margin-top:10px;">
+            📞 <strong>+221 78 157 10 09</strong> · <strong>+221 77 348 57 91</strong>
+        </div>
+        <button onclick="hideModalById('premiumModal')" style="display:block;margin:8px auto 0;background:none;border:none;color:#9CA3AF;cursor:pointer;font-size:12px;">Plus tard</button>
     </div>
 </div>
 
 <!-- Contact/Upgrade -->
 <div id="contactModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4" style="backdrop-filter:blur(5px);">
-    <div class="modal-box">
-        <div class="modal-title">🚀 Passer en Premium</div>
+    <div class="modal-box" style="max-width:360px;">
+        <div class="modal-title">🚀 Souscrire au Premium</div>
+        <div style="background:#F0FDF4;border:1.5px solid #BBF7D0;border-radius:12px;padding:12px;margin-bottom:14px;font-size:12px;color:#166534;line-height:1.5;">
+            💡 Remplissez ce formulaire puis effectuez votre paiement. Un administrateur validera votre abonnement sous <strong>24h</strong>.
+        </div>
         <form id="upgradeForm">
-            <div class="form-group"><label>Téléphone (WhatsApp)</label><input type="tel" id="phone" placeholder="Numéro WhatsApp" required></div>
-            <div class="form-group"><label>Moyen de paiement</label>
+            <div class="form-group">
+                <label>Téléphone WhatsApp</label>
+                <input type="tel" id="phone" placeholder="Ex: +221 77 000 00 00" required>
+            </div>
+            <div class="form-group">
+                <label>Moyen de paiement</label>
                 <select id="payment_method" required>
                     <option value="">-- Choisir --</option>
-                    <option value="wave">Wave</option>
-                    <option value="orange">Orange Money</option>
-                    <option value="cash">Espèces</option>
+                    <option value="wave">💙 Wave</option>
+                    <option value="orange">🟠 Orange Money</option>
+                    <option value="cash">💵 Espèces</option>
                 </select>
             </div>
-            <div class="form-group"><label>Montant</label><input type="number" id="amount" value="5000" readonly></div>
-            <input type="hidden" id="expiration">
-            <div class="form-group"><label>Expiration</label><input type="text" id="expiration_display" readonly></div>
-            <button type="submit" class="btn-confirm" style="width:100%;">Envoyer</button>
+            <div class="form-group">
+                <label>Montant à payer</label>
+                <input type="number" id="amount" value="5000" readonly style="background:#F5F3FF;font-weight:700;color:#7C3AED;">
+                <div style="font-size:11px;color:#6B7280;margin-top:4px;">5 000 FCFA / mois</div>
+            </div>
+            <button type="submit" class="btn-confirm" style="width:100%;margin-top:8px;">Envoyer ma demande</button>
         </form>
-        <div style="text-align:center;font-size:12px;color:#6B7280;margin-top:12px;">📞 <strong>+221 78 157 10 09</strong> · <strong>+221 77 348 57 91</strong></div>
-        <button onclick="hideModalById('contactModal')" style="display:block;margin:10px auto 0;background:none;border:none;color:#6B7280;cursor:pointer;font-size:13px;">Annuler</button>
+        <div style="text-align:center;font-size:12px;color:#6B7280;margin-top:12px;">
+            📞 <strong>+221 78 157 10 09</strong> · <strong>+221 77 348 57 91</strong>
+        </div>
+        <button onclick="hideModalById('contactModal')" style="display:block;margin:8px auto 0;background:none;border:none;color:#9CA3AF;cursor:pointer;font-size:12px;">Annuler</button>
     </div>
 </div>
 

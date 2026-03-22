@@ -107,8 +107,8 @@
         border:'#93C5FD',
         color: '#1E40AF',
         icon:  '⏳',
-        text:  'Votre demande Premium est en cours de validation (sous 24h).',
-        cta:   null,
+        text:  'Votre demande est en cours de validation (sous 24h).',
+        cta:   '🔄 Vérifier',
       },
     };
 
@@ -128,7 +128,7 @@
     banner.innerHTML = `
       <span style="font-size:18px;">${c.icon}</span>
       <span style="flex:1;line-height:1.4;">${c.text}</span>
-      ${c.cta ? `<button onclick="window.showModalById?.('premiumModal');document.getElementById('sub-banner')?.remove();"
+      ${c.cta ? `<button onclick="window._checkPlanNow?.()"
         style="background:${c.color};color:#fff;border:none;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
         ${c.cta}
       </button>` : ''}
@@ -284,6 +284,8 @@
           window.afficherCategories?.();
           // Retirer la bannière "en attente" si présente
           document.getElementById('sub-banner')?.remove();
+          // Recharger la page pour tout débloquer proprement
+          setTimeout(() => window.location.reload(), 2000);
         }
 
         // Validé → expiré : plan rétrogradé
@@ -340,7 +342,39 @@
   }
 
   // Exposer pour que app.js puisse recharger après sync
-  window.subscriptionGuard = { reload: loadProfile, startPolling, stopPolling };
+  // Vérification immédiate (bouton "Vérifier" dans la bannière)
+  async function checkNow() {
+    const btn = document.querySelector('#sub-banner button:first-of-type');
+    if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+
+    const prevStatus = _profile?.upgrade_status;
+    await loadProfile();
+    const newStatus  = _profile?.upgrade_status;
+    const newPlan    = _profile?.plan;
+
+    if (btn) { btn.textContent = '🔄 Vérifier'; btn.disabled = false; }
+
+    if (prevStatus === 'en attente' && newStatus === 'validé') {
+      const planCfg = window.getPlan?.(newPlan) || {};
+      window.showNotification?.(
+        `🎉 Abonnement ${planCfg.emoji || ''} ${planCfg.label || newPlan} activé !`,
+        'success'
+      );
+      document.getElementById('sub-banner')?.remove();
+      stopPolling();
+      await window.syncFromServer?.();
+      window.updateStats?.();
+      window.afficherProduits?.();
+      window.afficherCategories?.();
+      // Forcer le rechargement de la page pour tout débloquer proprement
+      setTimeout(() => window.location.reload(), 1500);
+    } else if (newStatus === 'en attente') {
+      window.showNotification?.('⏳ Demande toujours en attente de validation.', 'info');
+    }
+  }
+
+  window._checkPlanNow = checkNow;
+  window.subscriptionGuard = { reload: loadProfile, startPolling, stopPolling, checkNow };
   window.canUseFeature   = canUseFeature;
   window.showUpgradeModal = showUpgradeModal;
 

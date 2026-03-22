@@ -49,6 +49,9 @@ async function loadPendingRequests() {
             sideBadge.style.display = pending.length > 0 ? 'flex' : 'none';
         }
 
+        // Stocker pour que approveUpgrade puisse lire le plan demandé
+        window._pendingUsers = pending;
+
         if (!pending.length) {
             list.innerHTML = '<div style="text-align:center;padding:20px;color:#9CA3AF;font-size:13px;">Aucune demande en attente ✅</div>';
             return;
@@ -63,9 +66,9 @@ async function loadPendingRequests() {
                     </div>
                 </div>
                 <div style="display:flex;gap:6px;flex-shrink:0;">
-                    <button onclick="approveUpgrade(${u.id}, '${u.plan}')"
+                    <button onclick="approveUpgrade(${u.id}, '${u.plan || ''}')"
                         style="background:#10B981;color:#fff;border:none;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
-                        ✅ Valider
+                        ✅ Valider ${u.plan ? '(' + u.plan + ')' : ''}
                     </button>
                     <button onclick="rejectUpgrade(${u.id})"
                         style="background:#EF4444;color:#fff;border:none;padding:6px 10px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
@@ -455,18 +458,23 @@ function populateSubscribersGrid() {
 // ==========================
 
 async function approveUpgrade(userId, requestedPlan) {
-    // Trouver l'utilisateur pour afficher le plan demandé
-    const sub = subscribers.find(s => s.id === userId);
-    const suggestedPlan = requestedPlan || sub?.plan || 'Pro';
+    // Nettoyer requestedPlan (évite la chaîne 'undefined' si le champ est absent)
+    const VALID_PLANS = ['Starter', 'Pro', 'Business', 'Enterprise'];
+    const cleanRequested = VALID_PLANS.includes(requestedPlan) ? requestedPlan : null;
+
+    // Chercher dans subscribers OU dans pendingRequests déjà chargés
+    const sub = subscribers.find(s => s.id === userId)
+             || window._pendingUsers?.find(u => u.id === userId);
+    const suggestedPlan = cleanRequested || sub?.plan || 'Pro';
 
     const planChoice = prompt(
-      `Plan pour ${sub?.company_name || sub?.username || userId}\nPlan demandé: ${suggestedPlan}\n\nChoisir: Starter / Pro / Business / Enterprise`,
+      `Plan pour ${sub?.company_name || sub?.username || userId}\nPlan demandé : ${suggestedPlan}\n\nEntrez le plan (Starter / Pro / Business / Enterprise) :`,
       suggestedPlan
     );
     if (!planChoice) return;
-    const plan = ['Starter','Pro','Business','Enterprise'].includes(planChoice) ? planChoice : 'Pro';
+    const plan = VALID_PLANS.includes(planChoice.trim()) ? planChoice.trim() : 'Pro';
 
-    const months = parseInt(prompt('Durée (mois) :', '1') || '1') || 1;
+    const months = parseInt(prompt('Durée de l\'abonnement (mois) :', '1') || '1') || 1;
 
     try {
         const res = await fetch(`${API_BASE}/auth/upgrade/${userId}/approve`, {

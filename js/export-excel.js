@@ -279,6 +279,11 @@
   // EXPORT PRINCIPAL
   // ══════════════════════════════════════
   async function exportAllExcel() {
+    // Vérifier la feature export (Pro+)
+    if (typeof window.canUseFeature === 'function' && !window.canUseFeature('export')) {
+      window.showUpgradeModal?.('export');
+      return;
+    }
     if (!window.XLSX) {
       window.showNotification?.('SheetJS non disponible','error');
       return;

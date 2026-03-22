@@ -623,7 +623,11 @@
 
 <template id="offline-page">
     <html><head><meta charset="UTF-8"><title>Hors ligne</title>
-    <style>body{font-family:sans-serif;text-align:center;padding:50px;background:#f9f9f9;}h2{color:#7C3AED;}p{color:#444;}</style></head>
+    <style>body{font-family:sans-serif;text-align:center;padding:50px;background:#f9f9f9;}h2{color:#7C3AED;}p{color:#444;}  @keyframes slideUp {
+    from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+    to   { transform: translateX(-50%) translateY(0);   opacity: 1; }
+  }
+</style></head>
     <body><h2>⚠️ Hors connexion</h2><p>Vos données locales restent accessibles.</p></body></html>
 </template>
 
@@ -726,6 +730,7 @@ window.closePlusSheet = closePlusSheet;
 <script src="js/caisse-section.js"></script>
 <script src="js/team.js"></script>
 <script src="js/token-refresh.js"></script>
+<script src="js/subscription-guard.js"></script>
 <script src="js/returns.js"></script>
 <script src="js/partial-credit.js"></script>
 <script src="js/app-enhancements.js"></script>

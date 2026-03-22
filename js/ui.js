@@ -63,6 +63,11 @@ export function afficherCategories() {
   ctn.appendChild(grid);
 }
 
+// ── Pagination liste produits ──
+const PRODUITS_PAGE_SIZE = 40;
+let   _produitsOffset    = 0;
+let   _produitsTotal     = 0;
+
 export function afficherProduits(categorieFilter) {
   if (typeof categorieFilter === 'undefined') categorieFilter = 'tous';
 

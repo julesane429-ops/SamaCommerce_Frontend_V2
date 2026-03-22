@@ -48,52 +48,62 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ======================
-  // 1️⃣ Chargement local
+  // 1️⃣ Chargement local — sections critiques uniquement
+  // Rapports, inventaire, crédits sont différés au premier accès
   // ======================
   loadAppDataLocal();
 
+  // Sections visibles immédiatement (menu + vente)
   updateStats();
   verifierStockFaible();
   afficherCategoriesVente();
   afficherProduits();
   afficherCategories();
-  afficherRapports();
-  afficherInventaire();
-  afficherCredits();
 
   setupSearchInputs();
-  initCreditChart();
-  remplirProduitsCredit();
-  renderCreditsHistory();
 
   // ======================
-  // 2️⃣ Sync serveur initial
+  // 2️⃣ Sync serveur — en parallèle sans bloquer le rendu
   // ======================
-  // Afficher le syncBanner si la sync prend plus de 600ms (réseau lent)
   const _syncTimer = setTimeout(() => {
     const banner = document.getElementById('syncBanner');
     if (banner) {
-      banner.textContent = '🔄 Chargement des données…';
+      banner.textContent = '🔄 Synchronisation…';
       banner.style.display = 'block';
     }
-  }, 600);
+  }, 800); // seuil plus haut — on ne montre le banner que si vraiment lent
 
-  await syncFromServer();
-  clearTimeout(_syncTimer);
+  // Lancer la sync sans await pour ne pas bloquer l'UI
+  syncFromServer().then(() => {
+    clearTimeout(_syncTimer);
+    const banner = document.getElementById('syncBanner');
+    if (banner) banner.style.display = 'none';
 
+    // Après sync : mettre à jour les sections visibles
+    updateStats();
+    verifierStockFaible();
+    afficherCategoriesVente();
+    afficherProduits();
+    afficherCategories();
+
+    window.hideSplash?.();
+    window.scNotifications?.check();
+    window.subscriptionGuard?.reload();
+
+    // Sections différées : initialiser seulement si déjà visitées
+    const cur = window.currentSection;
+    if (cur === 'rapports')   { afficherRapports(); }
+    if (cur === 'inventaire') { afficherInventaire(); }
+    if (cur === 'credits')    { afficherCredits(); renderCreditsHistory(); }
+
+  }).catch(err => {
+    clearTimeout(_syncTimer);
+    console.warn('syncFromServer failed:', err.message);
+    window.hideSplash?.();
+  });
+
+  // Splash immédiat (avant même la fin de sync)
   window.hideSplash?.();
-  window.scNotifications?.check();
-  // Recharger le guard d'abonnement après sync (données fraîches depuis le serveur)
-  window.subscriptionGuard?.reload();
-  updateStats();
-  verifierStockFaible();
-  afficherCategoriesVente();
-  afficherProduits();
-  afficherCategories();
-  afficherRapports();
-  afficherInventaire();
-
-  console.log("📦 Crédits après sync :", appData.credits);
 
   // ======================
   // 3️⃣ Date expiration Premium

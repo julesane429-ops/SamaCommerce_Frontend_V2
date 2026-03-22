@@ -15,7 +15,6 @@ async function loadSubscribers() {
         }
 
         subscribers = await res.json();
-        console.log("📦 Abonnés récupérés:", subscribers);
         filteredSubscribers = [...subscribers];
         populateSubscribersGrid();
     } catch (err) {
@@ -24,29 +23,136 @@ async function loadSubscribers() {
     }
 }
 
-// Sample transactions
-const transactions = [
-    { id: 1, type: "income", description: "Paiement Premium - Jean Dupont", amount: 29.99, date: "Aujourd'hui, 14:30", method: "wave" },
-    { id: 2, type: "income", description: "Paiement Premium - Sophie Leroy", amount: 29.99, date: "Hier, 09:15", method: "wave" },
-    { id: 3, type: "expense", description: "Frais de service", amount: -125.00, date: "Hier, 08:00", method: "main" },
-    { id: 4, type: "income", description: "Paiement Premium - Thomas Bernard", amount: 29.99, date: "2 jours, 16:45", method: "orange" },
-    { id: 5, type: "income", description: "Paiement Cash - Pierre Durand", amount: 29.99, date: "3 jours, 11:20", method: "cash" }
-];
+// Transactions chargées depuis l'API (voir loadTransactions())
+const transactions = [];
+// ══════════════════════════════════════════════════════════
+// DEMANDES EN ATTENTE
+// ══════════════════════════════════════════════════════════
+async function loadPendingRequests() {
+    try {
+        const res = await fetch(API_BASE + '/auth/pending', {
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+        });
+        if (!res.ok) return;
+        const users = await res.json();
+        const pending = users.filter(u => u.upgrade_status === 'en attente');
+
+        const list = document.getElementById('pendingRequestsList');
+        const badge = document.getElementById('pendingBadgeCount');
+        if (!list) return;
+
+        if (badge) badge.textContent = pending.length;
+        // Mettre à jour le badge dans la sidebar
+        const sideBadge = document.getElementById('sidebarPendingBadge');
+        if (sideBadge) {
+            sideBadge.textContent = pending.length;
+            sideBadge.style.display = pending.length > 0 ? 'flex' : 'none';
+        }
+
+        if (!pending.length) {
+            list.innerHTML = '<div style="text-align:center;padding:20px;color:#9CA3AF;font-size:13px;">Aucune demande en attente ✅</div>';
+            return;
+        }
+
+        list.innerHTML = pending.map(u => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:#F9FAFB;border-radius:14px;margin-bottom:8px;gap:10px;">
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:700;font-size:14px;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.company_name || u.username}</div>
+                    <div style="font-size:11px;color:#6B7280;margin-top:2px;">
+                        📞 ${u.phone || '—'} · 💳 ${u.payment_method || '—'} · 💰 ${u.amount ? Number(u.amount).toLocaleString('fr-FR') + ' F' : '—'}
+                    </div>
+                </div>
+                <div style="display:flex;gap:6px;flex-shrink:0;">
+                    <button onclick="approveUpgrade(${u.id})"
+                        style="background:#10B981;color:#fff;border:none;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
+                        ✅ Valider
+                    </button>
+                    <button onclick="rejectUpgrade(${u.id})"
+                        style="background:#EF4444;color:#fff;border:none;padding:6px 10px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
+                        ✗
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('loadPendingRequests:', err.message);
+    }
+}
+
+async function loadRevenueStats(period = 'monthly') {
+    try {
+        const res = await fetch(`${API_BASE}/admin-stats/revenus?period=${period}`, {
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const fmt = v => Number(v || 0).toLocaleString('fr-FR') + ' FCFA';
+        const el = (id) => document.getElementById(id);
+
+        if (el('revenueBalance'))  el('revenueBalance').textContent  = fmt(data.balance);
+        if (el('revenuePeriod'))   el('revenuePeriod').textContent   = fmt(data.periodTotal);
+        if (el('revenuePending'))  el('revenuePending').textContent  = fmt(data.pending);
+        if (el('pendingAmount'))   el('pendingAmount').textContent   = fmt(data.pending);
+    } catch (err) {
+        console.error('loadRevenueStats:', err.message);
+    }
+}
+
+
+// ══════════════════════════════════════════════════════════
+// TRANSACTIONS RÉELLES
+// ══════════════════════════════════════════════════════════
+async function loadTransactions(limit = 20) {
+    try {
+        const res = await fetch(`${API_BASE}/admin-stats/transactions?limit=${limit}`, {
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const container = document.getElementById('transactionsList');
+        if (!container) return;
+
+        if (!data.length) {
+            container.innerHTML = '<div style="text-align:center;padding:20px;color:#9CA3AF;font-size:13px;">Aucune transaction</div>';
+            return;
+        }
+
+        container.innerHTML = data.map(t => {
+            const isPremium  = t.upgrade_status === 'validé';
+            const isPending  = t.upgrade_status === 'en attente';
+            const exp        = t.expiration ? new Date(t.expiration).toLocaleDateString('fr-FR') : '—';
+            const amt        = t.amount ? Number(t.amount).toLocaleString('fr-FR') + ' F' : '—';
+            const statusColor = isPremium ? '#10B981' : isPending ? '#F59E0B' : '#6B7280';
+            const statusLabel = isPremium ? '✅ Validé' : isPending ? '⏳ En attente' : '—';
+            return `
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F3F4F6;font-size:13px;">
+                    <div>
+                        <div style="font-weight:700;color:#111;">${t.company_name || t.username}</div>
+                        <div style="color:#6B7280;font-size:11px;">💳 ${t.payment_method || '—'} · expire ${exp}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-weight:700;color:#7C3AED;">${amt}</div>
+                        <div style="font-size:11px;color:${statusColor};font-weight:600;">${statusLabel}</div>
+                    </div>
+                </div>`;
+        }).join('');
+    } catch (err) {
+        console.error('loadTransactions:', err.message);
+    }
+}
+
+
+
 
 let sidebarVisible = true;
 
 function logout() {
-    // Supprimer les infos d'auth
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("userRole");
-
-    // Notification
+    ['authToken','userRole','userId','inviteBoutiqueId','inviteBoutiqueName',
+     'employeeRole','sc_refresh_token','boutique_appData','boutique_cached_userId'].forEach(k => localStorage.removeItem(k));
     showNotification("✅ Déconnexion réussie", "info");
-
-    // Redirection vers la page de login
-    setTimeout(() => {
-        window.location.href = "/login/login.html";
-    }, 800);
+    setTimeout(() => { window.location.href = "/login/login.html"; }, 800);
 }
 
 
@@ -113,8 +219,8 @@ function filterRevenue() {
 
     info.textContent = periodTexts[period];
 
-    // Update revenue display based on period
-    updateRevenueDisplay(period);
+    // Reload revenue from API with period filter
+    loadRevenueStats(period);
 }
 
 // Filter accounts function
@@ -348,59 +454,54 @@ function populateSubscribersGrid() {
 //  Upgrade : Valider / Rejeter
 // ==========================
 
-async function approveUpgrade(userId) {
+async function approveUpgrade(userId, months = 1) {
+    // Demander la durée si pas précisée
+    if (months === 1) {
+        const input = prompt('Durée de l\'abonnement (mois) :', '1');
+        if (input === null) return;
+        months = parseInt(input) || 1;
+    }
     try {
         const res = await fetch(`${API_BASE}/auth/upgrade/${userId}/approve`, {
-            method: "PUT",
+            method: 'PUT',
             headers: {
-                "Authorization": "Bearer " + localStorage.getItem("authToken"),
-                "Content-Type": "application/json"
-            }
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('authToken')
+            },
+            body: JSON.stringify({ months })
         });
-
+        if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Erreur API");
-
-        // 🔄 Mise à jour locale
-        filteredSubscribers = filteredSubscribers.map(u =>
-            u.id === userId ? { ...u, plan: "Premium", upgrade_status: "validé" } : u
-        );
-
-        // 🔄 Mise à jour visuelle
-        updateSubscriberCard(userId);
-
-        showNotification(`✅ Upgrade validé pour ${data.user?.username || userId}`, "success");
+        showNotification(`✅ Premium activé pour ${data.user?.username || userId} (${months} mois)`, 'success');
+        await loadSubscribers();
+    loadPendingRequests();
+    loadTransactions();
+    loadRevenueStats();
+        await loadDashboard();
     } catch (err) {
-        console.error("Erreur approveUpgrade:", err);
-        showNotification("❌ Impossible de valider l'upgrade", "error");
+        console.error('Erreur approveUpgrade:', err.message);
+        showNotification('❌ Erreur lors de la validation', 'error');
     }
 }
 
 async function rejectUpgrade(userId) {
+    if (!confirm('Rejeter cette demande Premium ?')) return;
     try {
         const res = await fetch(`${API_BASE}/auth/upgrade/${userId}/reject`, {
-            method: "PUT",
+            method: 'PUT',
             headers: {
-                "Authorization": "Bearer " + localStorage.getItem("authToken"),
-                "Content-Type": "application/json"
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('authToken')
             }
         });
-
+        if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Erreur API");
-
-        // 🔄 Mise à jour locale
-        filteredSubscribers = filteredSubscribers.map(u =>
-            u.id === userId ? { ...u, upgrade_status: "rejeté" } : u
-        );
-
-        // 🔄 Mise à jour visuelle
-        updateSubscriberCard(userId);
-
-        showNotification(`🚫 Upgrade rejeté pour ${data.user?.username || userId}`, "error");
+        showNotification(`❌ Demande rejetée pour ${data.user?.username || userId}`, 'warning');
+        await loadSubscribers();
+        await loadPendingRequests();
     } catch (err) {
-        console.error("Erreur rejectUpgrade:", err);
-        showNotification("❌ Impossible de rejeter l'upgrade", "error");
+        console.error('Erreur rejectUpgrade:', err.message);
+        showNotification('❌ Erreur lors du rejet', 'error');
     }
 }
 

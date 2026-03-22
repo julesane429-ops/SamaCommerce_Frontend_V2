@@ -135,8 +135,7 @@
       'plan.whatsapp':           'Rappels WhatsApp',
 
       // Onboarding
-      'onb.bienvenue':    'Bienvenue sur
-Sama Commerce !',
+      'onb.bienvenue':    'Bienvenue sur Sama Commerce !',
       'onb.demo_titre':   "Démarrer avec des données d'exemple ?",
       'onb.demo_desc':    "Ajout de 3 produits et 2 catégories pour découvrir l'app.",
       'onb.demo_oui':     '✅ Oui, ajouter',
@@ -255,8 +254,7 @@ Sama Commerce !',
       'plan.whatsapp':           'Fetal WhatsApp',
 
       // Onboarding
-      'onb.bienvenue':    'Dalal ak yëgël
-Sama Commerce !',
+      'onb.bienvenue':    'Dalal ak yëgël Sama Commerce !',
       'onb.demo_titre':   'Nangu données yi ak exemp?',
       'onb.demo_desc':    'Bañ 3 produits ak 2 ngélaw ngir xamxam app bi.',
       'onb.demo_oui':     '✅ Waaw, yokk',

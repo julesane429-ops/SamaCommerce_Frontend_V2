@@ -13,7 +13,7 @@ import { showNotification, customConfirm,  } from "./notification.js";
 import { handleAddProductClick } from "./premium.js";
 import { afficherCategories, afficherProduits, afficherCategoriesVente,afficherProduitsCategorie, verifierStockFaible, afficherCredits } from "./ui.js";
 import { showSection } from "./utils.js";
-// ventes.js import removed — circular dependency resolved
+import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier, afficherPanier, modifierQuantitePanier, finaliserVente, tryRenderSalesHistory, ouvrirModal, marquerRembourse, purgeSalesHistoryClones, filtrerVentesParPeriode, modifierVente  } from "./ventes.js";
 
 
 
@@ -42,33 +42,17 @@ export async function supprimerProduit(id) {
 
 export async function mettreAJourProduit() {
   const id = document.getElementById('modalEditProduit').dataset.id;
-
-  const isMixed     = document.getElementById('editIsMixedSale')?.checked || false;
-  const lotSize     = parseInt(document.getElementById('editLotSizeProduit')?.value) || 1;
-  const priceGros   = parseFloat(document.getElementById('editPrixGrosProduit')?.value) || null;
-  const priceDetail = parseFloat(document.getElementById('editPrixDetailProduit')?.value) || null;
-  const priceSimple = parseFloat(document.getElementById('editPrixProduit').value);
-  const price       = isMixed ? (priceDetail || 0) : priceSimple;
-
   const produit = {
-    name:          document.getElementById('editNomProduit').value,
-    category_id:   parseInt(document.getElementById('editCategorieProduit').value),
-    price_achat:   parseFloat(document.getElementById('editPrixAchatProduit').value),
-    price,
-    stock:         parseInt(document.getElementById('editStockProduit').value),
-    description:   document.getElementById('editDescriptionProduit').value,
-    is_mixed_sale: isMixed,
-    lot_size:      isMixed ? lotSize    : 1,
-    price_gros:    isMixed ? priceGros  : null,
-    price_detail:  isMixed ? priceDetail: null,
+    name: document.getElementById('editNomProduit').value,
+    category_id: parseInt(document.getElementById('editCategorieProduit').value),
+    price_achat: parseFloat(document.getElementById('editPrixAchatProduit').value),
+    price: parseFloat(document.getElementById('editPrixProduit').value),
+    stock: parseInt(document.getElementById('editStockProduit').value),
+    description: document.getElementById('editDescriptionProduit').value
   };
 
-  if (!produit.name || isNaN(produit.price_achat) || isNaN(produit.stock)) {
+  if (!produit.name || isNaN(produit.price) || isNaN(produit.price_achat) || isNaN(produit.stock)) {
     showNotification('❌ Remplissez tous les champs correctement.', 'error');
-    return;
-  }
-  if (!isMixed && isNaN(priceSimple)) {
-    showNotification('❌ Saisissez le prix de vente.', 'error');
     return;
   }
 
@@ -97,49 +81,28 @@ export async function mettreAJourProduit() {
 }
 
 export async function ajouterProduit() {
-  const name        = document.getElementById('nomProduit').value;
+  const name = document.getElementById('nomProduit').value;
   const category_id = parseInt(document.getElementById('categorieProduit').value);
-  const scentEl     = document.getElementById('parfumProduit');
-  const scent       = scentEl ? scentEl.value : '';
-  const priceAchat  = parseFloat(document.getElementById('prixAchatProduit').value);
-  const stock       = parseInt(document.getElementById('stockProduit').value);
+  const scentEl = document.getElementById('parfumProduit');
+  const scent = scentEl ? scentEl.value : '';
+  const priceAchat = parseFloat(document.getElementById('prixAchatProduit').value); // ✅ prix achat
+  const price = parseFloat(document.getElementById('prixProduit').value);
+  const stock = parseInt(document.getElementById('stockProduit').value);
 
-  // Vente mixte
-  const isMixed     = document.getElementById('isMixedSale')?.checked || false;
-  const lotSize     = parseInt(document.getElementById('lotSizeProduit')?.value) || 1;
-  const priceGros   = parseFloat(document.getElementById('prixGrosProduit')?.value) || null;
-  const priceDetail = parseFloat(document.getElementById('prixDetailProduit')?.value) || null;
-
-  // Le prix principal = prix détail si mixte, sinon prix vente simple
-  const price = isMixed
-    ? (priceDetail || 0)
-    : parseFloat(document.getElementById('prixProduit').value);
-
-  // Validations
-  if (!name || !category_id || isNaN(priceAchat) || isNaN(stock)) {
-    showNotification('❌ Remplissez tous les champs correctement.', 'error');
-    return;
-  }
-  if (!isMixed && isNaN(price)) {
-    showNotification('❌ Saisissez le prix de vente.', 'error');
-    return;
-  }
-  if (isMixed && (!priceGros || !priceDetail || isNaN(lotSize) || lotSize < 2)) {
-    showNotification(`Vente mixte : saisissez les unites par lot, le prix gros et le prix detail.`, 'error');
+  // Validation
+  if (!name || !category_id || isNaN(price) || isNaN(stock) || isNaN(priceAchat)) {
+    showNotification('❌ Remplissez tous les champs correctement.', "error");
     return;
   }
 
+  // ✅ envoyer avec le nom correct pour la BDD
   const produit = {
-    name,
-    category_id,
-    scent,
-    price,
-    price_achat:  priceAchat,
-    stock,
-    is_mixed_sale: isMixed,
-    lot_size:      isMixed ? lotSize    : 1,
-    price_gros:    isMixed ? priceGros  : null,
-    price_detail:  isMixed ? priceDetail: null,
+    name: name,
+    category_id: category_id,
+    scent: scent,
+    price: price,
+    price_achat: priceAchat,
+    stock: stock
   };
 
   const created = await postProductServer(produit);
@@ -155,7 +118,7 @@ export async function ajouterProduit() {
     afficherInventaire();
     hideModal();
   } else {
-    showNotification('Erreur ajout produit.', 'error');
+    showNotification('❌ Erreur lors de l\'ajout du produit.', "error");
   }
 }
 

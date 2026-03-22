@@ -34,29 +34,31 @@ export async function handleAddProductClick() {
       return;
     }
 
-    // Premium valide
-    const isPremium = me.plan === "Premium" && me.upgrade_status === "valid\u00e9";
-    const expired   = me.expiration && new Date(me.expiration) < new Date();
+    // Plan payant valide (Starter / Pro / Business / Enterprise)
+    const PAID = ['Starter', 'Pro', 'Business', 'Enterprise'];
+    const isPaid  = PAID.includes(me.plan) && me.upgrade_status === 'validé';
+    const expired = me.expiration && new Date(me.expiration) < new Date();
 
-    if (isPremium && !expired) {
-      showModal("ajoutProduit");
+    if (isPaid && !expired) {
+      showModal('ajoutProduit');
       return;
     }
 
-    if (isPremium && expired) {
-      showNotification("\u26A0\uFE0F Votre abonnement Premium a expir\u00e9. Renouvelez pour continuer.", "warning");
-      showModalById("premiumModal");
+    if (isPaid && expired) {
+      showNotification('\u26A0\uFE0F Votre abonnement a expiré. Renouvelez pour continuer.', 'warning');
+      showModalById('premiumModal');
       return;
     }
 
-    // Free — v\u00e9rifier quota (la vraie limite est aussi c\u00f4t\u00e9 serveur)
+    // Plan Free ou expiré — vérifier quota selon le plan
     const prodRes  = await authfetch(`${API_BASE}/products`);
     const products = prodRes.ok ? await prodRes.json() : [];
+    const limit    = window.getPlan?.(me.plan)?.products_limit ?? 5;
 
-    if (products.length >= 5) {
-      showModalById("premiumModal");
+    if (limit !== Infinity && products.length >= limit) {
+      showModalById('premiumModal');
     } else {
-      showModal("ajoutProduit");
+      showModal('ajoutProduit');
     }
 
   } catch (err) {

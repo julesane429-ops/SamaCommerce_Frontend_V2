@@ -21,7 +21,6 @@ export let deferredPrompt;
 const installBtn = document.getElementById('installBtn');
 
 window.addEventListener('beforeinstallprompt', (e) => {
-  console.log("📲 Événement beforeinstallprompt déclenché !");
   e.preventDefault();
   deferredPrompt = e;
   installBtn.classList.remove('hidden'); // Afficher le bouton
@@ -29,24 +28,20 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 installBtn?.addEventListener('click', async () => {
   if (!deferredPrompt) {
-    console.log("⚠️ Aucun prompt disponible (app peut déjà être installée)");
     return;
   }
 
   deferredPrompt.prompt();
   const { outcome } = await deferredPrompt.userChoice;
-  console.log(`✅ Résultat installation: ${outcome}`);
   deferredPrompt = null;
   installBtn.classList.add('hidden'); // Cacher après installation
 });
 
 // Juste pour debug
-console.log("🔎 Script bouton d’installation chargé !");
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/pwa/sw.js")
-      .then(() => console.log("📦 Service Worker installé et ⚡ activé"))
       .catch(err => console.error("❌ Erreur SW:", err));
   });
 }

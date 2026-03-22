@@ -70,6 +70,13 @@
       else if (isPaid && daysLeft !== null && daysLeft <= 7) showSubscriptionBanner('warning', daysLeft);
       else if (isPending)                             showSubscriptionBanner('pending');
     }
+
+    // Démarrer le polling si plan en attente de validation
+    if (isPending) {
+      startPolling();
+    } else {
+      stopPolling();
+    }
   }
 
   // ══════════════════════════════════════
@@ -241,6 +248,72 @@
   }
 
   // ══════════════════════════════════════
+  // POLLING — détection changement de plan
+  // Vérifie toutes les 30s si le plan a changé (ex: admin vient de valider)
+  // ══════════════════════════════════════
+  let _pollInterval = null;
+  let _lastStatus   = null;
+
+  function startPolling() {
+    if (_pollInterval) return; // déjà actif
+    _pollInterval = setInterval(async () => {
+      const prevPlan   = _profile?.plan;
+      const prevStatus = _profile?.upgrade_status;
+
+      await loadProfile();
+
+      const newPlan   = _profile?.plan;
+      const newStatus = _profile?.upgrade_status;
+
+      // Changement détecté
+      if (prevStatus !== newStatus || prevPlan !== newPlan) {
+
+        // En attente → validé : plan activé !
+        if (prevStatus === 'en attente' && newStatus === 'validé') {
+          const planCfg = window.getPlan?.(newPlan) || {};
+          window.showNotification?.(
+            `🎉 Votre abonnement ${planCfg.emoji || ''} ${planCfg.label || newPlan} est maintenant actif !`,
+            'success'
+          );
+          // Arrêter le polling — plus besoin
+          stopPolling();
+          // Recharger les données pour débloquer les sections
+          await window.syncFromServer?.();
+          window.updateStats?.();
+          window.afficherProduits?.();
+          window.afficherCategories?.();
+          // Retirer la bannière "en attente" si présente
+          document.getElementById('sub-banner')?.remove();
+        }
+
+        // Validé → expiré : plan rétrogradé
+        if (prevStatus === 'validé' && (newStatus === 'expiré' || newPlan === 'Free')) {
+          window.showNotification?.(
+            '⚠️ Votre abonnement a expiré. Certaines fonctionnalités sont désactivées.',
+            'warning'
+          );
+          stopPolling();
+          await window.syncFromServer?.();
+        }
+      }
+
+      // Arrêter le polling si plus en attente et plan actif
+      if (newStatus !== 'en attente' && window.planHasFeature?.(newPlan, 'ventes')) {
+        stopPolling();
+      }
+    }, 30000); // toutes les 30 secondes
+
+    console.log('🔄 Polling plan démarré (statut: en attente)');
+  }
+
+  function stopPolling() {
+    if (_pollInterval) {
+      clearInterval(_pollInterval);
+      _pollInterval = null;
+    }
+  }
+
+  // ══════════════════════════════════════
   // HELPER PUBLIC — vérification de feature
   // Utilisable par n'importe quel module :
   //   if (!window.canUseFeature('export')) { showUpgradeModal(); return; }
@@ -267,7 +340,7 @@
   }
 
   // Exposer pour que app.js puisse recharger après sync
-  window.subscriptionGuard = { reload: loadProfile };
+  window.subscriptionGuard = { reload: loadProfile, startPolling, stopPolling };
   window.canUseFeature   = canUseFeature;
   window.showUpgradeModal = showUpgradeModal;
 

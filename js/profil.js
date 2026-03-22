@@ -26,8 +26,12 @@
   function render() {
     const el = document.getElementById('profilContent');
     if (!el || !profile) return;
- 
-    const isPremium   = profile.plan === 'Premium';
+
+    const plan        = profile.plan || 'Free';
+    const planCfg     = window.getPlan?.(plan) || { label: plan, emoji: '🆓', color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB', price: 0, products_limit: 5 };
+    const PAID_PLANS  = ['Starter', 'Pro', 'Business'];
+    const isPaid      = PAID_PLANS.includes(plan) && profile.upgrade_status === 'validé';
+    const isPremium   = isPaid; // alias pour compatibilité
     const expiration  = profile.expiration ? new Date(profile.expiration) : null;
     const expStr      = expiration ? expiration.toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' }) : null;
     const isExpired   = expiration && expiration < new Date();
@@ -49,23 +53,24 @@
       </div>
  
       <!-- ── Badge plan ── -->
-      <div style="background:${isPremium?'linear-gradient(135deg,#FEF9C3,#FFFBEB)':'var(--surface)'};border:1.5px solid ${isPremium?'#F59E0B':'#E5E7EB'};border-radius:16px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
-        <div style="font-size:32px;">${isPremium ? '⭐' : '🆓'}</div>
+      <div style="background:${planCfg.bg};border:2px solid ${planCfg.border};border-radius:16px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
+        <div style="font-size:32px;">${planCfg.emoji || '🆓'}</div>
         <div style="flex:1;">
-          <div style="font-family:'Sora',sans-serif;font-size:15px;font-weight:800;color:${isPremium?'#92400E':'var(--text)'};">
-            Plan ${isPremium ? 'Premium' : 'Gratuit'}
+          <div style="font-family:'Sora',sans-serif;font-size:15px;font-weight:800;color:${planCfg.color};">
+            Plan ${planCfg.label}
+            ${isPaid && planCfg.price ? ` <span style="font-size:11px;font-weight:500;color:#9CA3AF;">${planCfg.price.toLocaleString('fr-FR')} F/mois</span>` : ''}
           </div>
-          ${isPremium && expStr ? `
+          ${isPaid && expStr ? `
             <div style="font-size:12px;color:${isExpired?'#EF4444':daysLeft<=7?'#F59E0B':'#6B7280'};margin-top:3px;font-weight:600;">
               ${isExpired ? '⚠️ Expiré' : `⏳ ${daysLeft} jours restants — expire le ${expStr}`}
             </div>
           ` : ''}
-          ${!isPremium ? `<div style="font-size:12px;color:#6B7280;margin-top:3px;">Limité à 5 produits</div>` : ''}
+          ${!isPaid ? `<div style="font-size:12px;color:#6B7280;margin-top:3px;">Limité à ${planCfg.products_limit} produits</div>` : ''}
         </div>
-        ${!isPremium ? `
+        ${!isPaid ? `
           <button onclick="window.showModalById?.('premiumModal')"
             style="background:linear-gradient(135deg,#7C3AED,#EC4899);color:#fff;border:none;padding:8px 14px;border-radius:11px;font-family:'Sora',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
-            🚀 Passer Pro
+            🚀 Upgrade
           </button>
         ` : ''}
       </div>
@@ -75,8 +80,8 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px;">
           <div style="background:#EDE9FE;border-radius:16px;padding:14px;text-align:center;">
             <div style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:#7C3AED;">${stats.nb_produits}</div>
-            <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.4px;margin-top:4px;">📦 Produits${!isPremium?` / 5`:''}</div>
-            ${!isPremium ? `<div style="height:4px;background:#E5E7EB;border-radius:999px;margin-top:6px;overflow:hidden;"><div style="height:100%;width:${Math.min((stats.nb_produits/5)*100,100)}%;background:#7C3AED;border-radius:999px;"></div></div>` : ''}
+            <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.4px;margin-top:4px;">📦 Produits${!isPaid?` / ${planCfg.products_limit}`:''}</div>
+            ${!isPaid && planCfg.products_limit !== Infinity ? `<div style="height:4px;background:#E5E7EB;border-radius:999px;margin-top:6px;overflow:hidden;"><div style="height:100%;width:${Math.min((stats.nb_produits/planCfg.products_limit)*100,100)}%;background:${planCfg.color};border-radius:999px;"></div></div>` : ''}
           </div>
           <div style="background:#ECFDF5;border-radius:16px;padding:14px;text-align:center;">
             <div style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:#10B981;">${stats.nb_ventes}</div>

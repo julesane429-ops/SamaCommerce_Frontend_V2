@@ -151,7 +151,7 @@ export async function syncFromServer() {
       authfetch(API_BASE + '/categories'),
       authfetch(API_BASE + '/products'),
       authfetch(API_BASE + '/stats/ventes-par-jour'),
-      authfetch(API_BASE + '/sales?limit=500'),
+      authfetch(API_BASE + '/sales?limit=200&days=90'), // 90 derniers jours, max 200
     ]).then(results => results.map(r => r.status === 'fulfilled' ? r.value : { ok: false }));
 
     // --- Catégories ---

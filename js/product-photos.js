@@ -51,6 +51,10 @@
   // UPLOAD PHOTO
   // ══════════════════════════════════════
   async function uploadPhoto(produitId, file) {
+    if (typeof window.canUseFeature === 'function' && !window.canUseFeature('photos')) {
+      window.showUpgradeModal?.('photos');
+      return null;
+    }
     try {
       const base64 = await compressImage(file);
       await auth(`${API()}/products/${produitId}`, {
@@ -301,6 +305,11 @@
   // ══════════════════════════════════════
   // INJECTER LES PHOTOS DANS LES CARTES
   // ══════════════════════════════════════
+  // Check feature once and cache result
+  function isPhotosEnabled() {
+    return typeof window.canUseFeature !== 'function' || window.canUseFeature('photos');
+  }
+
   function injectPhotoInCards() {
     const list = document.getElementById('listeProduits');
     if (!list) return;

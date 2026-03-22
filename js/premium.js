@@ -86,10 +86,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btn) { btn.disabled = true; btn.textContent = '\u23F3 Envoi en cours\u2026'; }
 
     try {
+      // Récupérer le plan sélectionné depuis le formulaire
+      const plan = document.getElementById('selectedPlan')?.value || 'Pro';
+
       const res = await authfetch(`${API_BASE}/auth/upgrade`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, payment_method, amount })
+        body: JSON.stringify({ phone, payment_method, amount, plan })
       });
 
       const data = await res.json();

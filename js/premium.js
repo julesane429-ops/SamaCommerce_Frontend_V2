@@ -111,28 +111,3 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
-
-    if (!res.ok) {
-      let errorMsg = "Impossible d’upgrader.";
-      try {
-        const data = await res.json();
-        if (data.error) errorMsg = data.error;
-      } catch (err) {
-        errorMsg = await res.text();
-      }
-      showNotification("❌ Erreur : " + errorMsg, "error");
-      return;
-    }
-
-    const data = await res.json();
-
-    showNotification("✅ Votre demande Premium est envoyée et en attente de validation par un administrateur !", "success");
-    closeContactModal();
-    updateHeader?.();
-    window.location.reload();
-
-  } catch (err) {
-    console.error("❌ Erreur upgrade:", err);
-    showNotification("❌ Erreur réseau. Veuillez réessayer.", "error");
-  }
-});

@@ -218,6 +218,168 @@ html.dark .sr-highlight { background: #3B2F6E; color: var(--primary-light); }
 /* Scrollbar sombre */
 html.dark ::-webkit-scrollbar-thumb { background: #3B3760; }
 
+
+/* ══════════════════════════════════════
+   NOUVELLES SECTIONS — ajouts dark mode
+══════════════════════════════════════ */
+
+/* ── Notification bell panel ── */
+html.dark #notif-panel-wrapper {
+  background: #1E1B2E;
+  border-color: rgba(167,139,250,.15);
+}
+html.dark #notif-panel-wrapper > div:first-child {
+  background: linear-gradient(135deg, #3B1F8C, #5B21B6) !important;
+}
+html.dark #notif-panel {
+  background: #1E1B2E;
+}
+html.dark #notif-panel > div {
+  border-bottom-color: rgba(167,139,250,.1) !important;
+}
+
+/* ── Subscription guard modal ── */
+html.dark #premium-gate-modal > div {
+  background: #1E1B2E;
+  color: var(--text);
+}
+html.dark #premium-gate-modal .plan-card {
+  background: #2A2740;
+  border-color: rgba(167,139,250,.2);
+}
+
+/* ── Credit dashboard ── */
+html.dark #credit-dashboard-widget > div > div {
+  background: #2A2740 !important;
+  border-color: rgba(167,139,250,.15) !important;
+}
+html.dark #credit-dashboard-widget [style*="background:#F9FAFB"] {
+  background: #2A2740 !important;
+}
+html.dark #credit-dashboard-widget [style*="background:#FEF2F2"] {
+  background: rgba(239,68,68,.15) !important;
+}
+html.dark #credit-dashboard-widget [style*="background:#FFFBEB"] {
+  background: rgba(245,158,11,.15) !important;
+}
+html.dark #credit-dashboard-widget [style*="background:#F0FDF4"],
+html.dark #credit-dashboard-widget [style*="background:#ECFDF5"] {
+  background: rgba(16,185,129,.15) !important;
+}
+html.dark #credit-dashboard-widget [style*="background:#EFF6FF"] {
+  background: rgba(59,130,246,.15) !important;
+}
+html.dark #credit-dashboard-widget [style*="border-bottom:1px solid #F3F4F6"] {
+  border-bottom-color: rgba(167,139,250,.1) !important;
+}
+
+/* ── Sub-banner (expiration warning) ── */
+html.dark #sub-banner {
+  background: #2A2740 !important;
+  border-color: rgba(167,139,250,.3) !important;
+}
+
+/* ── Multi-plan modal (premiumModal) ── */
+html.dark #premiumModal > div {
+  background: #1E1B2E;
+}
+html.dark #plan-card-Starter,
+html.dark #plan-card-Pro,
+html.dark #plan-card-Business {
+  background: #2A2740 !important;
+}
+
+/* ── ContactModal upgrade form ── */
+html.dark #contactModal > div {
+  background: #1E1B2E;
+}
+html.dark #contactModal [style*="background:#F0FDF4"] {
+  background: rgba(16,185,129,.12) !important;
+  border-color: rgba(16,185,129,.3) !important;
+}
+html.dark #contactModal [style*="background:#F5F3FF"] {
+  background: rgba(124,58,237,.15) !important;
+}
+
+/* ── Caisse section ── */
+html.dark #caisseSection [style*="background:#F9FAFB"],
+html.dark #caisseSection [style*="background: #F9FAFB"] {
+  background: #2A2740 !important;
+}
+html.dark #caisseSection [style*="border-bottom:1px solid #F3F4F6"] {
+  border-bottom-color: rgba(167,139,250,.1) !important;
+}
+
+/* ── Team section ── */
+html.dark #teamSection .module-sheet,
+html.dark .module-sheet {
+  background: #1E1B2E;
+  color: var(--text);
+}
+html.dark .module-sheet-backdrop {
+  background: rgba(0,0,0,.7);
+}
+html.dark #teamSection [style*="background:#F9FAFB"] {
+  background: #2A2740 !important;
+}
+html.dark #teamSection [style*="background:#EFF6FF"] {
+  background: rgba(59,130,246,.12) !important;
+}
+html.dark #teamSection [style*="background:#F5F3FF"] {
+  background: rgba(124,58,237,.12) !important;
+}
+
+/* ── Profil section plan badge ── */
+html.dark #profilContent [style*="background:#F9FAFB"],
+html.dark #profilContent [style*="background:#ECFDF5"],
+html.dark #profilContent [style*="background:#EFF6FF"],
+html.dark #profilContent [style*="background:#EDE9FE"] {
+  background: #2A2740 !important;
+  border-color: rgba(167,139,250,.2) !important;
+}
+
+/* ── Plan selection cards ── */
+html.dark [id^="plan-card-"] {
+  background: #2A2740 !important;
+}
+
+/* ── Subscription guard overlay ── */
+html.dark #premium-gate-modal {
+  background: rgba(0,0,0,.75);
+}
+html.dark #premium-gate-modal > div {
+  background: #1E1B2E !important;
+}
+
+/* ── inapp-notifications bell ── */
+html.dark #notif-bell {
+  background: rgba(255,255,255,.08) !important;
+}
+html.dark #notif-bell:hover {
+  background: rgba(255,255,255,.15) !important;
+}
+
+/* ── Produits virtualisation "Voir plus" btn ── */
+html.dark button[onclick*="produitsOffset"] {
+  background: #2A2740 !important;
+  color: var(--text) !important;
+}
+
+/* ── Rapports + inventaire tables ── */
+html.dark .inv-table th { background: #2E1065; color: var(--primary-light); }
+html.dark .inv-table td { border-color: rgba(167,139,250,.08); color: var(--text); }
+html.dark .inv-table tr:nth-child(even) td { background: rgba(167,139,250,.04); }
+
+/* ── Swipe actions ── */
+html.dark .swipe-action-left  { background: #064E3B; }
+html.dark .swipe-action-right { background: #7F1D1D; }
+
+/* ── Section guides ── */
+html.dark .section-guide-card {
+  background: #2A2740;
+  border-color: rgba(167,139,250,.15);
+}
+
 /* ══════════════════════════════════════
    BOUTON TOGGLE
 ══════════════════════════════════════ */

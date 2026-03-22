@@ -53,7 +53,7 @@
 
     const plan       = _profile.plan || 'Free';
     const planCfg    = window.getPlan?.(plan) || { label: plan };
-    const PAID_PLANS = ['Starter', 'Pro', 'Business'];
+    const PAID_PLANS = ['Starter', 'Pro', 'Business', 'Enterprise'];
     const isPaid     = PAID_PLANS.includes(plan) && _profile.upgrade_status === 'validé';
     const expiration = _profile.expiration ? new Date(_profile.expiration) : null;
     const now        = new Date();
@@ -201,7 +201,7 @@
     // Trouver le plan minimum requis pour cette feature
     let minPlan = null;
     if (feature && window.PLANS) {
-      const ordered = ['Starter', 'Pro', 'Business'];
+      const ordered = ['Starter', 'Pro', 'Business', 'Enterprise'];
       minPlan = ordered.find(p => window.PLANS[p]?.features[feature]);
     }
     const bd    = document.createElement('div');
@@ -330,7 +330,7 @@
   function showUpgradeModal(feature) {
     const minPlan = (() => {
       if (!window.PLANS) return 'Pro';
-      const ordered = ['Starter', 'Pro', 'Business'];
+      const ordered = ['Starter', 'Pro', 'Business', 'Enterprise'];
       return ordered.find(p => window.PLANS[p]?.features[feature]) || 'Pro';
     })();
     const cfg = window.PLANS?.[minPlan];

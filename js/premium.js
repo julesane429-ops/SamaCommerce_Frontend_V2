@@ -105,7 +105,7 @@ document.getElementById("upgradeForm").addEventListener("submit", async (e) => {
   try {
     const token = localStorage.getItem("authToken");
 
-    const res = await fetch("https://ma-boutique-backend-3.onrender.com/auth/upgrade", {
+    const res = await fetch(`${API_BASE}/auth/upgrade`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",

@@ -17,6 +17,7 @@
 
   // Map section → feature requise (utilise planConfig.js)
   const SECTION_FEATURES = {
+    boutiques:    'multi_boutique',
     rapports:     'rapports',
     caisse:       'caisse',
     team:         'team',
@@ -180,7 +181,8 @@
   const SECTION_LABELS = {
     rapports: 'Rapports & Chiffres',
     caisse:   'Caisse',
-    team:     'Gestion d\'équipe',
+    team:     "Gestion d'équipe",
+    boutiques: 'Multi-boutiques',
   };
 
   function showPremiumRequired(section, isExpired = false, feature = null) {

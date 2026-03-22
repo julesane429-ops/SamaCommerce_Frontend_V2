@@ -32,18 +32,20 @@ export async function handleAddProductClick() {
       return;
     }
 
-    // 🔎 Récupérer les infos de l'utilisateur connecté via /auth/me
-    const userRes = await authfetch(`${API_BASE}/auth/me`);
+    // 🔎 Vérifier l’utilisateur connecté
+    const userRes = await fetch(`${API_BASE}/auth/users`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
 
-    if (!userRes.ok) throw new Error("Erreur /auth/me " + userRes.status);
+    if (!userRes.ok) throw new Error("Erreur API Utilisateurs " + userRes.status);
 
-    const currentUser = await userRes.json();
+    const users = await userRes.json();
+    const currentUser = users.find(u => u.id === userId);
 
     if (!currentUser) {
       showNotification("❌ Utilisateur introuvable", "error");
       return;
     }
-
 
     // 🚫 Cas 1 : Upgrade en attente = blocage total
     if (currentUser.upgrade_status === "en attente") {
@@ -51,8 +53,15 @@ export async function handleAddProductClick() {
       return;
     }
 
-    // 🔄 Utiliser les produits déjà en mémoire (évite un appel réseau supplémentaire)
-    const userProducts = appData.produits || [];
+    // 🔄 Charger produits existants
+    const prodRes = await fetch(`${API_BASE}/products`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+
+    if (!prodRes.ok) throw new Error("Erreur API Produits " + prodRes.status);
+
+    const products = await prodRes.json();
+    const userProducts = products.filter(p => p.user_id === userId);
 
     // ✅ Cas 2 : Premium validé
     if (currentUser.plan === "Premium" && currentUser.upgrade_status === "validé") {

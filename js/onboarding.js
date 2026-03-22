@@ -373,16 +373,129 @@
 
   function finish() {
     localStorage.setItem(KEY, 'true');
-    // Cacher le userGuide existant aussi
     const guide = document.getElementById('userGuide');
     if (guide) { guide.style.display = 'none'; }
-    // Animation de sortie
     if (overlay) {
       overlay.style.animation = 'onbFadeIn .25s ease reverse both';
       setTimeout(() => { overlay?.remove(); overlay = null; }, 250);
     }
-    // Notification de bienvenue
-    setTimeout(() => window.showNotification?.('🚀 Bienvenue ! Commencez par ajouter vos produits.', 'success'), 400);
+
+    // Proposer de charger des données de démo
+    setTimeout(() => {
+      const hasProduits = (window.appData?.produits?.length || 0) > 0;
+      if (!hasProduits) {
+        showDemoOfferBanner();
+      } else {
+        window.showNotification?.('🚀 Bienvenue ! Tout est prêt.', 'success');
+      }
+    }, 500);
+  }
+
+  // ══════════════════════════════════════
+  // BANNIÈRE OFFRE DONNÉES DÉMO
+  // ══════════════════════════════════════
+  function showDemoOfferBanner() {
+    if (document.getElementById('demo-offer-banner')) return;
+
+    const banner = document.createElement('div');
+    banner.id = 'demo-offer-banner';
+    banner.style.cssText = `
+      position: fixed; bottom: calc(var(--nav-h, 68px) + 12px);
+      left: 12px; right: 12px;
+      background: linear-gradient(135deg, #5B21B6, #7C3AED);
+      border-radius: 18px; padding: 16px;
+      box-shadow: 0 8px 32px rgba(124,58,237,.35);
+      z-index: 950; animation: slideUp .35s cubic-bezier(.34,1.2,.64,1) both;
+    `;
+    banner.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="font-size:32px;flex-shrink:0;">🎁</div>
+        <div style="flex:1;">
+          <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:14px;color:#fff;margin-bottom:3px;">
+            Démarrer avec des données d'exemple ?
+          </div>
+          <div style="font-size:12px;color:rgba(255,255,255,.8);line-height:1.4;">
+            Ajout de 3 produits et 2 catégories pour découvrir l'app.
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button id="demo-yes-btn" style="flex:1;padding:10px;background:#fff;color:#7C3AED;border:none;border-radius:12px;font-family:'Sora',sans-serif;font-weight:800;font-size:13px;cursor:pointer;">
+          ✅ Oui, ajouter
+        </button>
+        <button id="demo-no-btn" style="flex:1;padding:10px;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:12px;font-family:'Sora',sans-serif;font-weight:700;font-size:13px;cursor:pointer;">
+          Non merci
+        </button>
+      </div>`;
+
+    document.body.appendChild(banner);
+
+    document.getElementById('demo-yes-btn').onclick = async () => {
+      banner.remove();
+      await loadDemoData();
+    };
+    document.getElementById('demo-no-btn').onclick = () => {
+      banner.remove();
+      window.showNotification?.('🚀 C\'est parti ! Commencez par ajouter vos produits.', 'success');
+    };
+
+    // Auto-masquer après 15s
+    setTimeout(() => banner?.remove(), 15000);
+  }
+
+  // ══════════════════════════════════════
+  // DONNÉES DE DÉMONSTRATION
+  // ══════════════════════════════════════
+  async function loadDemoData() {
+    const API = document.querySelector('meta[name="api-base"]')?.content || 'https://samacommerce-backend-v2.onrender.com';
+    const auth = window.authfetch;
+    if (!auth) return;
+
+    window.showNotification?.('⏳ Ajout des données d\'exemple…', 'info');
+
+    try {
+      // 1. Créer 2 catégories
+      const cats = [
+        { name: 'Vêtements',   emoji: '👕', couleur: 'category-habits' },
+        { name: 'Accessoires', emoji: '💍', couleur: 'category-accessoires' },
+      ];
+      const createdCats = [];
+      for (const cat of cats) {
+        const r = await auth(`${API}/categories`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cat)
+        });
+        if (r?.ok) createdCats.push(await r.json());
+      }
+
+      const catId1 = createdCats[0]?.id || 1;
+      const catId2 = createdCats[1]?.id || 2;
+
+      // 2. Créer 3 produits
+      const products = [
+        { name: 'T-shirt blanc',    category_id: catId1, price: 3500, price_achat: 1500, stock: 20 },
+        { name: 'Jean slim',        category_id: catId1, price: 12000, price_achat: 7000, stock: 8 },
+        { name: 'Ceinture cuir',    category_id: catId2, price: 4500, price_achat: 2000, stock: 15 },
+      ];
+      for (const prod of products) {
+        await auth(`${API}/products`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(prod)
+        });
+      }
+
+      // 3. Recharger les données
+      await window.syncFromServer?.();
+      window.afficherProduits?.();
+      window.afficherCategories?.();
+      window.afficherCategoriesVente?.();
+
+      window.showNotification?.('✅ Données d\'exemple ajoutées ! Explorez l\'app.', 'success');
+
+    } catch (err) {
+      console.warn('loadDemoData:', err.message);
+      window.showNotification?.('❌ Impossible d\'ajouter les données. Réessayez.', 'error');
+    }
   }
 
   // ══════════════════════════════════════

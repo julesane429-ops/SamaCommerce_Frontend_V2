@@ -194,6 +194,9 @@
   // VÉRIFICATION QUOTIDIENNE
   // ══════════════════════════════════════
   function check() {
+    // Vérifier la feature whatsapp (Pro+)
+    if (typeof window.canUseFeature === 'function' && !window.canUseFeature('whatsapp')) return;
+
     const today   = new Date().toISOString().split('T')[0];
     const lastChk = localStorage.getItem(CHECK_KEY);
 

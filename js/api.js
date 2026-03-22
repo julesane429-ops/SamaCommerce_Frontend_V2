@@ -65,8 +65,57 @@ export function authfetch(url, options = {}) {
         }
       }).catch(() => {});
     }
+    // 502/503 = serveur Render en cold-start ou redémarrage
+    if (res.status === 502 || res.status === 503) {
+      showColdStartBanner();
+    }
     return res;
+  }).catch(err => {
+    // Erreur réseau complète (serveur éteint ou internet coupé)
+    if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+      showColdStartBanner();
+    }
+    return Promise.reject(err);
   });
+}
+
+// ── Cold-start banner (Render free tier) ──
+let _coldBannerTimer = null;
+function showColdStartBanner() {
+  if (document.getElementById('cold-start-banner')) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'cold-start-banner';
+  banner.style.cssText = `
+    position: fixed; top: 0; left: 0; right: 0;
+    background: linear-gradient(135deg, #1E40AF, #3B82F6);
+    color: #fff; padding: 10px 16px;
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 600;
+    z-index: 9999; box-shadow: 0 2px 12px rgba(0,0,0,.2);
+  `;
+  banner.innerHTML = `
+    <span style="font-size:18px;animation:spin 1.5s linear infinite;">⏳</span>
+    <span style="flex:1;">Démarrage du serveur en cours… (10-30 sec sur Render gratuit)</span>
+    <button onclick="document.getElementById('cold-start-banner')?.remove()"
+      style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:4px 10px;border-radius:8px;cursor:pointer;font-size:12px;">✕</button>
+  `;
+
+  document.body.prepend(banner);
+
+  // Auto-masquer après 35s (le cold-start Render dure max ~30s)
+  _coldBannerTimer = setTimeout(() => {
+    document.getElementById('cold-start-banner')?.remove();
+  }, 35000);
+}
+
+// Masquer la bannière si une requête réussit
+const _origFetchCheck = window.fetch;
+if (_origFetchCheck && !_origFetchCheck._coldPatched) {
+  window._hideColdBanner = () => {
+    clearTimeout(_coldBannerTimer);
+    document.getElementById('cold-start-banner')?.remove();
+  };
 }
 export async function postSaleServer(sale) {
   try {

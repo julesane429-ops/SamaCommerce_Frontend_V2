@@ -460,11 +460,11 @@ async function approveUpgrade(userId, requestedPlan) {
     const suggestedPlan = requestedPlan || sub?.plan || 'Pro';
 
     const planChoice = prompt(
-      `Plan pour ${sub?.company_name || sub?.username || userId}\nPlan demandé: ${suggestedPlan}\n\nChoisir: Starter / Pro / Business`,
+      `Plan pour ${sub?.company_name || sub?.username || userId}\nPlan demandé: ${suggestedPlan}\n\nChoisir: Starter / Pro / Business / Enterprise`,
       suggestedPlan
     );
     if (!planChoice) return;
-    const plan = ['Starter','Pro','Business'].includes(planChoice) ? planChoice : 'Pro';
+    const plan = ['Starter','Pro','Business','Enterprise'].includes(planChoice) ? planChoice : 'Pro';
 
     const months = parseInt(prompt('Durée (mois) :', '1') || '1') || 1;
 

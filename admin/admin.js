@@ -477,7 +477,7 @@ async function approveUpgrade(userId, months = 1) {
     loadPendingRequests();
     loadTransactions();
     loadRevenueStats();
-        await loadDashboard();
+        await loadDashboardOverview();
     } catch (err) {
         console.error('Erreur approveUpgrade:', err.message);
         showNotification('❌ Erreur lors de la validation', 'error');
@@ -499,6 +499,7 @@ async function rejectUpgrade(userId) {
         showNotification(`❌ Demande rejetée pour ${data.user?.username || userId}`, 'warning');
         await loadSubscribers();
         await loadPendingRequests();
+        await loadDashboardOverview();
     } catch (err) {
         console.error('Erreur rejectUpgrade:', err.message);
         showNotification('❌ Erreur lors du rejet', 'error');

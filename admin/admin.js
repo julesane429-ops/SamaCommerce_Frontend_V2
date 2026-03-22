@@ -374,24 +374,34 @@ function populateSubscribersGrid() {
             ? '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Actif</span>'
             : '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Bloqué</span>';
 
-        // Badge plan avec gestion upgrade
-        let planBadge = "";
-        if (subscriber.plan === "Premium" && isValidated) {
-            planBadge = '<span class="px-2 py-1 text-xs font-medium bg-violet-100 text-violet-800 rounded-full">Premium</span>';
-        } else if (subscriber.plan === "Free" && isPending) {
-            planBadge = '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Free</span> ' +
-                '<span class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">Demande en attente</span>';
-        } else if (subscriber.plan === "Free" && isRejected) {
-            planBadge = '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Free</span> ' +
-                '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Demande rejetée</span>';
-        } else {
-            planBadge = '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Free</span>';
+        // Badge plan — tous les plans
+        const PLAN_COLORS = {
+            Free:       'bg-gray-100 text-gray-800',
+            Starter:    'bg-green-100 text-green-800',
+            Pro:        'bg-violet-100 text-violet-800',
+            Business:   'bg-yellow-100 text-yellow-800',
+            Enterprise: 'bg-indigo-100 text-indigo-800',
+        };
+        const PLAN_EMOJIS = { Free:'🆓', Starter:'🌱', Pro:'⭐', Business:'🏆', Enterprise:'🚀' };
+        const planName = subscriber.plan || 'Free';
+        const planColor = PLAN_COLORS[planName] || PLAN_COLORS.Free;
+        const planEmoji = PLAN_EMOJIS[planName] || '';
+
+        let planBadge = `<span class="px-2 py-1 text-xs font-medium ${planColor} rounded-full">${planEmoji} ${planName}</span>`;
+        if (isPending) {
+            planBadge += ' <span class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">⏳ En attente</span>';
+        } else if (isRejected) {
+            planBadge += ' <span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">❌ Rejeté</span>';
         }
 
         // Badge paiement
-        const paymentBadge = subscriber.payment_status === "À jour"
-            ? '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">À jour</span>'
-            : '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">En retard</span>';
+        const paymentStatusMap = {
+            'À jour':     '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">✅ À jour</span>',
+            'En attente': '<span class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">⏳ En attente</span>',
+            'Expiré':     '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">❌ Expiré</span>',
+        };
+        const paymentBadge = paymentStatusMap[subscriber.payment_status]
+            || '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">' + (subscriber.payment_status || '—') + '</span>';
 
         const paymentMethodIcons = {
             "wave": "🌊 Wave",
@@ -402,7 +412,7 @@ function populateSubscribersGrid() {
 
         // Boutons admin pour upgrade en attente
         const upgradeActions = isPending
-            ? `<button onclick="approveUpgrade(${subscriber.id})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Valider</button>
+            ? `<button onclick="approveUpgrade(${subscriber.id}, '${subscriber.plan || ''}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Valider</button>
          <button onclick="rejectUpgrade(${subscriber.id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs mb-2">Rejeter</button>`
             : '';
 
@@ -497,8 +507,8 @@ async function approveUpgrade(userId, requestedPlan) {
             loadDashboardOverview(),
         ]);
     } catch (err) {
-        console.error('Erreur approveUpgrade:', err.message);
-        showNotification('❌ Erreur lors de la validation', 'error');
+        console.error('Erreur approveUpgrade:', err);
+        showNotification('❌ ' + (err.message || 'Erreur lors de la validation'), 'error');
     }
 }
 
@@ -549,7 +559,7 @@ function generateSubscriberCardHTML(subscriber) {
         ? '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Actif</span>'
         : '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Bloqué</span>';
 
-    const planBadge = subscriber.plan === "Premium"
+    const planBadge = ["Starter","Pro","Business","Enterprise"].includes(subscriber.plan) && subscriber.upgrade_status === "validé"
         ? '<span class="px-2 py-1 text-xs font-medium bg-violet-100 text-violet-800 rounded-full">Premium</span>'
         : '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Free</span>';
 
@@ -557,11 +567,21 @@ function generateSubscriberCardHTML(subscriber) {
         ? '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">À jour</span>'
         : '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">En retard</span>';
 
-    const upgradeBadge = subscriber.upgrade_status === "en attente"
-        ? '<span class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">En attente</span>'
-        : (subscriber.upgrade_status === "rejeté"
-            ? '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Rejeté</span>'
-            : "");
+    const upgradeBadge = (() => {
+            const PLAN_C = { Free:'bg-gray-100 text-gray-800', Starter:'bg-green-100 text-green-800',
+                Pro:'bg-violet-100 text-violet-800', Business:'bg-yellow-100 text-yellow-800', Enterprise:'bg-indigo-100 text-indigo-800' };
+            const PLAN_E = { Free:'🆓', Starter:'🌱', Pro:'⭐', Business:'🏆', Enterprise:'🚀' };
+            const sp2 = subscriber.plan || 'Free';
+            if (subscriber.upgrade_status === 'en attente')
+                return '<span class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">⏳ En attente (' + sp2 + ')</span>';
+            if (subscriber.upgrade_status === 'validé')
+                return '<span class="px-2 py-1 text-xs font-medium ' + (PLAN_C[sp2]||PLAN_C.Free) + ' rounded-full">' + (PLAN_E[sp2]||'') + ' ' + sp2 + '</span>';
+            if (subscriber.upgrade_status === 'rejeté')
+                return '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">❌ Rejeté</span>';
+            if (subscriber.upgrade_status === 'expiré')
+                return '<span class="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full">⏰ Expiré</span>';
+            return '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">' + sp2 + '</span>';
+        })()
 
     const paymentMethodIcons = {
         "wave": "🌊 Wave",
@@ -571,7 +591,7 @@ function generateSubscriberCardHTML(subscriber) {
     };
 
     const upgradeActions = subscriber.upgrade_status === "en attente"
-        ? `<button onclick="approveUpgrade(${subscriber.id})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Valider</button>
+        ? `<button onclick="approveUpgrade(${subscriber.id}, '${subscriber.plan || ''}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Valider</button>
        <button onclick="rejectUpgrade(${subscriber.id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs mb-2">Rejeter</button>`
         : "";
 
@@ -694,7 +714,7 @@ async function addSubscriber() {
                 payment_status: "À jour",
                 payment_method: paymentMethod,
                 expiration: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                amount: plan === "Premium" ? 29.99 : 0.00
+                amount: ["Starter","Pro","Business","Enterprise"].includes(plan) ? (window.PLANS?.[plan]?.price || 0) / 655.96 : 0.00
             })
         });
 

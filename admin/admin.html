@@ -14,13 +14,48 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const role  = localStorage.getItem("userRole");
       const token = localStorage.getItem("authToken");
-      if (!token || role !== "admin") {
-        alert("⛔ Accès réservé aux administrateurs !");
-        window.location.href = "/login/login.html";
+      if (!token) { window.location.replace("/login/login.html"); return; }
+
+      // Vérifier rôle depuis le JWT (ne pas faire confiance à localStorage.userRole seul)
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const now     = Math.floor(Date.now() / 1000);
+
+        if (payload.exp && payload.exp < now) {
+          localStorage.removeItem('authToken');
+          window.location.replace('/login/login.html?expired=1');
+          return;
+        }
+
+        if (payload.role !== 'admin') {
+          showAccessDenied();
+          return;
+        }
+
+        // Mettre à jour le rôle depuis le token
+        localStorage.setItem('userRole', 'admin');
+      } catch {
+        localStorage.removeItem('authToken');
+        window.location.replace('/login/login.html');
       }
     });
+
+    function showAccessDenied() {
+      document.body.innerHTML = `
+        <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#F5F4FF;font-family:'Sora',sans-serif;">
+          <div style="background:#fff;border-radius:20px;padding:40px 32px;max-width:380px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.1);">
+            <div style="font-size:56px;margin-bottom:16px;">⛔</div>
+            <h1 style="font-size:20px;font-weight:800;color:#111;margin-bottom:8px;">Accès réservé</h1>
+            <p style="font-size:14px;color:#6B7280;line-height:1.6;margin-bottom:24px;">
+              Cette page est réservée aux administrateurs de Sama Commerce.
+            </p>
+            <a href="/index.html" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#7C3AED,#EC4899);color:#fff;text-decoration:none;border-radius:14px;font-weight:700;font-size:14px;">
+              Retour à l'app
+            </a>
+          </div>
+        </div>`;
+    }
   </script>
 
   <style>

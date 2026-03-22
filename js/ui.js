@@ -88,7 +88,20 @@ export function afficherProduits(categorieFilter) {
     produits = produits.filter(p => parseInt(p.category_id) === catId);
   }
 
-  produits.forEach(function (produit) {
+  _produitsTotal = produits.length;
+  // Virtualisation : ne rendre que la page courante
+  const page = produits.slice(_produitsOffset, _produitsOffset + PRODUITS_PAGE_SIZE);
+
+  // Bouton "charger plus" si nécessaire
+  if (_produitsOffset > 0 && produits.length > _produitsOffset) {
+    const loadMoreBtn = document.createElement('button');
+    loadMoreBtn.textContent = `← Page précédente`;
+    loadMoreBtn.style.cssText = 'width:100%;padding:10px;margin-bottom:10px;background:#F3F4F6;border:none;border-radius:12px;font-weight:700;cursor:pointer;';
+    loadMoreBtn.onclick = () => { _produitsOffset = Math.max(0, _produitsOffset - PRODUITS_PAGE_SIZE); afficherProduits(); };
+    container.appendChild(loadMoreBtn);
+  }
+
+  page.forEach(function (produit) {
     const categorie = appData.categories.find(c => c.id === produit.category_id);
 
     // Statut stock

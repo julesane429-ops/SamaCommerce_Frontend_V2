@@ -15,10 +15,16 @@
   const API     = () => document.querySelector('meta[name="api-base"]')?.content || 'https://samacommerce-backend-v2.onrender.com';
   const notify  = (m, t) => window.showNotification?.(m, t);
 
-  // Sections qui nécessitent Premium
-  const PREMIUM_SECTIONS = ['rapports', 'caisse', 'team'];
-  // Sections avec fonctionnalités limitées en Free (pas bloquées, juste réduites)
-  const LIMITED_SECTIONS = ['inventaire'];
+  // Map section → feature requise (utilise planConfig.js)
+  const SECTION_FEATURES = {
+    rapports:     'rapports',
+    caisse:       'caisse',
+    team:         'team',
+    clients:      'clients',
+    fournisseurs: 'fournisseurs',
+    commandes:    'commandes',
+    livraisons:   'livraisons',
+  };
 
   let _profile = null;
   let _bannerShown = false;
@@ -44,26 +50,24 @@
   function checkSubscription() {
     if (!_profile) return;
 
-    const isPremium  = _profile.plan === 'Premium' && _profile.upgrade_status === 'validé';
+    const plan       = _profile.plan || 'Free';
+    const planCfg    = window.getPlan?.(plan) || { label: plan };
+    const PAID_PLANS = ['Starter', 'Pro', 'Business'];
+    const isPaid     = PAID_PLANS.includes(plan) && _profile.upgrade_status === 'validé';
     const expiration = _profile.expiration ? new Date(_profile.expiration) : null;
     const now        = new Date();
     const daysLeft   = expiration ? Math.ceil((expiration - now) / (1000 * 60 * 60 * 24)) : null;
     const isExpired  = expiration && expiration < now;
     const isPending  = _profile.upgrade_status === 'en attente';
 
-    // Stocker l'état pour les guards de navigation
-    window._subscriptionState = { isPremium, isExpired, daysLeft, isPending };
+    // Stocker l'état complet pour les guards de navigation
+    window._subscriptionState = { plan, isPaid, isExpired, daysLeft, isPending };
 
     if (!_bannerShown) {
       _bannerShown = true;
-
-      if (isExpired && isPremium) {
-        showSubscriptionBanner('expired');
-      } else if (isPremium && daysLeft !== null && daysLeft <= 7) {
-        showSubscriptionBanner('warning', daysLeft);
-      } else if (isPending) {
-        showSubscriptionBanner('pending');
-      }
+      if (isPaid && isExpired)                        showSubscriptionBanner('expired');
+      else if (isPaid && daysLeft !== null && daysLeft <= 7) showSubscriptionBanner('warning', daysLeft);
+      else if (isPending)                             showSubscriptionBanner('pending');
     }
   }
 
@@ -147,17 +151,19 @@
 
     window.navTo = function (section) {
       const state = window._subscriptionState;
+      if (!state) { originalNavTo(section); return; }
 
-      if (state && !state.isPremium && !state.isPending) {
-        if (PREMIUM_SECTIONS.includes(section)) {
-          showPremiumRequired(section);
+      const requiredFeature = SECTION_FEATURES[section];
+      if (requiredFeature) {
+        // Expiré → bloquer
+        if (state.isExpired) {
+          showPremiumRequired(section, true);
           return;
         }
-      }
-
-      if (state && state.isExpired) {
-        if (PREMIUM_SECTIONS.includes(section)) {
-          showPremiumRequired(section, true);
+        // Plan actif mais feature pas incluse
+        const plan = state.plan || 'Free';
+        if (!window.planHasFeature?.(plan, requiredFeature)) {
+          showPremiumRequired(section, false, requiredFeature);
           return;
         }
       }
@@ -177,11 +183,18 @@
     team:     'Gestion d\'équipe',
   };
 
-  function showPremiumRequired(section, isExpired = false) {
+  function showPremiumRequired(section, isExpired = false, feature = null) {
     const existing = document.getElementById('premium-gate-modal');
     if (existing) existing.remove();
 
     const label = SECTION_LABELS[section] || section;
+
+    // Trouver le plan minimum requis pour cette feature
+    let minPlan = null;
+    if (feature && window.PLANS) {
+      const ordered = ['Starter', 'Pro', 'Business'];
+      minPlan = ordered.find(p => window.PLANS[p]?.features[feature]);
+    }
     const bd    = document.createElement('div');
     bd.id = 'premium-gate-modal';
     bd.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;';
@@ -193,8 +206,10 @@
         </div>
         <div style="font-size:13px;color:#6B7280;line-height:1.5;margin-bottom:20px;">
           ${isExpired
-            ? `Votre abonnement Premium a expiré. Renouvelez pour accéder à <strong>${label}</strong>.`
-            : `<strong>${label}</strong> est disponible à partir du plan <strong>Premium</strong> (5 000 FCFA/mois).`
+            ? `Votre abonnement a expiré. Renouvelez pour accéder à <strong>${label}</strong>.`
+            : minPlan
+              ? `<strong>${label}</strong> est disponible à partir du plan <strong>${window.PLANS[minPlan]?.emoji || ''} ${minPlan}</strong> (${(window.PLANS[minPlan]?.price || 0).toLocaleString('fr-FR')} FCFA/mois).`
+              : `<strong>${label}</strong> nécessite un abonnement supérieur.`
           }
         </div>
         <button onclick="window.showModalById?.('premiumModal');document.getElementById('premium-gate-modal')?.remove();"

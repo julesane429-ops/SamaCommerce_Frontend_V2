@@ -50,6 +50,13 @@ export function authfetch(url, options = {}) {
     'Authorization': 'Bearer ' + token
   };
 
+  // Injecter X-Boutique-Id si une boutique est sélectionnée (plan Enterprise)
+  const _boutiqueId = window._activeBoutiqueId
+    || parseInt(localStorage.getItem('sc_active_boutique') || '0') || null;
+  if (_boutiqueId && !headers['X-Boutique-Id']) {
+    headers['X-Boutique-Id'] = String(_boutiqueId);
+  }
+
   return fetch(url, { ...options, headers }).then(res => {
     if (res.status === 401) {
       localStorage.removeItem('authToken');

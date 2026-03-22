@@ -63,7 +63,7 @@ async function loadPendingRequests() {
                     </div>
                 </div>
                 <div style="display:flex;gap:6px;flex-shrink:0;">
-                    <button onclick="approveUpgrade(${u.id})"
+                    <button onclick="approveUpgrade(${u.id}, '${u.plan}')"
                         style="background:#10B981;color:#fff;border:none;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
                         ✅ Valider
                     </button>
@@ -454,13 +454,20 @@ function populateSubscribersGrid() {
 //  Upgrade : Valider / Rejeter
 // ==========================
 
-async function approveUpgrade(userId, months = 1) {
-    // Demander la durée si pas précisée
-    if (months === 1) {
-        const input = prompt('Durée de l\'abonnement (mois) :', '1');
-        if (input === null) return;
-        months = parseInt(input) || 1;
-    }
+async function approveUpgrade(userId, requestedPlan) {
+    // Trouver l'utilisateur pour afficher le plan demandé
+    const sub = subscribers.find(s => s.id === userId);
+    const suggestedPlan = requestedPlan || sub?.plan || 'Pro';
+
+    const planChoice = prompt(
+      `Plan pour ${sub?.company_name || sub?.username || userId}\nPlan demandé: ${suggestedPlan}\n\nChoisir: Starter / Pro / Business`,
+      suggestedPlan
+    );
+    if (!planChoice) return;
+    const plan = ['Starter','Pro','Business'].includes(planChoice) ? planChoice : 'Pro';
+
+    const months = parseInt(prompt('Durée (mois) :', '1') || '1') || 1;
+
     try {
         const res = await fetch(`${API_BASE}/auth/upgrade/${userId}/approve`, {
             method: 'PUT',
@@ -468,16 +475,19 @@ async function approveUpgrade(userId, months = 1) {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + localStorage.getItem('authToken')
             },
-            body: JSON.stringify({ months })
+            body: JSON.stringify({ plan, months })
         });
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
-        showNotification(`✅ Premium activé pour ${data.user?.username || userId} (${months} mois)`, 'success');
-        await loadSubscribers();
-    loadPendingRequests();
-    loadTransactions();
-    loadRevenueStats();
-        await loadDashboardOverview();
+        showNotification(`✅ Plan ${data.user?.plan || plan} activé pour ${data.user?.username || userId} (${months} mois)`, 'success');
+        // Recharger toutes les vues impactées
+        await Promise.allSettled([
+            loadSubscribers(),
+            loadPendingRequests(),
+            loadTransactions(),
+            loadRevenueStats(),
+            loadDashboardOverview(),
+        ]);
     } catch (err) {
         console.error('Erreur approveUpgrade:', err.message);
         showNotification('❌ Erreur lors de la validation', 'error');

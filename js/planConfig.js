@@ -39,6 +39,16 @@ window.PLANS = {
       commandes:true, livraisons:true, rapports:true,
       photos:true, export:true, whatsapp:true, team:true, finance:true },
   },
+  Enterprise: {
+    label: 'Enterprise', price: 15000, emoji: '🚀',
+    color: '#A78BFA', bg: '#1E1B2E', border: '#5B21B6',
+    products_limit: Infinity, members_limit: 5, boutiques_limit: 3,
+    features: { ventes:true, stock:true, categories:true,
+      caisse:true, credits:true, clients:true, fournisseurs:true,
+      commandes:true, livraisons:true, rapports:true,
+      photos:true, export:true, whatsapp:true, team:true, finance:true,
+      multi_boutique:true },
+  },
 };
 
 window.getPlan = (name) => window.PLANS[name] || window.PLANS.Free;

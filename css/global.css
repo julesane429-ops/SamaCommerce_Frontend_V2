@@ -18,3 +18,31 @@
 .big-button:hover {
     transform: scale(1.03);
 }
+
+/* ══════════════════════════════════════
+   TRANSITIONS ENTRE SECTIONS
+══════════════════════════════════════ */
+@keyframes scEnterForward {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes scEnterBack {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.sc-enter-forward {
+  animation: scEnterForward .22s cubic-bezier(.25,.46,.45,.94) both;
+}
+.sc-enter-back {
+  animation: scEnterBack .22s cubic-bezier(.25,.46,.45,.94) both;
+}
+
+/* section-page sans overflow hidden pour permettre les animations */
+.section-page {
+  will-change: transform, opacity;
+}

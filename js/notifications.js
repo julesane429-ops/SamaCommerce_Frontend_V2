@@ -390,10 +390,71 @@
     });
   }
 
+  // ════════════════════════════════════════
+  // WEB PUSH — Subscription
+  // ════════════════════════════════════════
+  async function subscribeToPush() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    if (Notification.permission !== 'granted') return;
+
+    try {
+      const sw = await navigator.serviceWorker.ready;
+
+      // Récupérer la clé VAPID publique du backend
+      const keyRes = await window.authfetch?.(`${API()}/push/vapid-key`);
+      if (!keyRes?.ok) return;
+      const { publicKey } = await keyRes.json();
+      if (!publicKey) return; // VAPID non configuré
+
+      // Vérifier si déjà abonné
+      const existing = await sw.pushManager.getSubscription();
+      if (existing) {
+        // Rafraîchir l'enregistrement côté serveur
+        await registerSubscription(existing);
+        return;
+      }
+
+      // Créer un nouvel abonnement
+      const sub = await sw.pushManager.subscribe({
+        userVisibleOnly:      true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+
+      await registerSubscription(sub);
+      console.log('✅ Push subscription enregistrée');
+    } catch (err) {
+      console.warn('subscribeToPush:', err.message);
+    }
+  }
+
+  async function registerSubscription(subscription) {
+    try {
+      await window.authfetch?.(`${API()}/push/subscribe`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ subscription }),
+      });
+    } catch { /* silencieux */ }
+  }
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw     = window.atob(base64);
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+  }
+
+  // Exposer la fonction d'abonnement push
+  window.scNotifications = window.scNotifications || {};
+  window.scNotifications.subscribePush = subscribeToPush;
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
   }
+
+  // Abonnement push après permission accordée
+  document.addEventListener('sc:notification-granted', subscribeToPush);
 
 })();

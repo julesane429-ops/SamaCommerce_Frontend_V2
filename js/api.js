@@ -171,21 +171,15 @@ export async function syncFromServer() {
     if (resProd.ok) {
       const prods = await resProd.json();
       appData.produits = prods.map(p => ({
-        id:           parseInt(p.id),
-        name:         p.name,
-        category_id:  parseInt(p.category_id),
-        scent:        p.scent,
-        price:        parseFloat(p.price)        || 0,
-        stock:        parseInt(p.stock)          || 0,
-        vendu:        0,
-        priceAchat:   parseFloat(p.price_achat)  || 0,
-        description:  p.description || '',
-        image_url:    p.image_url   || null,
-        // Vente mixte gros / détail
-        is_mixed_sale: p.is_mixed_sale === true || p.is_mixed_sale === 'true',
-        lot_size:      parseInt(p.lot_size)      || 1,
-        price_gros:    p.price_gros   ? parseFloat(p.price_gros)   : null,
-        price_detail:  p.price_detail ? parseFloat(p.price_detail) : null,
+        id:          parseInt(p.id),
+        name:        p.name,
+        category_id: parseInt(p.category_id),
+        scent:       p.scent,
+        price:       parseFloat(p.price)       || 0,
+        stock:       parseInt(p.stock)         || 0,
+        vendu:       0,
+        priceAchat:  parseFloat(p.price_achat) || 0,
+        description: p.description || ''
       }));
     }
 

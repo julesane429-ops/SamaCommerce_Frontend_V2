@@ -95,11 +95,7 @@ export function afficherProduits(categorieFilter) {
     const stockLevel = produit.stock <= 5 ? 'critical' : produit.stock < 10 ? 'low' : 'ok';
     const stockLabel = stockLevel === 'critical' ? '🔴' : stockLevel === 'low' ? '🟠' : '🟢';
 
-    // Marge : pour un produit mixte, la marge principale est sur le lot gros
-    const priceAchat = parseFloat(produit.priceAchat || produit.price_achat) || 0;
-    const marge = produit.is_mixed_sale && produit.price_gros
-      ? (produit.price_gros || 0) - priceAchat
-      : (produit.price || 0) - priceAchat;
+    const marge = (produit.price || 0) - (produit.priceAchat || produit.price_achat || 0);
     const margeSign = marge >= 0 ? '+' : '';
 
     const div = document.createElement('div');
@@ -110,9 +106,7 @@ export function afficherProduits(categorieFilter) {
           ${categorie ? (categorie.emoji + ' ' + categorie.name) : '📦 Sans catégorie'}
         </div>
         <div class="produit-stock-pill stock-pill-${stockLevel}">
-          ${stockLabel} ${produit.is_mixed_sale && produit.lot_size > 1
-            ? `${Math.floor((produit.stock||0)/produit.lot_size)} lots · ${produit.stock||0} u.`
-            : produit.stock || 0}
+          ${stockLabel} ${produit.stock || 0}
         </div>
       </div>
 
@@ -120,21 +114,9 @@ export function afficherProduits(categorieFilter) {
         <div class="produit-name">${produit.name}</div>
         ${produit.description ? `<div class="produit-desc">${produit.description}</div>` : ''}
         <div class="produit-prices">
-          ${produit.is_mixed_sale && produit.lot_size > 1 ? `
-            <div style="width:100%;margin-bottom:4px;">
-              <span style="font-size:10px;font-weight:700;color:#7C3AED;text-transform:uppercase;">📦 Gros lot×${produit.lot_size}</span>
-              <span style="font-size:15px;font-weight:800;color:#7C3AED;margin-left:6px;">${(produit.price_gros||0).toLocaleString('fr-FR')} F</span>
-            </div>
-            <div style="width:100%;">
-              <span style="font-size:10px;font-weight:700;color:#10B981;text-transform:uppercase;">🧴 Détail</span>
-              <span style="font-size:15px;font-weight:800;color:#10B981;margin-left:6px;">${(produit.price_detail||produit.price||0).toLocaleString('fr-FR')} F</span>
-            </div>
-            <div class="produit-price-achat" style="margin-top:4px;">Achat lot: ${(produit.priceAchat || produit.price_achat || 0).toLocaleString('fr-FR')} F</div>
-          ` : `
-            <div class="produit-price-main">${(produit.price || 0).toLocaleString('fr-FR')} F</div>
-            <div class="produit-price-achat">Achat: ${(produit.priceAchat || produit.price_achat || 0).toLocaleString('fr-FR')} F</div>
-            <div class="produit-marge ${marge >= 0 ? 'marge-pos' : 'marge-neg'}">Marge: ${margeSign}${marge.toLocaleString('fr-FR')} F</div>
-          `}
+          <div class="produit-price-main">${(produit.price || 0).toLocaleString('fr-FR')} F</div>
+          <div class="produit-price-achat">Achat: ${(produit.priceAchat || produit.price_achat || 0).toLocaleString('fr-FR')} F</div>
+          <div class="produit-marge ${marge >= 0 ? 'marge-pos' : 'marge-neg'}">Marge: ${margeSign}${marge.toLocaleString('fr-FR')} F</div>
         </div>
       </div>
 
@@ -172,76 +154,8 @@ export function afficherCategoriesVente() {
 }
 
 export function afficherProduitsCategorie(categorieId) {
-  const produits  = appData.produits.filter(p => p.category_id === categorieId && p.stock > 0);
-  const container = document.getElementById('categoriesVente');
-  if (!container) return;
-
-  container.innerHTML = '';
-
-  const retourBtn = document.createElement('button');
-  retourBtn.textContent = '← Retour';
-  retourBtn.className   = 'col-span-2 mb-4 text-blue-600 font-bold';
-  retourBtn.addEventListener('click', afficherCategoriesVente);
-  container.appendChild(retourBtn);
-
-  produits.forEach(produit => {
-    if (produit.is_mixed_sale && produit.lot_size > 1) {
-      // ── Produit vente mixte : afficher 2 cartes côte à côte ──
-      const wrapper = document.createElement('div');
-      wrapper.style.cssText = 'grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;';
-
-      // Carte GROS
-      const divGros = document.createElement('div');
-      divGros.className  = 'bg-white border-2 border-purple-200 p-3 rounded-2xl text-center cursor-pointer';
-      divGros.style.cssText = 'border-color:#DDD6FE;';
-      divGros.innerHTML = `
-        <div style="font-size:10px;font-weight:700;color:#7C3AED;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">📦 Lot×${produit.lot_size}</div>
-        <div style="font-size:13px;font-weight:700;color:#1E1B4B;margin-bottom:4px;">${produit.name}</div>
-        <div style="font-size:18px;font-weight:800;color:#7C3AED;margin-bottom:4px;">${(produit.price_gros || 0).toLocaleString()} F</div>
-        <div style="font-size:11px;color:#6B7280;">Stock: ${Math.floor(produit.stock / produit.lot_size)} lot${Math.floor(produit.stock / produit.lot_size) > 1 ? 's' : ''}</div>
-      `;
-      divGros.addEventListener('click', () => ajouterAuPanier({
-        ...produit,
-        price:          produit.price_gros,
-        _vente_mode:    'gros',
-        _lot_qty:       produit.lot_size,   // décrémente le stock de lot_size unités
-        name:           produit.name + ` (×${produit.lot_size})`,
-      }));
-
-      // Carte DÉTAIL
-      const divDetail = document.createElement('div');
-      divDetail.className   = 'bg-white border-2 border-green-200 p-3 rounded-2xl text-center cursor-pointer';
-      divDetail.style.cssText = 'border-color:#BBF7D0;';
-      divDetail.innerHTML = `
-        <div style="font-size:10px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">🧴 Unité</div>
-        <div style="font-size:13px;font-weight:700;color:#1E1B4B;margin-bottom:4px;">${produit.name}</div>
-        <div style="font-size:18px;font-weight:800;color:#10B981;margin-bottom:4px;">${(produit.price_detail || produit.price || 0).toLocaleString()} F</div>
-        <div style="font-size:11px;color:#6B7280;">Stock: ${produit.stock} unité${produit.stock > 1 ? 's' : ''}</div>
-      `;
-      divDetail.addEventListener('click', () => ajouterAuPanier({
-        ...produit,
-        price:       produit.price_detail || produit.price,
-        _vente_mode: 'detail',
-        _lot_qty:    1,
-      }));
-
-      wrapper.appendChild(divGros);
-      wrapper.appendChild(divDetail);
-      container.appendChild(wrapper);
-
-    } else {
-      // ── Produit normal : une seule carte ──
-      const div = document.createElement('div');
-      div.className = 'bg-white border-2 border-gray-200 p-4 rounded-2xl text-center cursor-pointer';
-      div.addEventListener('click', () => ajouterAuPanier(produit));
-      div.innerHTML = `
-        <div style="font-size:13px;font-weight:700;color:#1E1B4B;margin-bottom:4px;">${produit.name}</div>
-        <div style="font-size:20px;font-weight:800;color:#10B981;margin-bottom:4px;">${(parseFloat(produit.price) || 0).toLocaleString()} F</div>
-        <div style="font-size:11px;color:#6B7280;">Stock: ${produit.stock || 0}</div>
-      `;
-      container.appendChild(div);
-    }
-  });
+  const produits = appData.produits.filter(function (p) { return p.category_id === categorieId && p.stock > 0; }); const container = document.getElementById('categoriesVente'); if (!container) return; container.innerHTML = ''; const retourBtn = document.createElement('button'); retourBtn.textContent = '← Retour'; retourBtn.className = 'col-span-2 mb-4 text-blue-600 font-bold'; retourBtn.addEventListener('click', afficherCategoriesVente); container.appendChild(retourBtn);
+  produits.forEach(function (produit) { const div = document.createElement('div'); div.className = 'bg-white border-2 border-gray-200 p-4 rounded-2xl text-center cursor-pointer hover:border-blue-400 transition-all'; div.addEventListener('click', function () { ajouterAuPanier(produit); }); div.innerHTML = '<div class="font-bold text-lg mb-1">' + produit.name + '</div><div class="text-2xl font-bold text-green-600 mb-1">' + (produit.price || 0).toLocaleString() + ' F</div><div class="text-sm text-gray-600">Stock: ' + (produit.stock || 0) + '</div>'; container.appendChild(div); });
 }
 
 export function verifierStockFaible() {

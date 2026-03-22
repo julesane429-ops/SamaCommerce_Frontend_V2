@@ -40,6 +40,39 @@ export function showSection(section) {
   setCurrentSection(section);
  
   // Sections existantes
+  // Lazy init — sections initialisées seulement au premier accès
+  const _sectionInit = window._sectionInit || {};
+  window._sectionInit = _sectionInit;
+
+  if (!_sectionInit[section]) {
+    _sectionInit[section] = true;
+    switch (section) {
+      case 'rapports':
+        window.afficherRapports?.();
+        break;
+      case 'inventaire':
+        window.afficherInventaire?.();
+        window.initInventaire?.();
+        break;
+      case 'credits':
+        window.afficherCredits?.();
+        window.renderCreditsHistory?.();
+        window.initCreditChart?.();
+        window.remplirProduitsCredit?.();
+        break;
+      case 'clients':
+      case 'fournisseurs':
+      case 'commandes':
+      case 'livraisons':
+      case 'caisse':
+      case 'calendrier':
+      case 'team':
+      case 'profil':
+        // Ces sections gèrent leur propre init via pageChange event
+        break;
+    }
+  }
+
   if (section === 'vente') {
     afficherCategoriesVente();
     afficherPanier();

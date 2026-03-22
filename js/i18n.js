@@ -90,6 +90,57 @@
       'msg.sync':          'Synchronisation en cours…',
       'msg.hors_ligne':    'Hors connexion',
       'msg.merci':         'Merci pour votre achat !',
+
+      // Notifications / Alertes
+      'notif.vente_ok':       '✅ Vente enregistrée avec succès',
+      'notif.stock_faible':   '⚠️ Stock faible',
+      'notif.credit_retard':  '🔴 Crédit en retard',
+      'notif.sync_ok':        '✅ Données synchronisées',
+      'notif.erreur_reseau':  '❌ Erreur réseau. Vérifiez votre connexion.',
+      'notif.session_expiree':'⚠️ Session expirée. Reconnectez-vous.',
+      'notif.produit_ajoute': '✅ Produit ajouté',
+      'notif.produit_modifie':'✅ Produit mis à jour',
+      'notif.produit_supprime':'✅ Produit supprimé',
+      'notif.categorie_ajoutee': '✅ Catégorie ajoutée',
+
+      // Erreurs
+      'err.champs_requis':   '❌ Veuillez remplir tous les champs.',
+      'err.stock_insuf':     '❌ Stock insuffisant.',
+      'err.panier_vide':     '❌ Votre panier est vide.',
+      'err.connexion':       '❌ Impossible de contacter le serveur.',
+      'err.plan_insuffisant':'⭐ Cette fonctionnalité nécessite un abonnement supérieur.',
+      'err.quota_produits':  '🚫 Limite de produits atteinte pour votre plan.',
+
+      // Modales
+      'modal.ajout_produit':   '📦 Nouveau Produit',
+      'modal.modifier_produit':'✏️ Modifier le produit',
+      'modal.ajout_categorie': '🏷️ Nouvelle Catégorie',
+      'modal.confirmation':    'Confirmer',
+      'modal.supprimer_conf':  'Êtes-vous sûr de vouloir supprimer ?',
+      'modal.upgrade':         '🚀 Passer au plan supérieur',
+
+      // Premium
+      'premium.titre':        'Choisissez votre plan',
+      'premium.mensuel':      '/ mois',
+      'premium.souscrire':    'Souscrire maintenant',
+      'premium.plus_tard':    'Plus tard',
+      'premium.validation':   'Validation sous 24h',
+
+      // Plan features
+      'plan.produits_illimites': 'Produits illimités',
+      'plan.equipe':             'Gestion d'équipe',
+      'plan.rapports':           'Rapports avancés',
+      'plan.export':             'Export Excel',
+      'plan.photos':             'Photos produits',
+      'plan.whatsapp':           'Rappels WhatsApp',
+
+      // Onboarding
+      'onb.bienvenue':    'Bienvenue sur
+Sama Commerce !',
+      'onb.demo_titre':   'Démarrer avec des données d'exemple ?',
+      'onb.demo_desc':    'Ajout de 3 produits et 2 catégories pour découvrir l'app.',
+      'onb.demo_oui':     '✅ Oui, ajouter',
+      'onb.demo_non':     'Non merci',
     },
 
     wo: {
@@ -159,6 +210,57 @@
       'msg.sync':          'Soppiku…',
       'msg.hors_ligne':    'Internet bañ',
       'msg.merci':         'Jërejëf ci sa jënd!',
+
+      // Notifications / Alertes
+      'notif.vente_ok':       '✅ Jënd dafay seetël',
+      'notif.stock_faible':   '⚠️ Liggéey bu sore',
+      'notif.credit_retard':  '🔴 Crédit ji weesu yoon',
+      'notif.sync_ok':        '✅ Données yi soppiku nañu',
+      'notif.erreur_reseau':  '❌ Internet bañ. Xoolal sa connexion.',
+      'notif.session_expiree':'⚠️ Waxtu bi jeex. Dugël ci kanam.',
+      'notif.produit_ajoute': '✅ Ay yokk la produit bi',
+      'notif.produit_modifie':'✅ Produit bi soppi nañu',
+      'notif.produit_supprime':'✅ Produit bi lëk nañu',
+      'notif.categorie_ajoutee': '✅ Ngélaw bi yokk',
+
+      // Erreurs
+      'err.champs_requis':   '❌ Bind sa xibaar yép.',
+      'err.stock_insuf':     '❌ Liggéey bu baax bañ.',
+      'err.panier_vide':     '❌ Panier bi doyuñu dara.',
+      'err.connexion':       '❌ Serveur bi amul yëgël.',
+      'err.plan_insuffisant':'⭐ Dëkk bi dafa soxor ba yomb.',
+      'err.quota_produits':  '🚫 Produits yi dox nañu fi ak sa plan.',
+
+      // Modales
+      'modal.ajout_produit':   '📦 Produit bu bees',
+      'modal.modifier_produit':'✏️ Soppi produit bi',
+      'modal.ajout_categorie': '🏷️ Ngélaw bu bees',
+      'modal.confirmation':    'Dalal',
+      'modal.supprimer_conf':  'Degg nga bëgg lëk bi?',
+      'modal.upgrade':         '🚀 Dëkk ci kanam',
+
+      // Premium
+      'premium.titre':        'Tann sa plan',
+      'premium.mensuel':      '/ wellness',
+      'premium.souscrire':    'Dugël kanam',
+      'premium.plus_tard':    'Ci kanam',
+      'premium.validation':   'Seetël ci 24 wakhtaan',
+
+      // Plan features
+      'plan.produits_illimites': 'Produits bu amul melo',
+      'plan.equipe':             'Liggéey ak same',
+      'plan.rapports':           'Xaalis bi',
+      'plan.export':             'Bindi ci Excel',
+      'plan.photos':             'Téeré produit',
+      'plan.whatsapp':           'Fetal WhatsApp',
+
+      // Onboarding
+      'onb.bienvenue':    'Dalal ak yëgël
+Sama Commerce !',
+      'onb.demo_titre':   'Nangu données yi ak exemp?',
+      'onb.demo_desc':    'Bañ 3 produits ak 2 ngélaw ngir xamxam app bi.',
+      'onb.demo_oui':     '✅ Waaw, yokk',
+      'onb.demo_non':     'Deedeet jërejëf',
     },
   };
 

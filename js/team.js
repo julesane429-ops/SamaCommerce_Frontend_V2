@@ -293,14 +293,32 @@
     bd.addEventListener('click', e => { if (e.target === bd) bd.remove(); });
   }
 
-  function reshowInviteLink(member) {
-    // Reconstruire le lien depuis l'email du membre
-    const base  = document.querySelector('meta[name="api-base"]')?.content
-                || 'https://samacommerce-frontend-v2-1.onrender.com';
-    const email = encodeURIComponent(member.email);
-    // Le token n'est plus stocké côté client après création (sécurité)
-    // On réinvite proprement via l'API
-    notify('Pour renvoyer l\'invitation, supprimez et recréez l\'entrée.', 'info');
+  async function reshowInviteLink(member) {
+    try {
+      const res = await auth(`${API()}/members/${member.id}/resend`, { method: 'POST' });
+      if (!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      notify('🔗 Nouveau lien généré !', 'success');
+      // Afficher le lien dans une modale simple
+      const link = data.invite_link || '';
+      if (link) {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+        overlay.innerHTML = `
+          <div style="background:#fff;border-radius:20px;padding:24px;max-width:340px;width:90%;text-align:center;">
+            <div style="font-size:20px;margin-bottom:8px;">🔗 Lien d'invitation</div>
+            <div style="font-size:11px;color:#6B7280;margin-bottom:12px;">Valide 72h</div>
+            <input readonly value="${link}" style="width:100%;padding:10px;border:1.5px solid #E5E7EB;border-radius:12px;font-size:11px;margin-bottom:12px;box-sizing:border-box;">
+            <button onclick="navigator.clipboard.writeText('${link}');this.textContent='✅ Copié !'" style="width:100%;padding:12px;background:#7C3AED;color:#fff;border:none;border-radius:12px;font-weight:700;cursor:pointer;margin-bottom:8px;">📋 Copier le lien</button>
+            <button onclick="this.closest('[style*=fixed]').remove()" style="width:100%;padding:10px;background:#F3F4F6;border:none;border-radius:12px;cursor:pointer;">Fermer</button>
+          </div>`;
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+      }
+    } catch (err) {
+      const msg = String(err.message) === '404' ? 'Invitation déjà acceptée' : 'Erreur lors du renvoi';
+      notify(msg, 'error');
+    }
   }
 
   // ════════════════════════════════════════

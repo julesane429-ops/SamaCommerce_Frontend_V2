@@ -28,7 +28,14 @@
     if (!el || !profile) return;
 
     const plan        = profile.plan || 'Free';
-    const planCfg     = window.getPlan?.(plan) || { label: plan, emoji: '🆓', color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB', price: 0, products_limit: 5 };
+    const _planDefaults = {
+      Free:       { label:'Gratuit',    emoji:'🆓', color:'#6B7280', bg:'#F9FAFB', border:'#E5E7EB', price:0,     products_limit:5 },
+      Starter:    { label:'Starter',    emoji:'🌱', color:'#059669', bg:'#ECFDF5', border:'#6EE7B7', price:2500,  products_limit:30 },
+      Pro:        { label:'Pro',        emoji:'⭐', color:'#7C3AED', bg:'#EDE9FE', border:'#C4B5FD', price:5000,  products_limit:null },
+      Business:   { label:'Business',   emoji:'🏆', color:'#92400E', bg:'#FEF9C3', border:'#FCD34D', price:9000,  products_limit:null },
+      Enterprise: { label:'Enterprise', emoji:'🚀', color:'#A78BFA', bg:'#1E1B2E', border:'#5B21B6', price:15000, products_limit:null },
+    };
+    const planCfg = window.getPlan?.(plan) || _planDefaults[plan] || _planDefaults.Free;
     const PAID_PLANS  = ['Starter', 'Pro', 'Business', 'Enterprise'];
     const isPaid      = PAID_PLANS.includes(plan) && profile.upgrade_status === 'validé';
     const isPremium   = isPaid; // alias pour compatibilité

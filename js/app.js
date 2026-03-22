@@ -108,20 +108,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ======================
-  // 4️⃣ Auto refresh 30s
+  // 4️⃣ Auto refresh — délégué à realtime-sync.js (polling intelligent)
+  // setInterval supprimé ici — doublon avec realtime-sync.js
   // ======================
-  setInterval(async () => {
-    await syncFromServer();
-    updateStats();
-    verifierStockFaible();
-    afficherCategoriesVente();
-    afficherProduits();
-    afficherCategories();
-    afficherRapports();
-    afficherInventaire();
-
-    console.log("♻️ Refresh auto OK");
-  }, 30000);
 
   // ======================
   // 5️⃣ Changement période rapports

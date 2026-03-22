@@ -26,13 +26,35 @@ export function showSection(section) {
     section = 'menu';
   }
  
+  // Identifier la section courante pour la direction de l'animation
+  const prevSection = window.currentSection;
+  const navOrder    = sections;
+  const prevIdx     = navOrder.indexOf(prevSection);
+  const nextIdx     = navOrder.indexOf(section);
+  const dir         = nextIdx > prevIdx ? 'forward' : 'back';
+
+  // Cacher toutes les sections
   sections.forEach(function (s) {
     const el = document.getElementById(s + 'Section');
-    if (el) el.classList.add('hidden');
+    if (el) {
+      el.classList.add('hidden');
+      el.classList.remove('sc-enter-forward', 'sc-enter-back');
+    }
   });
- 
+
   const target = document.getElementById(section + 'Section');
-  if (target) target.classList.remove('hidden');
+  if (target) {
+    target.classList.remove('hidden');
+    // Déclencher l'animation de transition
+    if (prevSection && prevSection !== section) {
+      const animClass = dir === 'forward' ? 'sc-enter-forward' : 'sc-enter-back';
+      target.classList.add(animClass);
+      // Nettoyer après animation
+      target.addEventListener('animationend', () => {
+        target.classList.remove('sc-enter-forward', 'sc-enter-back');
+      }, { once: true });
+    }
+  }
  
   const backBtn = document.getElementById('backBtn');
   if (backBtn) backBtn.style.display = (section === 'menu') ? 'none' : 'block';

@@ -83,6 +83,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   window.hideSplash?.();
   window.scNotifications?.check();
+  // Recharger le guard d'abonnement après sync (données fraîches depuis le serveur)
+  window.subscriptionGuard?.reload();
   updateStats();
   verifierStockFaible();
   afficherCategoriesVente();

@@ -238,8 +238,36 @@
     guardNavigation();
   }
 
+  // ══════════════════════════════════════
+  // HELPER PUBLIC — vérification de feature
+  // Utilisable par n'importe quel module :
+  //   if (!window.canUseFeature('export')) { showUpgradeModal(); return; }
+  // ══════════════════════════════════════
+  function canUseFeature(feature) {
+    const state = window._subscriptionState;
+    if (!state) return true;  // pas encore chargé → on laisse passer
+    if (state.isExpired) return false;
+    return window.planHasFeature?.(state.plan, feature) ?? true;
+  }
+
+  function showUpgradeModal(feature) {
+    const minPlan = (() => {
+      if (!window.PLANS) return 'Pro';
+      const ordered = ['Starter', 'Pro', 'Business'];
+      return ordered.find(p => window.PLANS[p]?.features[feature]) || 'Pro';
+    })();
+    const cfg = window.PLANS?.[minPlan];
+    window.showNotification?.(
+      `${cfg?.emoji || '⭐'} La fonctionnalité "${feature}" nécessite le plan ${minPlan} (${(cfg?.price || 0).toLocaleString('fr-FR')} F/mois).`,
+      'warning'
+    );
+    setTimeout(() => window.showModalById?.('premiumModal'), 400);
+  }
+
   // Exposer pour que app.js puisse recharger après sync
   window.subscriptionGuard = { reload: loadProfile };
+  window.canUseFeature   = canUseFeature;
+  window.showUpgradeModal = showUpgradeModal;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

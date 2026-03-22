@@ -600,6 +600,18 @@
           <div style="font-weight:800;font-size:16px;color:#92400E;">9 000 F<span style="font-size:11px;font-weight:500;">/mois</span></div>
         </div>
       </div>
+
+      <!-- Enterprise -->
+      <div onclick="selectUpgradePlan('Enterprise')" id="plan-card-Enterprise"
+        style="border:2px solid #5B21B6;border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .15s;background:linear-gradient(135deg,#1E1B2E,#2E1065);">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <span style="font-family:'Sora',sans-serif;font-weight:800;font-size:14px;color:#A78BFA;">🚀 Enterprise</span>
+            <div style="font-size:11px;color:#C4B5FD;margin-top:2px;">Tout Business + <strong style="color:#F472B6;">3 boutiques</strong> · 5 employés</div>
+          </div>
+          <div style="font-weight:800;font-size:16px;color:#A78BFA;">15 000 F<span style="font-size:11px;font-weight:500;color:#C4B5FD;">/mois</span></div>
+        </div>
+      </div>
     </div>
 
     <button id="premiumModalCTA" onclick="goToUpgradeForm()"
@@ -671,12 +683,12 @@ let _selectedPlan = 'Pro';
 function selectUpgradePlan(plan) {
   _selectedPlan = plan;
   // Reset all cards
-  ['Starter','Pro','Business'].forEach(p => {
+  ['Starter','Pro','Business','Enterprise'].forEach(p => {
     const card = document.getElementById('plan-card-' + p);
     if (!card) return;
-    const colors = { Starter:'#6EE7B7', Pro:'#C4B5FD', Business:'#FCD34D' };
+    const colors = { Starter:'#6EE7B7', Pro:'#C4B5FD', Business:'#FCD34D', Enterprise:'#5B21B6' };
     card.style.border = '2px solid ' + colors[p];
-    card.style.background = p === 'Pro' ? 'linear-gradient(135deg,#F5F3FF,#fff)' : '';
+    card.style.background = p === 'Pro' ? 'linear-gradient(135deg,#F5F3FF,#fff)' : p === 'Enterprise' ? 'linear-gradient(135deg,#1E1B2E,#2E1065)' : '';
     card.style.transform = '';
   });
   // Highlight selected
@@ -686,8 +698,8 @@ function selectUpgradePlan(plan) {
     sel.style.transform = 'scale(1.01)';
   }
   // Update CTA
-  const prices = { Starter: 2500, Pro: 5000, Business: 9000 };
-  const labels = { Starter: '🌱 Starter', Pro: '⭐ Pro', Business: '🏆 Business' };
+  const prices = { Starter: 2500, Pro: 5000, Business: 9000, Enterprise: 15000 };
+  const labels = { Starter: '🌱 Starter', Pro: '⭐ Pro', Business: '🏆 Business', Enterprise: '🚀 Enterprise' };
   const cta = document.getElementById('premiumModalCTA');
   if (cta) cta.textContent = '🚀 Souscrire au plan ' + plan;
 }
@@ -695,7 +707,7 @@ function selectUpgradePlan(plan) {
 function goToUpgradeForm() {
   hideModalById('premiumModal');
   // Mettre à jour le formulaire avec le plan sélectionné
-  const prices = { Starter: 2500, Pro: 5000, Business: 9000 };
+  const prices = { Starter: 2500, Pro: 5000, Business: 9000, Enterprise: 15000 };
   const price = prices[_selectedPlan] || 5000;
 
   const planInput = document.getElementById('selectedPlan');
@@ -821,6 +833,7 @@ window.closePlusSheet = closePlusSheet;
 <script src="js/token-refresh.js"></script>
 <script src="js/planConfig.js"></script>
 <script src="js/subscription-guard.js"></script>
+<script src="js/boutique-switcher.js"></script>
 <script src="js/inapp-notifications.js"></script>
 <script src="js/credit-dashboard.js"></script>
 <script src="js/returns.js"></script>
@@ -837,12 +850,12 @@ let _selectedPlan = 'Pro';
 function selectUpgradePlan(plan) {
   _selectedPlan = plan;
   // Reset all cards
-  ['Starter','Pro','Business'].forEach(p => {
+  ['Starter','Pro','Business','Enterprise'].forEach(p => {
     const card = document.getElementById('plan-card-' + p);
     if (!card) return;
-    const colors = { Starter:'#6EE7B7', Pro:'#C4B5FD', Business:'#FCD34D' };
+    const colors = { Starter:'#6EE7B7', Pro:'#C4B5FD', Business:'#FCD34D', Enterprise:'#5B21B6' };
     card.style.border = '2px solid ' + colors[p];
-    card.style.background = p === 'Pro' ? 'linear-gradient(135deg,#F5F3FF,#fff)' : '';
+    card.style.background = p === 'Pro' ? 'linear-gradient(135deg,#F5F3FF,#fff)' : p === 'Enterprise' ? 'linear-gradient(135deg,#1E1B2E,#2E1065)' : '';
     card.style.transform = '';
   });
   // Highlight selected
@@ -852,8 +865,8 @@ function selectUpgradePlan(plan) {
     sel.style.transform = 'scale(1.01)';
   }
   // Update CTA
-  const prices = { Starter: 2500, Pro: 5000, Business: 9000 };
-  const labels = { Starter: '🌱 Starter', Pro: '⭐ Pro', Business: '🏆 Business' };
+  const prices = { Starter: 2500, Pro: 5000, Business: 9000, Enterprise: 15000 };
+  const labels = { Starter: '🌱 Starter', Pro: '⭐ Pro', Business: '🏆 Business', Enterprise: '🚀 Enterprise' };
   const cta = document.getElementById('premiumModalCTA');
   if (cta) cta.textContent = '🚀 Souscrire au plan ' + plan;
 }
@@ -861,7 +874,7 @@ function selectUpgradePlan(plan) {
 function goToUpgradeForm() {
   hideModalById('premiumModal');
   // Mettre à jour le formulaire avec le plan sélectionné
-  const prices = { Starter: 2500, Pro: 5000, Business: 9000 };
+  const prices = { Starter: 2500, Pro: 5000, Business: 9000, Enterprise: 15000 };
   const price = prices[_selectedPlan] || 5000;
 
   const planInput = document.getElementById('selectedPlan');

@@ -43,42 +43,9 @@ export function ouvrirModalEdit(produit) {
     document.getElementById('editCategorieProduit').appendChild(opt);
   });
   document.getElementById('editPrixAchatProduit').value = produit.priceAchat || produit.price_achat || 0;
+  document.getElementById('editPrixProduit').value = produit.price;
   document.getElementById('editStockProduit').value = produit.stock;
   document.getElementById('editDescriptionProduit').value = produit.description || '';
-
-  // ── Vente mixte : pré-remplir les champs ──
-  const isMixed = !!produit.is_mixed_sale;
-  const cbMixed = document.getElementById('editIsMixedSale');
-  if (cbMixed) {
-    cbMixed.checked = isMixed;
-    // Mettre à jour le visuel du toggle
-    const track = document.getElementById('editMixedSaleTrack');
-    const dot   = track?.querySelector('span');
-    if (track) track.style.background = isMixed ? '#7C3AED' : '#E5E7EB';
-    if (dot)   dot.style.left          = isMixed ? '22px'   : '2px';
-    const fields = document.getElementById('editMixedSaleFields');
-    const simple = document.getElementById('editPrixVenteSimpleGroup');
-    if (fields) fields.style.display = isMixed ? 'block' : 'none';
-    if (simple) simple.style.display = isMixed ? 'none'  : '';
-  }
-
-  if (isMixed) {
-    const lotEl    = document.getElementById('editLotSizeProduit');
-    const grossEl  = document.getElementById('editPrixGrosProduit');
-    const detailEl = document.getElementById('editPrixDetailProduit');
-    if (lotEl)    lotEl.value    = produit.lot_size    || 1;
-    if (grossEl)  grossEl.value  = produit.price_gros  || '';
-    if (detailEl) detailEl.value = produit.price_detail || produit.price || '';
-    document.getElementById('editPrixProduit').value = '';
-  } else {
-    document.getElementById('editPrixProduit').value = produit.price || 0;
-    const lotEl    = document.getElementById('editLotSizeProduit');
-    const grossEl  = document.getElementById('editPrixGrosProduit');
-    const detailEl = document.getElementById('editPrixDetailProduit');
-    if (lotEl)    lotEl.value    = '';
-    if (grossEl)  grossEl.value  = '';
-    if (detailEl) detailEl.value = '';
-  }
 
   // Stocker l'ID du produit en cours d'édition
   document.getElementById('modalEditProduit').dataset.id = produit.id;

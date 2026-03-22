@@ -75,7 +75,6 @@ export async function postSaleServer(sale) {
     }
 
     const data = await res.json();
-    console.log('✅ Vente enregistrée sur serveur :', data);
     return data;
   } catch (e) {
     console.warn('🌐 Erreur réseau lors du POST /sales', e);
@@ -214,10 +213,6 @@ export async function syncFromServer() {
       });
 
       // ✅ Debug complet
-      console.log("🛒 Toutes les ventes normalisées :", appData.ventes);
-      console.log("📦 Crédits filtrés :", appData.credits);
-      console.log("💳 Méthodes de paiement distinctes :",
-        [...new Set(appData.ventes.map(v => (v.payment_method || '').trim()))]);
     }
 
 

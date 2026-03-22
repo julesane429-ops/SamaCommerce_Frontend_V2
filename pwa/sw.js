@@ -3,8 +3,8 @@
 // Version 5 — Network First pour JS/HTML/CSS, Cache First pour assets
 // ============================================================
 
-const CACHE_STATIC = 'samacommerce-static-v5';
-const CACHE_PAGES  = 'samacommerce-pages-v5';
+const CACHE_STATIC = 'samacommerce-static-v6';
+const CACHE_PAGES  = 'samacommerce-pages-v6';
 const API_URL      = 'https://samacommerce-backend-v2.onrender.com';
 
 const STATIC_ASSETS = [

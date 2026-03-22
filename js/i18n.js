@@ -128,7 +128,7 @@
 
       // Plan features
       'plan.produits_illimites': 'Produits illimités',
-      'plan.equipe':             'Gestion d'équipe',
+      'plan.equipe':             "Gestion d'équipe",
       'plan.rapports':           'Rapports avancés',
       'plan.export':             'Export Excel',
       'plan.photos':             'Photos produits',
@@ -137,8 +137,8 @@
       // Onboarding
       'onb.bienvenue':    'Bienvenue sur
 Sama Commerce !',
-      'onb.demo_titre':   'Démarrer avec des données d'exemple ?',
-      'onb.demo_desc':    'Ajout de 3 produits et 2 catégories pour découvrir l'app.',
+      'onb.demo_titre':   "Démarrer avec des données d'exemple ?",
+      'onb.demo_desc':    "Ajout de 3 produits et 2 catégories pour découvrir l'app.",
       'onb.demo_oui':     '✅ Oui, ajouter',
       'onb.demo_non':     'Non merci',
     },

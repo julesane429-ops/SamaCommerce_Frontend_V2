@@ -258,38 +258,158 @@ export function afficherStatsCredits() {
 export function initRapportPDF() {
   const btn = document.getElementById("btnPdfRapports");
   if (!btn) return;
+  btn.addEventListener("click", generateRapportPDF);
+}
 
-  btn.addEventListener("click", () => {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+export function generateRapportPDF() {
+  if (!window.jspdf?.jsPDF) {
+    window.showNotification?.('jsPDF non disponible', 'error');
+    return;
+  }
+  const { jsPDF } = window.jspdf;
+  const doc     = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W       = doc.internal.pageSize.getWidth();
+  const now     = new Date();
+  const dateStr = now.toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
+  const periode = document.getElementById('periodeRapports')?.value || 'tout';
+  const boutique = localStorage.getItem('sc_company') ||
+    document.getElementById('appHeader')?.textContent?.replace('🏪','').trim() || 'Sama Commerce';
 
-    const periode = document.getElementById("periodeRapports").value;
+  const VIOLET = [124, 58, 237];
+  const GREEN  = [16, 185, 129];
+  const RED    = [239, 68, 68];
+  const GRAY   = [107, 114, 128];
+  const DARK   = [30, 27, 75];
+  const LIGHT  = [249, 250, 251];
 
-    const caEncaisse = document.getElementById("caEncaisse").textContent;
-    const caEnAttente = document.getElementById("caEnAttente").textContent;
-    const credits = document.getElementById("creditsEnCours").textContent;
-    const taux = document.getElementById("tauxRecouvrement").textContent;
+  // ── EN-TÊTE ──
+  doc.setFillColor(...VIOLET);
+  doc.rect(0, 0, W, 35, 'F');
+  doc.setFillColor(236, 72, 153);
+  doc.triangle(W-40, 0, W, 0, W, 35, 'F');
 
-    doc.setFontSize(18);
-    doc.text("RAPPORT FINANCIER", 20, 20);
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(18); doc.setFont('helvetica', 'bold');
+  doc.text(boutique, 14, 14);
+  doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+  doc.text('RAPPORT FINANCIER', 14, 22);
+  doc.setFontSize(9);
+  doc.text(`Période : ${periode} · Généré le ${dateStr}`, 14, 29);
 
-    doc.setFontSize(12);
-    doc.text("Période: " + periode, 20, 35);
+  // ── KPIs ──
+  let y = 46;
+  const ventes = appData.ventes || [];
+  const now0 = new Date(); now0.setHours(0,0,0,0);
 
-    doc.text("CA encaissé: " + caEncaisse, 20, 50);
-    doc.text("CA en attente: " + caEnAttente, 20, 60);
-    doc.text("Crédits en cours: " + credits, 20, 70);
-    doc.text("Taux recouvrement: " + taux, 20, 80);
+  // Filtrer selon période
+  const filterVentes = (v) => {
+    const d = new Date(v.created_at);
+    if (periode === 'jour')    return d >= now0;
+    if (periode === 'semaine') return d >= new Date(now0 - 6*86400000);
+    if (periode === 'mois')    return d >= new Date(now0.getFullYear(), now0.getMonth(), 1);
+    return true;
+  };
+  const filtered = ventes.filter(filterVentes);
+  const caEncaisse  = filtered.filter(v => v.paid).reduce((s,v) => s + (parseFloat(v.total)||0), 0);
+  const caCredit    = filtered.filter(v => !v.paid).reduce((s,v) => s + (parseFloat(v.total)||0), 0);
+  const nbVentes    = filtered.length;
+  const panierMoyen = nbVentes > 0 ? caEncaisse / nbVentes : 0;
 
-    let y = 100;
-    doc.text("Répartition paiements :", 20, y);
-    y += 10;
-
-    Object.entries(appData.stats.paiements || {}).forEach(([m, v]) => {
-      doc.text(`${m} : ${v.toLocaleString()} F`, 25, y);
-      y += 8;
-    });
-
-    doc.save("rapport_financier.pdf");
+  // Répartition paiements
+  const paiements = { especes: 0, wave: 0, orange: 0 };
+  filtered.filter(v => v.paid).forEach(v => {
+    const m = (v.payment_method||'').toLowerCase();
+    if (paiements[m] !== undefined) paiements[m] += parseFloat(v.total)||0;
   });
+
+  // Cartes KPI (2x2)
+  const fmt = v => Math.round(v).toLocaleString('fr-FR') + ' F';
+  const kpis = [
+    { label: 'CA Encaissé',    value: fmt(caEncaisse),  color: GREEN },
+    { label: 'CA Crédit',      value: fmt(caCredit),    color: RED   },
+    { label: 'Nb Ventes',      value: nbVentes,         color: VIOLET},
+    { label: 'Panier Moyen',   value: fmt(panierMoyen), color: GRAY  },
+  ];
+
+  const cardW = (W - 30) / 2;
+  kpis.forEach((k, i) => {
+    const cx = 10 + (i % 2) * (cardW + 10);
+    const cy = y + Math.floor(i / 2) * 22;
+    doc.setFillColor(...LIGHT);
+    doc.roundedRect(cx, cy, cardW, 18, 3, 3, 'F');
+    doc.setFillColor(...k.color);
+    doc.rect(cx, cy, 3, 18, 'F');
+    doc.setTextColor(...DARK); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+    doc.text(k.label.toUpperCase(), cx+7, cy+6);
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...k.color);
+    doc.text(String(k.value), cx+7, cy+14);
+  });
+  y += 50;
+
+  // ── RÉPARTITION PAIEMENTS ──
+  doc.setTextColor(...DARK); doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+  doc.text('Répartition des paiements', 14, y); y += 6;
+  doc.setDrawColor(229,231,235); doc.line(14, y, W-14, y); y += 5;
+
+  const payRows = [
+    ['💵 Espèces',      paiements.especes, caEncaisse],
+    ['📱 Wave',         paiements.wave,    caEncaisse],
+    ['📞 Orange Money', paiements.orange,  caEncaisse],
+  ];
+  payRows.forEach(([label, amount, total]) => {
+    const pct = total > 0 ? Math.round((amount/total)*100) : 0;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...GRAY);
+    doc.text(label, 14, y);
+    doc.setTextColor(...DARK); doc.setFont('helvetica', 'bold');
+    doc.text(fmt(amount), W-50, y);
+    doc.setTextColor(...GRAY); doc.setFont('helvetica', 'normal');
+    doc.text(`${pct}%`, W-14, y, { align: 'right' });
+    // Barre
+    doc.setFillColor(229,231,235); doc.rect(14, y+2, W-28, 3, 'F');
+    if (pct > 0) { doc.setFillColor(...VIOLET); doc.rect(14, y+2, (W-28)*pct/100, 3, 'F'); }
+    y += 10;
+  });
+  y += 4;
+
+  // ── TOP PRODUITS ──
+  doc.setTextColor(...DARK); doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+  doc.text('Top produits', 14, y); y += 6;
+  doc.setDrawColor(229,231,235); doc.line(14, y, W-14, y); y += 3;
+
+  const topMap = {};
+  filtered.forEach(v => {
+    const k = v.product_name || 'Inconnu';
+    if (!topMap[k]) topMap[k] = { name: k, ca: 0, nb: 0 };
+    topMap[k].ca += parseFloat(v.total)||0;
+    topMap[k].nb += parseInt(v.quantity)||0;
+  });
+  const top5 = Object.values(topMap).sort((a,b) => b.ca - a.ca).slice(0,5);
+
+  if (top5.length > 0 && doc.autoTable) {
+    doc.autoTable({
+      startY: y,
+      head: [['Produit', 'Ventes', 'CA']],
+      body: top5.map(p => [p.name, p.nb + ' unités', fmt(p.ca)]),
+      styles:     { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: VIOLET, textColor: [255,255,255], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: LIGHT },
+      columnStyles: { 0: {cellWidth:'auto'}, 1:{cellWidth:30,halign:'center'}, 2:{cellWidth:35,halign:'right'} },
+      margin: { left: 14, right: 14 },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  // ── PIED DE PAGE ──
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFillColor(249,250,251); doc.rect(0, doc.internal.pageSize.getHeight()-12, W, 12, 'F');
+    doc.setTextColor(...GRAY); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+    doc.text(`${boutique} · Rapport ${periode} · Page ${i}/${pageCount}`, W/2, doc.internal.pageSize.getHeight()-4, {align:'center'});
+  }
+
+  const filename = `rapport_${periode}_${now.toISOString().split('T')[0]}.pdf`;
+  doc.save(filename);
+  window.showNotification?.('📄 Rapport PDF exporté', 'success');
 }

@@ -1169,6 +1169,55 @@
     <!-- ── ANALYTICS ── -->
     <div id="analytics" class="section">
       <div class="page-title">📈 Analyses & Chiffres</div>
+      <!-- ── KPIs Business ── -->
+      <div class="stats-grid" style="margin-bottom:16px;">
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-card-label">Conversion Free→Payant</div>
+            <div class="stat-icon" style="background:#EDE9FE;">📈</div>
+          </div>
+          <div class="stat-value" id="kpiConversion">—</div>
+          <div class="stat-footer"><span class="stat-trend trend-up" id="kpiNew7d">—</span><span>7 derniers jours</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-card-label">MRR Total</div>
+            <div class="stat-icon" style="background:#ECFDF5;">💰</div>
+          </div>
+          <div class="stat-value" id="kpiMRR">—</div>
+          <div class="stat-footer"><span class="stat-trend" id="kpiNew30d">—</span><span>30 derniers jours</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-card-label">Taux de Churn</div>
+            <div class="stat-icon" style="background:#FEE2E2;">📉</div>
+          </div>
+          <div class="stat-value" id="kpiChurn" style="color:var(--red);">—</div>
+          <div class="stat-footer"><span class="stat-trend trend-down">Abonnements expirés non renouvelés</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-card-label">Expirent dans 7j</div>
+            <div class="stat-icon" style="background:#FEF3C7;">⏳</div>
+          </div>
+          <div class="stat-value" id="kpiExpiring" style="color:var(--orange);">—</div>
+          <div class="stat-footer"><span class="stat-trend trend-down">À relancer</span></div>
+        </div>
+      </div>
+
+      <!-- MRR par plan + Cibles conversion -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+        <div class="chart-card">
+          <div class="chart-card-title">💰 MRR par plan</div>
+          <div id="mrrByPlan"><div style="color:#9CA3AF;font-size:12px;text-align:center;padding:16px;">Chargement…</div></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">🎯 Cibles de conversion (Free → 4-5 produits)</div>
+          <div id="nearLimitUsers" style="max-height:200px;overflow-y:auto;"><div style="color:#9CA3AF;font-size:12px;text-align:center;padding:16px;">Chargement…</div></div>
+        </div>
+      </div>
+
+
 
       <div class="kpi-grid">
         <div class="kpi-card">

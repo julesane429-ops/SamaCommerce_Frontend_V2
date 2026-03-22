@@ -1438,73 +1438,101 @@ async function fetchAuthJSON(path, opts = {}) {
 /* ====== Chargement principal ====== */
 async function loadAnalytics(period = 'monthly') {
     try {
-        // Indicateur console pour debug
-        console.log("🔎 loadAnalytics period =", period);
+        console.log('🔎 loadAnalytics period =', period);
 
-        // Lancer les requêtes en parallèle
-        const [revenus, transactions, accounts, users] = await Promise.all([
-            fetchAuthJSON(`/admin-stats/revenus?period=${encodeURIComponent(period)}`),
-            fetchAuthJSON(`/admin-stats/transactions?limit=100`),
-            fetchAuthJSON(`/admin-stats/accounts`),
-            fetchAuthJSON(`/auth/users`)
+        const [revenusRes, businessRes] = await Promise.allSettled([
+            fetch(`${API_BASE}/admin-stats/revenus?period=${period}`, {
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+            }).then(r => r.ok ? r.json() : null),
+            fetch(`${API_BASE}/admin-stats/business`, {
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+            }).then(r => r.ok ? r.json() : null),
         ]);
 
-        console.log('📊 revenus', revenus, '📥 transactions', transactions, '🏦 accounts', accounts);
+        const revenus  = revenusRes.status  === 'fulfilled' ? revenusRes.value  : null;
+        const business = businessRes.status === 'fulfilled' ? businessRes.value : null;
 
-        // KPI 1 : Chiffre d'affaires (balance total)
-        document.getElementById('kpiCA').textContent = formatFCFA(revenus.balance || 0);
-
-        // KPI 2 : Taux de conversion = validatedPremium / totalUsers * 100
-        const totalUsers = Array.isArray(users) ? users.length : 0;
-        const validatedPremiumUsers = (users || []).filter(u => u.plan === 'Premium' && (u.upgrade_status === 'validé' || u.upgrade_status === 'validé'.toLowerCase()));
-        const validatedCount = validatedPremiumUsers.length;
-        const conversion = totalUsers ? ((validatedCount / totalUsers) * 100) : 0;
-        document.getElementById('kpiConversion').textContent = conversion.toFixed(1) + '%';
-
-        // KPI 3 : Valeur moyenne par abonnement (balance / validatedCount)
-        const avgValue = validatedCount ? ((revenus.balance || 0) / validatedCount) : 0;
-        document.getElementById('kpiAvgValue').textContent = formatFCFA(avgValue);
-
-        // KPI 4 : Rétention = proportion des premium validés dont expiration > today
-        const now = new Date();
-        const premiumWithFutureExp = validatedPremiumUsers.filter(u => u.expiration && new Date(u.expiration) > now).length;
-        const retention = validatedCount ? ((premiumWithFutureExp / validatedCount) * 100) : 0;
-        document.getElementById('kpiRetention').textContent = retention.toFixed(1) + '%';
-
-        // Balance / Period / Pending (section Revenus déjà sur la page)
         if (revenus) {
-            if (document.getElementById('balanceMain')) document.getElementById('balanceMain').textContent = formatFCFA(revenus.balance || 0);
-            if (document.getElementById('revenuePeriodValue')) document.getElementById('revenuePeriodValue').textContent = formatFCFA(revenus.periodTotal || 0);
-            if (document.getElementById('pendingAmount')) document.getElementById('pendingAmount').textContent = formatFCFA(revenus.pending || 0);
+            console.log('📊 revenus', revenus);
+            const fmt = v => Number(v||0).toLocaleString('fr-FR') + ' FCFA';
+            const el = id => document.getElementById(id);
+            if (el('revenueBalance'))  el('revenueBalance').textContent  = fmt(revenus.balance);
+            if (el('revenuePeriod'))   el('revenuePeriod').textContent   = fmt(revenus.periodTotal);
+            if (el('revenuePending'))  el('revenuePending').textContent  = fmt(revenus.pending);
+            if (el('pendingAmount'))   el('pendingAmount').textContent   = fmt(revenus.pending);
         }
 
-        // Transactions récentes (liste simple)
-        renderTransactionsList(transactions);
+        if (business) {
+            // Conversion rate
+            const kpiConv = document.getElementById('kpiConversion');
+            if (kpiConv) kpiConv.textContent = business.conversion.rate;
 
-        // Graph 1 : répartition des revenus par méthode — on essaie d'utiliser accounts.accounts en priorité
-        let breakdownData = { wave: 0, orange: 0, cash: 0 };
-        if (accounts && accounts.accounts) {
-            breakdownData = Object.assign(breakdownData, accounts.accounts);
-        } else {
-            // fallback : calculer à partir des transactions
-            (transactions || []).forEach(t => {
-                const m = (t.payment_method || t.method || '').toLowerCase();
-                if (m === 'wave' || m === 'orange' || m === 'cash') {
-                    breakdownData[m] = (breakdownData[m] || 0) + Number(t.amount || t.total || 0);
-                }
-            });
+            // MRR total
+            const kpiMRR = document.getElementById('kpiMRR');
+            if (kpiMRR) kpiMRR.textContent = Number(business.mrr_total||0).toLocaleString('fr-FR') + ' F';
+
+            // Churn rate
+            const kpiChurn = document.getElementById('kpiChurn');
+            if (kpiChurn) kpiChurn.textContent = business.churn_rate;
+
+            // Expiring soon
+            const kpiExpiring = document.getElementById('kpiExpiring');
+            if (kpiExpiring) kpiExpiring.textContent = business.expiring_soon;
+
+            // MRR par plan
+            renderMRRByPlan(business.mrr);
+
+            // Near-limit users (cibles de conversion)
+            renderNearLimit(business.near_limit);
+
+            // Growth
+            if (business.growth) {
+                const el7  = document.getElementById('kpiNew7d');
+                const el30 = document.getElementById('kpiNew30d');
+                if (el7)  el7.textContent  = business.growth.new_7d  + ' inscrits';
+                if (el30) el30.textContent = business.growth.new_30d + ' inscrits';
+            }
         }
-        renderRevenueBreakdownChart(breakdownData);
-
-        // Graph 2 : croissance mensuelle à partir des transactions (regrouper par mois)
-        const monthly = aggregateMonthly(transactions || []);
-        renderGrowthChart(monthly);
 
     } catch (err) {
-        console.error("Erreur loadAnalytics:", err);
-        // message simple pour l'admin
-        showNotification ? showNotification("Impossible de charger les analyses", "error") : alert("Erreur chargement analyses : " + (err.message || err));
+        console.error('Erreur loadAnalytics:', err.message);
     }
+}
+
+function renderMRRByPlan(mrr = []) {
+    const el = document.getElementById('mrrByPlan');
+    if (!el) return;
+    const planColors = { Starter: '#059669', Pro: '#7C3AED', Business: '#D97706' };
+    el.innerHTML = mrr.length ? mrr.map(r => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F3F4F6;">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:10px;height:10px;border-radius:50%;background:${planColors[r.plan]||'#6B7280'};"></div>
+                <span style="font-weight:700;font-size:13px;">${r.plan}</span>
+                <span style="font-size:11px;color:#9CA3AF;">${r.nb_actifs} actif${r.nb_actifs>1?'s':''}</span>
+            </div>
+            <span style="font-weight:800;font-size:13px;color:${planColors[r.plan]||'#6B7280'};">${Number(r.mrr_total).toLocaleString('fr-FR')} F</span>
+        </div>`).join('') : '<div style="color:#9CA3AF;font-size:12px;text-align:center;padding:16px;">Aucun abonné actif</div>';
+}
+
+function renderNearLimit(users = []) {
+    const el = document.getElementById('nearLimitUsers');
+    if (!el) return;
+    el.innerHTML = users.length ? users.map(u => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F3F4F6;">
+            <div>
+                <div style="font-weight:700;font-size:12px;">${u.company_name||u.username}</div>
+                <div style="font-size:11px;color:#9CA3AF;">${u.nb_produits}/5 produits</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+                <div style="width:60px;height:6px;background:#E5E7EB;border-radius:99px;overflow:hidden;">
+                    <div style="width:${(u.nb_produits/5)*100}%;height:100%;background:${u.nb_produits>=5?'#EF4444':'#F59E0B'};border-radius:99px;"></div>
+                </div>
+                <button onclick="window.open('https://wa.me/${(u.phone||'').replace(/\s/g,'').replace(/^0/,'221')}','_blank')"
+                    style="background:#25D366;color:#fff;border:none;padding:3px 7px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;${u.phone?'':'display:none;'}">
+                    WA
+                </button>
+            </div>
+        </div>`).join('') : '<div style="color:#9CA3AF;font-size:12px;text-align:center;padding:16px;">Aucun utilisateur proche de la limite</div>';
 }
 
 /* ====== Rendu transactions ====== */

@@ -20,105 +20,97 @@ import { annulerVente, renderSalesHistory, finaliserVenteCredit, ajouterAuPanier
 
 export async function handleAddProductClick() {
   try {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      showNotification("❌ Vous devez être connecté pour ajouter un produit", "error");
+    // /auth/me — profil de l'utilisateur connecté uniquement (sécurisé)
+    const meRes = await authfetch(`${API_BASE}/auth/me`);
+    if (!meRes.ok) {
+      showNotification("\u274C Impossible de v\u00e9rifier votre compte", "error");
+      return;
+    }
+    const me = await meRes.json();
+
+    // Upgrade en attente
+    if (me.upgrade_status === "en attente") {
+      showNotification("\u23F3 Votre demande Premium est en cours de validation.", "warning");
       return;
     }
 
-    const userId = getCurrentUserId();
-    if (!userId) {
-      showNotification("❌ Utilisateur introuvable", "error");
+    // Premium valide
+    const isPremium = me.plan === "Premium" && me.upgrade_status === "valid\u00e9";
+    const expired   = me.expiration && new Date(me.expiration) < new Date();
+
+    if (isPremium && !expired) {
+      showModal("ajoutProduit");
       return;
     }
 
-    // 🔎 Vérifier l’utilisateur connecté
-    const userRes = await fetch(`${API_BASE}/auth/users`, {
-      headers: { "Authorization": `Bearer ${token}` }
-    });
-
-    if (!userRes.ok) throw new Error("Erreur API Utilisateurs " + userRes.status);
-
-    const users = await userRes.json();
-    const currentUser = users.find(u => u.id === userId);
-
-    if (!currentUser) {
-      showNotification("❌ Utilisateur introuvable", "error");
+    if (isPremium && expired) {
+      showNotification("\u26A0\uFE0F Votre abonnement Premium a expir\u00e9. Renouvelez pour continuer.", "warning");
+      showModalById("premiumModal");
       return;
     }
 
-    // 🚫 Cas 1 : Upgrade en attente = blocage total
-    if (currentUser.upgrade_status === "en attente") {
-      showNotification("⏳ Votre demande Premium est en attente de validation. Vous ne pouvez pas ajouter de produit pour le moment.", "warning");
-      return;
+    // Free — v\u00e9rifier quota (la vraie limite est aussi c\u00f4t\u00e9 serveur)
+    const prodRes  = await authfetch(`${API_BASE}/products`);
+    const products = prodRes.ok ? await prodRes.json() : [];
+
+    if (products.length >= 5) {
+      showModalById("premiumModal");
+    } else {
+      showModal("ajoutProduit");
     }
-
-    // 🔄 Charger produits existants
-    const prodRes = await fetch(`${API_BASE}/products`, {
-      headers: { "Authorization": `Bearer ${token}` }
-    });
-
-    if (!prodRes.ok) throw new Error("Erreur API Produits " + prodRes.status);
-
-    const products = await prodRes.json();
-    const userProducts = products.filter(p => p.user_id === userId);
-
-    // ✅ Cas 2 : Premium validé
-    if (currentUser.plan === "Premium" && currentUser.upgrade_status === "validé") {
-      showModal("ajoutProduit"); // pas de limite
-      return;
-    }
-
-    // ✅ Cas 3 : Free ou rejeté => limite 5 produits
-    if (currentUser.plan === "Free" || currentUser.upgrade_status === "rejeté") {
-      if (userProducts.length >= 5) {
-        showModalById("premiumModal"); // proposer upgrade
-      } else {
-        showModal("ajoutProduit"); // peut ajouter
-      }
-      return;
-    }
-
-    // 🔒 Sécurité : fallback
-    showModal("ajoutProduit");
 
   } catch (err) {
     console.error("Erreur handleAddProductClick:", err);
-    showNotification("❌ Impossible d’ajouter le produit", "error");
+    showNotification("\u274C Impossible d'ajouter le produit", "error");
   }
 }
 
 // Soumission du formulaire Upgrade
-document.getElementById("upgradeForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('upgradeForm');
+  if (!form) return;
 
-  const phone = document.getElementById("phone").value.trim();
-  const payment_method = document.getElementById("payment_method").value.trim();
-  const amount = document.getElementById("amount").value.trim();
-  const expiration = document.getElementById("expiration").value;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-  if (!phone || !payment_method || !amount || !expiration) {
-    showNotification("❌ Tous les champs sont requis.", "error");
-    return;
-  }
+    const phone          = document.getElementById('phone')?.value.trim();
+    const payment_method = document.getElementById('payment_method')?.value.trim();
+    const amount         = document.getElementById('amount')?.value.trim();
 
-  try {
-    const token = localStorage.getItem("authToken");
+    if (!phone || !payment_method || !amount) {
+      showNotification('\u274C Tous les champs sont requis.', 'error');
+      return;
+    }
 
-    const res = await fetch(`${API_BASE}/auth/upgrade`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        phone,
-        payment_method,
-        amount,
-        expiration,
-        upgrade_status: "en_attente"
-      })
-    });
+    const btn = form.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.textContent = '\u23F3 Envoi en cours\u2026'; }
+
+    try {
+      const res = await authfetch(`${API_BASE}/auth/upgrade`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, payment_method, amount })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showNotification('\u274C ' + (data.error || "Impossible d'envoyer la demande."), 'error');
+        return;
+      }
+
+      showNotification('\u2705 Demande Premium envoy\u00e9e ! Validation sous 24h.', 'success');
+      hideModalById?.('contactModal');
+      setTimeout(() => window.location.reload(), 1200);
+
+    } catch (err) {
+      console.error('\u274C Erreur upgrade:', err);
+      showNotification('\u274C Erreur r\u00e9seau. Veuillez r\u00e9essayer.', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Envoyer ma demande'; }
+    }
+  });
+});
 
     if (!res.ok) {
       let errorMsg = "Impossible d’upgrader.";

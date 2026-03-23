@@ -26,10 +26,13 @@
   // ══════════════════════════════════════
   // STORAGE (clé par userId pour multi-compte)
   // ══════════════════════════════════════
-  function storageKey() {
-    const uid = localStorage.getItem('userId') || 'default';
-    return `${STORAGE_KEY}_${uid}`;
-  }
+  
+function storageKey() {
+  const uid = localStorage.getItem('userId') || 'default';
+  // ✅ Clé par boutique — chaque boutique a son propre objectif
+  const bid = localStorage.getItem('sc_active_boutique') || '0';
+  return `${STORAGE_KEY}_${uid}_b${bid}`;
+}
 
   function loadGoal() {
     try {

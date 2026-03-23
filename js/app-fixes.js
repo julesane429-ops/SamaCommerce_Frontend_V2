@@ -1,10 +1,10 @@
 /**
- * app-fixes.js v3
+ * app-fixes.js v4
  *
- * 1. Debounce alerts/notifications — cible directement les fonctions de refresh
- *    (pas syncFromServer qui est déjà patché 2× en chaîne)
+ * 1. Stabilise #alertesStock — intercepte les display:none rapides via MutationObserver
+ *    et ne cache vraiment que si appData confirme l'absence de stock faible
  *
- * 2. CSS : transition douce sur #alertesStock (évite le flash show/hide)
+ * 2. Debounce des fonctions de notification en rafale
  *
  * Intégration : dernier script avant </body>
  *   <script src="js/app-fixes.js"></script>
@@ -12,31 +12,82 @@
 (function () {
 
   // ══════════════════════════════════════
-  // 1. TRANSITION CSS sur #alertesStock
-  //    Évite le clignotement brutal show/hide
+  // 1. STABILISER #alertesStock
+  //    verifierStockFaible() est appelé plusieurs fois pendant syncFromServer
+  //    → appData.produits passe par [] → display:none → display:block → clignotement
+  //
+  //    Fix : quand display:none arrive, on l'annule immédiatement et on reporte
+  //    la décision de masquage 700ms plus tard en vérifiant appData directement.
   // ══════════════════════════════════════
-  function addAlertTransition() {
-    const style = document.createElement('style');
-    style.textContent = `
-      #alertesStock {
-        transition: opacity .35s ease, max-height .35s ease !important;
-        overflow: hidden !important;
+  function stabilizeAlertDiv() {
+    var el = document.getElementById('alertesStock');
+    if (!el || el._scStabilized) return;
+    el._scStabilized = true;
+
+    var _hideTimer  = null;
+    var _skipNext   = false;   // flag pour ignorer les mutations qu'on génère nous-mêmes
+
+    function reallyHide() {
+      var produits    = window.appData && window.appData.produits ? window.appData.produits : [];
+      var hasLowStock = produits.some(function(p) { return p.stock > 0 && p.stock <= 5; });
+      if (!hasLowStock && produits.length > 0) {
+        _skipNext = true;
+        el.style.display = 'none';
       }
-      #alertesStock[style*="display: none"],
-      #alertesStock[style*="display:none"] {
-        opacity: 0 !important;
-        max-height: 0 !important;
-        pointer-events: none;
+      // Si produits est vide (sync en cours) → on ne masque pas
+    }
+
+    var obs = new MutationObserver(function() {
+      if (_skipNext) { _skipNext = false; return; }
+
+      var d = el.style.display;
+
+      if (d === 'none') {
+        // Annuler le masquage immédiat
+        _skipNext = true;
+        el.style.display = '';
+
+        // Replanifier un vrai masquage 700ms plus tard
+        clearTimeout(_hideTimer);
+        _hideTimer = setTimeout(reallyHide, 700);
+
+      } else {
+        // On veut afficher → annuler tout masquage en attente
+        clearTimeout(_hideTimer);
       }
-    `;
-    document.head.appendChild(style);
+    });
+
+    obs.observe(el, { attributes: true, attributeFilter: ['style'] });
   }
-  addAlertTransition();
+
+  // Lancer dès que #alertesStock est dans le DOM
+  function waitForAlert() {
+    if (document.getElementById('alertesStock')) {
+      stabilizeAlertDiv();
+    } else {
+      setTimeout(waitForAlert, 200);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', waitForAlert);
+  } else {
+    waitForAlert();
+  }
+
+  // Re-stabiliser après switch de boutique (l'élément est parfois recréé)
+  window.addEventListener('boutique:changed', function() {
+    setTimeout(function() {
+      var el = document.getElementById('alertesStock');
+      if (el) { el._scStabilized = false; stabilizeAlertDiv(); }
+    }, 400);
+  });
+
 
   // ══════════════════════════════════════
-  // 2. DEBOUNCE DES FONCTIONS DE REFRESH
-  //    verifierStockFaible, inappNotifications.refresh, scNotifications.check
-  //    sont appelés en rafale après syncFromServer
+  // 2. DEBOUNCE NOTIFICATIONS EN RAFALE
+  //    inapp-notifications.js + notifications.js patchent tous deux syncFromServer
+  //    → refresh() + check() appelés 4-5× par sync
   // ══════════════════════════════════════
   function makeDebounced(fn, delay) {
     var t;
@@ -49,53 +100,26 @@
   }
 
   function applyDebounces() {
-    // a. verifierStockFaible — cause principale des alertes qui clignotent
-    if (window.verifierStockFaible && !window.verifierStockFaible._debounced) {
-      var origVSF = window.verifierStockFaible;
-      window.verifierStockFaible = makeDebounced(origVSF, 500);
-      window.verifierStockFaible._debounced = true;
+    if (window.inappNotifications && window.inappNotifications.refresh && !window.inappNotifications.refresh._db) {
+      var r = makeDebounced(window.inappNotifications.refresh, 700);
+      r._db = true;
+      window.inappNotifications.refresh = r;
     }
-
-    // b. inapp-notifications refresh
-    if (window.inappNotifications?.refresh && !window.inappNotifications.refresh._debounced) {
-      var origIR = window.inappNotifications.refresh;
-      window.inappNotifications.refresh = makeDebounced(origIR, 700);
-      window.inappNotifications.refresh._debounced = true;
-    }
-
-    // c. scNotifications.check (notifications.js)
-    if (window.scNotifications?.check && !window.scNotifications.check._debounced) {
-      var origSC = window.scNotifications.check;
-      window.scNotifications.check = makeDebounced(origSC, 700);
-      window.scNotifications.check._debounced = true;
+    if (window.scNotifications && window.scNotifications.check && !window.scNotifications.check._db) {
+      var c = makeDebounced(window.scNotifications.check, 700);
+      c._db = true;
+      window.scNotifications.check = c;
     }
   }
 
-  // Attendre que les modules soient initialisés
-  var _attempts = 0;
-  function waitAndApply() {
-    _attempts++;
-    var ready = window.verifierStockFaible
-             && window.inappNotifications?.refresh
-             && window.scNotifications?.check;
-
-    if (ready) {
+  var _att = 0;
+  function waitAndDebounce() {
+    if (window.inappNotifications && window.scNotifications) {
       applyDebounces();
-    } else if (_attempts < 30) {
-      setTimeout(waitAndApply, 300);
+    } else if (_att++ < 30) {
+      setTimeout(waitAndDebounce, 300);
     }
   }
-
-  // Lancer après le chargement complet
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() { setTimeout(waitAndApply, 500); });
-  } else {
-    setTimeout(waitAndApply, 500);
-  }
-
-  // Re-appliquer si les fonctions sont re-définies (après switch boutique)
-  window.addEventListener('boutique:changed', function() {
-    setTimeout(applyDebounces, 500);
-  });
+  setTimeout(waitAndDebounce, 800);
 
 })();

@@ -31,10 +31,16 @@
     _activeBoutique = boutique;
     if (boutique?.id) {
       localStorage.setItem(KEY, String(boutique.id));
+      // ✅ Sauvegarder is_primary pour que api.js sache si envoyer X-Boutique-Id
+      localStorage.setItem(KEY + '_is_primary', boutique.is_primary ? '1' : '0');
     } else {
       localStorage.removeItem(KEY);
+      localStorage.removeItem(KEY + '_is_primary');
     }
-    window._activeBoutiqueId = boutique?.id || null;
+    // Boutique principale → pas de X-Boutique-Id (vue cumulative)
+    // Boutique secondaire → X-Boutique-Id = boutique.id
+    window._activeBoutiqueId        = (boutique?.is_primary || !boutique?.id) ? null : boutique.id;
+    window._activeBoutiqueIsPrimary = boutique?.is_primary || false;
     updateHeaderDisplay();
     window.dispatchEvent(new CustomEvent('boutique:changed', { detail: boutique }));
   }

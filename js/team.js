@@ -81,11 +81,17 @@
   // CHARGER LES MEMBRES
   // ════════════════════════════════════════
   async function loadMembers() {
+    // Les employés ne gèrent pas l'équipe — section réservée aux owners
+    if (window._employeeMode) return;
+
     try {
       const _bid = localStorage.getItem("sc_active_boutique");
       const _isPrimary = localStorage.getItem("sc_active_boutique_is_primary") === "1";
       const _url = (_bid && !_isPrimary) ? `${API()}/members?boutique_id=${_bid}` : `${API()}/members`;
-      members = await auth(_url).then(ok_);
+      const res = await auth(_url);
+      // 403 = pas owner de cette boutique → ignorer silencieusement
+      if (res.status === 403) { members = []; renderTeamSection(); return; }
+      members = await res.json();
       renderTeamSection();
     } catch { notify('Erreur chargement équipe', 'error'); }
   }
@@ -272,33 +278,101 @@
   }
 
   function showInviteLink(link, email) {
-    const bd = document.createElement('div');
-    bd.className = 'module-sheet-backdrop';
-    const waText = encodeURIComponent(`Vous êtes invité à rejoindre ma boutique sur Sama Commerce :\n${link}`);
-    const sheet = document.createElement('div');
-    sheet.className = 'module-sheet';
-    sheet.innerHTML = `
-      <div class="module-sheet-pill"></div>
-      <div class="module-sheet-title">🔗 Lien d'invitation</div>
-      <div style="background:#ECFDF5;border-radius:14px;padding:14px;margin-bottom:14px;">
-        <div style="font-size:13px;color:#065F46;margin-bottom:8px;text-align:center;">
-          Partagez ce lien avec <strong>${email}</strong><br>
-          <span style="font-size:11px;color:#059669;">⏳ Valide 72 heures — l'employé devra créer un compte ou se connecter</span>
-        </div>
-        <div id="invite-link-txt" style="font-size:11px;word-break:break-all;color:#059669;background:#fff;padding:8px;border-radius:8px;">${link}</div>
-      </div>
-      <button id="copy-link-btn" style="width:100%;padding:12px;background:#EDE9FE;color:#7C3AED;border:none;border-radius:14px;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;">📋 Copier le lien</button>
-      <a href="https://wa.me/?text=${waText}" target="_blank" style="display:block;width:100%;padding:12px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border-radius:14px;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;text-align:center;text-decoration:none;margin-bottom:10px;">💬 Envoyer via WhatsApp</a>
-      <button id="close-link-btn" style="width:100%;padding:12px;background:#F3F4F6;color:#6B7280;border:none;border-radius:14px;font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Fermer</button>
-    `;
+    // Modale centrée — plus fiable que le bottom sheet (pas de conflit de z-index)
+    const overlay = document.createElement('div');
+    overlay.style.cssText = [
+      'position:fixed', 'inset:0', 'z-index:9999',
+      'background:rgba(0,0,0,.55)', 'backdrop-filter:blur(4px)',
+      'display:flex', 'align-items:center', 'justify-content:center', 'padding:20px',
+    ].join(';');
 
-    bd.appendChild(sheet);
-    document.body.appendChild(bd);
-    sheet.querySelector('#copy-link-btn').addEventListener('click', () => {
-      navigator.clipboard.writeText(link).then(() => notify('📋 Lien copié !', 'success'));
+    const waText = encodeURIComponent('Vous êtes invité à rejoindre ma boutique sur Sama Commerce :\n' + link);
+
+    const card = document.createElement('div');
+    card.style.cssText = [
+      'background:#fff', 'border-radius:20px', 'padding:24px',
+      'width:100%', 'max-width:360px', 'box-sizing:border-box',
+    ].join(';');
+
+    // Titre
+    const title = document.createElement('div');
+    title.style.cssText = 'text-align:center;font-size:28px;margin-bottom:6px;';
+    title.textContent = '✅';
+    card.appendChild(title);
+
+    const h = document.createElement('div');
+    h.style.cssText = "font-family:'Sora',sans-serif;font-weight:800;font-size:15px;text-align:center;margin-bottom:4px;";
+    h.textContent = 'Invitation créée !';
+    card.appendChild(h);
+
+    const sub = document.createElement('div');
+    sub.style.cssText = 'font-size:12px;color:#6B7280;text-align:center;margin-bottom:16px;';
+    sub.textContent = 'Partagez ce lien avec ' + email + ' (valide 72h)';
+    card.appendChild(sub);
+
+    // Zone lien
+    const linkBox = document.createElement('div');
+    linkBox.style.cssText = 'background:#F5F3FF;border-radius:12px;padding:12px;margin-bottom:14px;';
+    const linkTxt = document.createElement('div');
+    linkTxt.style.cssText = 'font-size:11px;color:#7C3AED;word-break:break-all;line-height:1.5;font-family:monospace;';
+    linkTxt.textContent = link;
+    linkBox.appendChild(linkTxt);
+    card.appendChild(linkBox);
+
+    // Bouton copier
+    const copyBtn = document.createElement('button');
+    copyBtn.style.cssText = [
+      'width:100%', 'padding:13px', 'background:#7C3AED', 'color:#fff',
+      'border:none', 'border-radius:14px', "font-family:'Sora',sans-serif",
+      'font-size:14px', 'font-weight:800', 'cursor:pointer', 'margin-bottom:8px', 'display:block',
+    ].join(';');
+    copyBtn.textContent = '📋 Copier le lien';
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(link).then(() => {
+        copyBtn.textContent = '✅ Copié !';
+        setTimeout(() => { copyBtn.textContent = '📋 Copier le lien'; }, 2000);
+        notify('📋 Lien copié !', 'success');
+      }).catch(() => {
+        // Fallback pour les navigateurs sans clipboard API
+        const inp = document.createElement('input');
+        inp.value = link;
+        document.body.appendChild(inp);
+        inp.select();
+        document.execCommand('copy');
+        inp.remove();
+        copyBtn.textContent = '✅ Copié !';
+      });
     });
-    sheet.querySelector('#close-link-btn').addEventListener('click', () => bd.remove());
-    bd.addEventListener('click', e => { if (e.target === bd) bd.remove(); });
+    card.appendChild(copyBtn);
+
+    // Bouton WhatsApp
+    const waLink = document.createElement('a');
+    waLink.href = 'https://wa.me/?text=' + waText;
+    waLink.target = '_blank';
+    waLink.rel = 'noopener';
+    waLink.style.cssText = [
+      'display:block', 'width:100%', 'padding:13px', 'box-sizing:border-box',
+      'background:linear-gradient(135deg,#25D366,#128C7E)', 'color:#fff',
+      'border-radius:14px', "font-family:'Sora',sans-serif",
+      'font-size:14px', 'font-weight:800', 'text-align:center',
+      'text-decoration:none', 'margin-bottom:8px',
+    ].join(';');
+    waLink.textContent = '💬 Envoyer via WhatsApp';
+    card.appendChild(waLink);
+
+    // Bouton fermer
+    const closeBtn = document.createElement('button');
+    closeBtn.style.cssText = [
+      'width:100%', 'padding:11px', 'background:#F3F4F6', 'color:#6B7280',
+      'border:none', 'border-radius:14px', 'font-size:13px', 'cursor:pointer',
+    ].join(';');
+    closeBtn.textContent = 'Fermer';
+    closeBtn.addEventListener('click', () => overlay.remove());
+    card.appendChild(closeBtn);
+
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   }
 
   async function reshowInviteLink(member) {
@@ -497,9 +571,9 @@
       if (e.detail?.key === 'profil') setTimeout(injectTeamInProfile, 300);
     });
 
-    // ✅ Recharger les membres quand on change de boutique
+    // ✅ Recharger les membres quand on change de boutique (owners uniquement)
     window.addEventListener('boutique:changed', () => {
-      setTimeout(loadMembers, 300);
+      if (!window._employeeMode) setTimeout(loadMembers, 300);
     });
   }
 

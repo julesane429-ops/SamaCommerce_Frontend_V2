@@ -1,55 +1,175 @@
-/**
- * planConfig.js — Source de vérité frontend pour les plans
- * Miroir de middleware/planConfig.js côté backend
- */
-window.PLANS = {
+// middleware/planConfig.js
+// ─────────────────────────────────────────────────────────────
+// Source de vérité unique pour les plans et leurs limites.
+// Importé par checkSubscription, products, members, etc.
+// ─────────────────────────────────────────────────────────────
+
+const PLANS = {
   Free: {
-    label: 'Gratuit', price: 0, emoji: '🆓',
-    color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB',
-    products_limit: 5, members_limit: 0,
-    features: { ventes:true, stock:true, categories:true,
-      caisse:false, credits:false, clients:false, fournisseurs:false,
-      commandes:false, livraisons:false, rapports:false,
-      photos:false, export:false, whatsapp:false, team:false, finance:false },
+    label:           'Gratuit',
+    price:           0,
+    products_limit:  5,
+    members_limit:   0,
+    boutiques_limit: 1,
+    features: {
+      ventes:         true,
+      stock:          true,
+      categories:     true,
+      caisse:         false,
+      credits:        false,
+      clients:        false,
+      fournisseurs:   false,
+      commandes:      false,
+      livraisons:     false,
+      rapports:       false,
+      photos:         false,
+      export:         false,
+      whatsapp:       false,
+      team:           false,
+      finance:        false,
+      multi_boutique: false,
+    },
   },
+
   Starter: {
-    label: 'Starter', price: 2500, emoji: '🌱',
-    color: '#059669', bg: '#ECFDF5', border: '#6EE7B7',
-    products_limit: 30, members_limit: 0,
-    features: { ventes:true, stock:true, categories:true,
-      caisse:true, credits:true, clients:true, fournisseurs:false,
-      commandes:false, livraisons:false, rapports:false,
-      photos:true, export:false, whatsapp:false, team:false, finance:false },
+    label:           'Starter',
+    price:           2500,
+    products_limit:  30,
+    members_limit:   0,
+    boutiques_limit: 1,
+    features: {
+      ventes:         true,
+      stock:          true,
+      categories:     true,
+      caisse:         true,
+      credits:        true,
+      clients:        true,
+      fournisseurs:   false,
+      commandes:      false,
+      livraisons:     false,
+      rapports:       false,
+      photos:         true,
+      export:         false,
+      whatsapp:       false,
+      team:           false,
+      finance:        false,
+      multi_boutique: false,
+    },
   },
+
   Pro: {
-    label: 'Pro', price: 5000, emoji: '⭐',
-    color: '#7C3AED', bg: '#EDE9FE', border: '#C4B5FD',
-    products_limit: Infinity, members_limit: 0,
-    features: { ventes:true, stock:true, categories:true,
-      caisse:true, credits:true, clients:true, fournisseurs:true,
-      commandes:true, livraisons:true, rapports:true,
-      photos:true, export:true, whatsapp:true, team:false, finance:true },
+    label:           'Pro',
+    price:           5000,
+    products_limit:  Infinity,
+    members_limit:   0,
+    boutiques_limit: 1,
+    features: {
+      ventes:         true,
+      stock:          true,
+      categories:     true,
+      caisse:         true,
+      credits:        true,
+      clients:        true,
+      fournisseurs:   true,
+      commandes:      true,
+      livraisons:     true,
+      rapports:       true,
+      photos:         true,
+      export:         true,
+      whatsapp:       true,
+      team:           false,
+      finance:        true,
+      multi_boutique: false,
+    },
   },
+
   Business: {
-    label: 'Business', price: 9000, emoji: '🏆',
-    color: '#92400E', bg: '#FEF9C3', border: '#FCD34D',
-    products_limit: Infinity, members_limit: 3,
-    features: { ventes:true, stock:true, categories:true,
-      caisse:true, credits:true, clients:true, fournisseurs:true,
-      commandes:true, livraisons:true, rapports:true,
-      photos:true, export:true, whatsapp:true, team:true, finance:true },
+    label:           'Business',
+    price:           9000,
+    products_limit:  Infinity,
+    members_limit:   3,
+    boutiques_limit: 1,
+    features: {
+      ventes:         true,
+      stock:          true,
+      categories:     true,
+      caisse:         true,
+      credits:        true,
+      clients:        true,
+      fournisseurs:   true,
+      commandes:      true,
+      livraisons:     true,
+      rapports:       true,
+      photos:         true,
+      export:         true,
+      whatsapp:       true,
+      team:           true,
+      finance:        true,
+      multi_boutique: false,
+    },
   },
+
   Enterprise: {
-    label: 'Enterprise', price: 15000, emoji: '🚀',
-    color: '#A78BFA', bg: '#1E1B2E', border: '#5B21B6',
-    products_limit: Infinity, members_limit: 5, boutiques_limit: 3,
-    features: { ventes:true, stock:true, categories:true,
-      caisse:true, credits:true, clients:true, fournisseurs:true,
-      commandes:true, livraisons:true, rapports:true,
-      photos:true, export:true, whatsapp:true, team:true, finance:true,
-      multi_boutique:true },
+    label:           'Enterprise',
+    price:           15000,
+    products_limit:  Infinity,
+    members_limit:   Infinity,   // employés illimités
+    boutiques_limit: Infinity,   // boutiques illimitées
+    features: {
+      ventes:         true,
+      stock:          true,
+      categories:     true,
+      caisse:         true,
+      credits:        true,
+      clients:        true,
+      fournisseurs:   true,
+      commandes:      true,
+      livraisons:     true,
+      rapports:       true,
+      photos:         true,
+      export:         true,
+      whatsapp:       true,
+      team:           true,
+      finance:        true,
+      multi_boutique: true,
+    },
   },
 };
 
-window.getPlan = (name) => window.PLANS[name] || window.PLANS.Free;
-window.planHasFeature = (planName, feat) => window.getPlan(planName).features[feat] === true;
+// Plans considérés comme "actifs" (payants validés)
+const PAID_PLANS = ['Starter', 'Pro', 'Business', 'Enterprise'];
+
+// Retourne la config d'un plan (fallback sur Free si inconnu)
+function getPlan(planName) {
+  return PLANS[planName] || PLANS.Free;
+}
+
+// Vérifie si un plan a accès à une feature
+function hasFeature(planName, feature) {
+  return getPlan(planName).features[feature] === true;
+}
+
+// Limite de produits pour un plan
+function getProductLimit(planName) {
+  return getPlan(planName).products_limit;
+}
+
+// Limite de membres pour un plan
+function getMembersLimit(planName) {
+  return getPlan(planName).members_limit ?? 0;
+}
+
+// Limite de boutiques pour un plan
+function getBoutiquesLimit(planName) {
+  return getPlan(planName).boutiques_limit ?? 1;
+}
+
+module.exports = {
+  PLANS,
+  PAID_PLANS,
+  getPlan,
+  hasFeature,
+  getProductLimit,
+  getMembersLimit,
+  getBoutiquesLimit,
+};

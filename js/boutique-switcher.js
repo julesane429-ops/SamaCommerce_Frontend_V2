@@ -477,8 +477,7 @@
     card.appendChild(copyBtn);
 
     const waBtn = document.createElement('a');
-    waBtn.href = 'https://wa.me/?text=' + encodeURIComponent('Rejoignez ma boutique sur Sama Commerce :
-' + link);
+    waBtn.href = 'https://wa.me/?text=' + encodeURIComponent('Rejoignez ma boutique sur Sama Commerce :\n' + link);
     waBtn.target = '_blank'; waBtn.rel = 'noopener noreferrer';
     waBtn.style.cssText = "display:block;width:100%;padding:13px;box-sizing:border-box;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border-radius:14px;font-family:'Sora',sans-serif;font-size:14px;font-weight:800;text-align:center;text-decoration:none;margin-bottom:8px;";
     waBtn.textContent = '💬 Envoyer via WhatsApp';

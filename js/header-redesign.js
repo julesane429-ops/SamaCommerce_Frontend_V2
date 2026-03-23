@@ -106,8 +106,41 @@
 
     _done = true;
 
+    // ══════════════════════════════════════════════════════
+    // PATCH CRITIQUE : intercepter insertBefore / appendChild
+    // sur headerInner pour les scripts qui injectent APRÈS
+    // la réorganisation (realtime-sync.js, etc.)
+    //
+    // Ces scripts font : headerInner.insertBefore(btn, searchBtn)
+    // Mais searchBtn est maintenant dans .hd-right, pas dans
+    // headerInner directement → NotFoundError.
+    // On route tout vers rightZone.
+    // ══════════════════════════════════════════════════════
+    const _origInsertBefore = headerInner.insertBefore.bind(headerInner);
+    const _origAppendChild  = headerInner.appendChild.bind(headerInner);
+    const ZONE_CLASSES = ['hd-left', 'hd-center', 'hd-right'];
+
+    headerInner.insertBefore = function (newNode, refNode) {
+      // Si le nœud de référence n'est PAS un enfant direct → route vers rightZone
+      if (refNode && refNode.parentNode !== headerInner) {
+        return rightZone.insertBefore(newNode, null);
+      }
+      // Si le nouveau nœud n'est pas une zone → route vers rightZone
+      if (newNode instanceof Element && !ZONE_CLASSES.includes(newNode.className)) {
+        return rightZone.appendChild(newNode);
+      }
+      return _origInsertBefore(newNode, refNode);
+    };
+
+    headerInner.appendChild = function (newNode) {
+      // Toute injection hors-zones → rightZone
+      if (newNode instanceof Element && !ZONE_CLASSES.includes(newNode.className)) {
+        return rightZone.appendChild(newNode);
+      }
+      return _origAppendChild(newNode);
+    };
+
     // ── Observer les futurs éléments injectés ──
-    // (si boutique-switcher est injecté APRÈS la réorganisation)
     observeFutureInjections(centerZone, rightZone);
   }
 

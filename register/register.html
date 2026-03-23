@@ -142,6 +142,23 @@
       transition: background .3s;
     }
     .pwd-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .pwd-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px;
+      line-height: 1;
+      color: #9CA3AF;
+      transition: color .2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pwd-toggle:hover { color: var(--green); }
+    .input-wrap.has-toggle input { padding-right: 44px; }
 
     /* ── Register btn ── */
     #registerBtn {
@@ -293,10 +310,13 @@
     <!-- Mot de passe -->
     <div class="form-group">
       <label for="password">Mot de passe</label>
-      <div class="input-wrap">
+      <div class="input-wrap has-toggle">
         <span class="input-icon">🔒</span>
         <input type="password" id="password" placeholder="Minimum 8 caractères" autocomplete="new-password"
           oninput="checkStrength(this.value)">
+        <button type="button" class="pwd-toggle" id="togglePassword" aria-label="Voir le mot de passe" tabindex="-1">
+          👁️
+        </button>
       </div>
       <div class="pwd-strength" id="pwdBars">
         <div class="pwd-bar" id="bar1"></div>
@@ -365,6 +385,25 @@
       hint.textContent = val.length === 0 ? 'Entrez un mot de passe' : labels[Math.max(0, score-1)];
       hint.style.color = val.length === 0 ? '#9CA3AF' : colors[Math.max(0, score-1)];
     }
+  </script>
+
+  <script>
+    // Toggle mot de passe — register
+    (function() {
+      var btn   = document.getElementById('togglePassword');
+      var input = document.getElementById('password');
+      if (!btn || !input) return;
+      var visible = false;
+      btn.addEventListener('click', function() {
+        visible = !visible;
+        input.type = visible ? 'text' : 'password';
+        btn.textContent = visible ? '🙈' : '👁️';
+        btn.setAttribute('aria-label', visible ? 'Masquer le mot de passe' : 'Voir le mot de passe');
+        // Trigger oninput for strength check to stay accurate
+        input.dispatchEvent(new Event('input'));
+        input.focus();
+      });
+    })();
   </script>
 </body>
 </html>

@@ -1,0 +1,333 @@
+/* ═══════════════════════════════════════════════════
+   header-vente.css — Header responsive + Vente mobile
+   Ajouter dans index.html <head> :
+   <link rel="stylesheet" href="css/header-vente.css">
+═══════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────
+   HEADER — gestion des boutons injectés dynamiquement
+   (boutique-switcher, employee-badge, notif-bell)
+───────────────────────────────────────────────── */
+
+.header-inner {
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+}
+
+/* Boutique-switcher et employee-badge injectés en firstChild */
+#boutique-switcher,
+#boutique-employee-badge {
+  flex-shrink: 0;
+  max-width: 120px !important;
+  min-width: 0;
+  font-size: 11px !important;
+  padding: 5px 8px !important;
+}
+
+#boutique-switcher #boutique-switcher-name,
+#boutique-employee-badge div div:first-child {
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* BackBtn — compact */
+#backBtn {
+  width: 34px !important;
+  height: 34px !important;
+  flex-shrink: 0;
+  font-size: 15px !important;
+}
+
+/* Centre — laisse de la place aux boutons latéraux */
+.header-center {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+}
+
+#appHeader {
+  font-size: 15px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -.3px;
+}
+
+.header-sub {
+  font-size: 11px !important;
+  white-space: nowrap;
+}
+
+/* Cloche de notification — compact */
+#notif-bell {
+  width: 34px !important;
+  height: 34px !important;
+  flex-shrink: 0 !important;
+  border-radius: 10px !important;
+}
+
+/* Icône 💰 — masquée si la cloche est présente */
+.header-icon {
+  display: none !important; /* remplacée par #notif-bell */
+}
+
+/* Badge confirmation switch boutique */
+#boutique-active-badge {
+  font-size: 11px !important;
+  padding: 5px 12px !important;
+}
+
+
+/* ─────────────────────────────────────────────────
+   TODAY FLOAT — plus compact sur petits écrans
+───────────────────────────────────────────────── */
+
+.today-float {
+  margin: -18px 12px 0;
+  padding: 10px 12px;
+}
+
+.ts { padding: 7px 4px; }
+.ts .v { font-size: 14px !important; }
+.ts .l { font-size: 9px !important; }
+
+
+/* ─────────────────────────────────────────────────
+   SECTION VENTE — redesign mobile
+───────────────────────────────────────────────── */
+
+#venteSection {
+  display: flex;
+  flex-direction: column;
+  /* Hauteur = tout l'espace disponible moins la nav */
+  min-height: calc(100dvh - var(--nav-h, 68px) - var(--safe-b, 0px) - 120px);
+}
+
+/* Header vente — titre + bouton vider */
+.vente-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 6px 0 10px;
+}
+
+.vente-page-header h2 {
+  font-family: 'Sora', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.btn-vider-panier {
+  display: none; /* affiché via JS quand panier non vide */
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: #FEF2F2;
+  color: #EF4444;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Sora', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.btn-vider-panier.visible { display: flex; }
+.btn-vider-panier:active { background: #FEE2E2; }
+
+/* Panier — card compacte */
+#venteSection .card {
+  margin-bottom: 0;
+  padding: 14px;
+  border-radius: 16px;
+}
+
+#venteSection .card-title {
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+/* Items du panier — rows compactes */
+.panier-item-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.panier-item-row:last-child { border-bottom: none; }
+
+.panier-item-name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panier-item-price {
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--primary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.panier-qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.panier-qty-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .1s;
+}
+.panier-qty-btn:active { transform: scale(.88); }
+.panier-qty-btn.minus { background: #FEE2E2; color: #EF4444; }
+.panier-qty-btn.plus  { background: #D1FAE5; color: #059669; }
+
+.panier-qty-value {
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  min-width: 20px;
+  text-align: center;
+  color: var(--text);
+}
+
+
+/* ─── BARRE STICKY EN BAS ─── */
+.vente-sticky-cta {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  background: var(--surface, #fff);
+  padding: 10px 0 6px;
+  margin-top: 12px;
+  /* Shadow vers le haut */
+  box-shadow: 0 -6px 20px rgba(0,0,0,.08);
+  border-radius: 18px 18px 0 0;
+}
+
+/* Total dans la sticky bar */
+.vente-sticky-cta .total-bar {
+  margin-bottom: 8px;
+  border-radius: 12px;
+}
+
+/* Bouton ENCAISSER + badge nombre d'articles */
+.btn-encaisser-wrapper {
+  position: relative;
+  display: block;
+}
+
+.btn-encaisser-badge {
+  display: none;
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #EF4444;
+  color: #fff;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 800;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  font-family: 'Sora', sans-serif;
+  padding: 0 4px;
+  z-index: 1;
+}
+
+.btn-encaisser-badge.visible { display: flex; }
+
+/* Bouton encaisser désactivé si panier vide */
+.btn-encaisser:disabled,
+.btn-encaisser[disabled] {
+  opacity: .5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none;
+}
+
+
+/* ─── SECTION PRODUITS ─── */
+.vente-products-area {
+  margin-top: 14px;
+  flex: 1;
+}
+
+.vente-section-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  margin-bottom: 10px;
+}
+
+/* Grille catégories — 2 colonnes, cartes plus grandes */
+#categoriesVente {
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+}
+
+/* Bouton catégorie — plus haut pour faciliter le tap */
+#categoriesVente .big-button {
+  min-height: 90px;
+  border-radius: 16px;
+}
+
+/* Grille produits dans une catégorie — 1 colonne sur petits écrans */
+@media (max-width: 400px) {
+  #categoriesVente { grid-template-columns: 1fr !important; }
+}
+
+
+/* ─── BOUTON SCANNER ─── */
+#vente-scan-btn-row {
+  margin-bottom: 12px;
+}
+
+#vente-scan-btn {
+  border-radius: 12px !important;
+  padding: 11px 16px !important;
+  font-size: 13px !important;
+}
+
+
+/* ─── PANIER VIDE — état visuel ─── */
+.panier-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: var(--muted);
+}
+
+.panier-empty-state .empty-icon { font-size: 32px; margin-bottom: 6px; }
+.panier-empty-state .empty-text { font-size: 12px; font-weight: 500; }

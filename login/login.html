@@ -138,6 +138,27 @@
       font-size: 17px;
       pointer-events: none;
     }
+    
+    .pwd-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px;
+      line-height: 1;
+      color: #9CA3AF;
+      transition: color .2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pwd-toggle:hover { color: var(--primary); }
+    /* Make room for toggle button on the right */
+    .input-wrap.has-toggle input {
+      padding-right: 44px;
+    }
     .form-group input {
       width: 100%;
       padding: 13px 14px 13px 42px;
@@ -449,9 +470,12 @@
     <!-- Mot de passe -->
     <div class="form-group">
       <label for="password">Mot de passe</label>
-      <div class="input-wrap">
+      <div class="input-wrap has-toggle">
         <span class="input-icon">🔒</span>
         <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+        <button type="button" class="pwd-toggle" id="togglePassword" aria-label="Voir le mot de passe" tabindex="-1">
+          👁️
+        </button>
       </div>
     </div>
 
@@ -529,5 +553,22 @@ async function loginDemo() {
   }
 }
 </script>
+
+  <script>
+    // Toggle mot de passe — login
+    (function() {
+      var btn   = document.getElementById('togglePassword');
+      var input = document.getElementById('password');
+      if (!btn || !input) return;
+      var visible = false;
+      btn.addEventListener('click', function() {
+        visible = !visible;
+        input.type  = visible ? 'text' : 'password';
+        btn.textContent = visible ? '🙈' : '👁️';
+        btn.setAttribute('aria-label', visible ? 'Masquer le mot de passe' : 'Voir le mot de passe');
+        input.focus();
+      });
+    })();
+  </script>
 </body>
 </html>

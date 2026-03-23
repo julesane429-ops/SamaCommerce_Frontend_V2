@@ -1,18 +1,11 @@
 /**
  * daily-goal.js — Widget "Objectif du jour"
  *
- * Injecte une carte sur l'écran d'accueil (#menuSection)
- * montrant la progression des ventes du jour vers un objectif
- * défini par l'utilisateur.
- *
- * - Objectif sauvegardé dans localStorage (par userId si dispo)
+ * - Objectif sauvegardé dans localStorage (par userId + boutiqueId)
  * - Se met à jour automatiquement dès que #chiffreAffaires change
- *   (MutationObserver — aucun appel API supplémentaire)
  * - Animation confetti + message quand l'objectif est atteint
  * - Reset automatique chaque jour à minuit
- *
- * INTÉGRATION dans index.html, juste avant </body> :
- *   <script src="js/daily-goal.js"></script>
+ * - window.dailyGoal.reload() exposé pour le boutique-switcher
  */
 
 (function () {
@@ -20,19 +13,17 @@
   // ══════════════════════════════════════
   // CONFIG
   // ══════════════════════════════════════
-  const PRESETS    = [5000, 10000, 25000, 50000, 100000];
+  const PRESETS     = [5000, 10000, 25000, 50000, 100000];
   const STORAGE_KEY = 'sc_daily_goal';
 
   // ══════════════════════════════════════
-  // STORAGE (clé par userId pour multi-compte)
+  // STORAGE — clé par userId ET boutiqueId
   // ══════════════════════════════════════
-  
-function storageKey() {
-  const uid = localStorage.getItem('userId') || 'default';
-  // ✅ Clé par boutique — chaque boutique a son propre objectif
-  const bid = localStorage.getItem('sc_active_boutique') || '0';
-  return `${STORAGE_KEY}_${uid}_b${bid}`;
-}
+  function storageKey() {
+    const uid = localStorage.getItem('userId') || 'default';
+    const bid = localStorage.getItem('sc_active_boutique') || '0';
+    return `${STORAGE_KEY}_${uid}_b${bid}`;
+  }
 
   function loadGoal() {
     try {
@@ -71,9 +62,9 @@ function storageKey() {
     for (let i = 0; i < 18; i++) {
       const p = document.createElement('div');
       p.className = 'dg-confetti-piece';
-      p.style.left            = `${Math.random() * 100}%`;
-      p.style.background      = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
-      p.style.animationDelay  = `${Math.random() * .4}s`;
+      p.style.left             = `${Math.random() * 100}%`;
+      p.style.background       = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+      p.style.animationDelay   = `${Math.random() * .4}s`;
       p.style.animationDuration = `${.9 + Math.random() * .5}s`;
       p.style.width  = `${5 + Math.random() * 5}px`;
       p.style.height = p.style.width;
@@ -90,7 +81,6 @@ function storageKey() {
   function renderCard(card, goal, current) {
 
     if (!goal) {
-      // ── Pas d'objectif défini ──
       card.innerHTML = `
         <div class="dg-header">
           <div class="dg-title">🎯 Objectif du jour</div>
@@ -105,8 +95,8 @@ function storageKey() {
       return;
     }
 
-    const pct      = Math.min(Math.round((current / goal) * 100), 100);
-    const reached  = current >= goal;
+    const pct       = Math.min(Math.round((current / goal) * 100), 100);
+    const reached   = current >= goal;
     const remaining = Math.max(goal - current, 0);
 
     card.innerHTML = `
@@ -135,7 +125,6 @@ function storageKey() {
     document.getElementById('dg-edit-btn')
       ?.addEventListener('click', openModal);
 
-    // Confetti si objectif tout juste atteint
     if (reached) fireConfetti(card);
   }
 
@@ -179,13 +168,11 @@ function storageKey() {
 
     document.body.appendChild(backdrop);
 
-    const input    = document.getElementById('dg-input');
-    const presets  = document.getElementById('dg-presets');
+    const input   = document.getElementById('dg-input');
+    const presets = document.getElementById('dg-presets');
 
-    // Focus auto
     setTimeout(() => input?.focus(), 100);
 
-    // Clic sur un preset → remplir l'input
     presets?.addEventListener('click', e => {
       const btn = e.target.closest('.dg-preset');
       if (!btn) return;
@@ -195,18 +182,15 @@ function storageKey() {
       btn.classList.add('selected');
     });
 
-    // Saisie manuelle → désélectionner les presets
     input?.addEventListener('input', () => {
       presets?.querySelectorAll('.dg-preset').forEach(b => b.classList.remove('selected'));
     });
 
-    // Annuler
     document.getElementById('dg-cancel')?.addEventListener('click', closeModal);
     backdrop.addEventListener('click', e => {
       if (e.target === backdrop) closeModal();
     });
 
-    // Enregistrer
     document.getElementById('dg-save')?.addEventListener('click', () => {
       const val = parseInt(input?.value, 10);
       if (!val || val <= 0) {
@@ -216,7 +200,7 @@ function storageKey() {
         return;
       }
       saveGoal(val);
-      confettiFired = false; // Reset pour le nouvel objectif
+      confettiFired = false;
       closeModal();
       updateCard();
     });
@@ -246,19 +230,16 @@ function storageKey() {
     const card = document.createElement('div');
     card.id = 'daily-goal-card';
 
-    // Insérer après #alertesStock (ou après .today-float si absente)
     const menuSection = document.getElementById('menuSection');
     if (!menuSection) return;
 
     const alertes = document.getElementById('alertesStock');
     const guide   = document.getElementById('userGuide');
 
-    // Insérer après alertesStock, ou après userGuide
     const anchor = alertes || guide;
     if (anchor && anchor.parentNode === menuSection) {
       anchor.parentNode.insertBefore(card, anchor.nextSibling);
     } else {
-      // Fallback : insérer en premier dans menuSection
       menuSection.prepend(card);
     }
 
@@ -268,11 +249,11 @@ function storageKey() {
   // ══════════════════════════════════════
   // OBSERVER #chiffreAffaires — singleton + debounce
   // ══════════════════════════════════════
-  let _goalObserver   = null;
-  let _goalDebounce   = null;
+  let _goalObserver = null;
+  let _goalDebounce = null;
 
   function watchCA() {
-    if (_goalObserver) return; // déjà actif, ne pas créer un deuxième
+    if (_goalObserver) return;
     const el = document.getElementById('chiffreAffaires');
     if (!el) return;
 
@@ -282,7 +263,6 @@ function storageKey() {
       const newText = el.textContent;
       if (newText === lastText) return;
       lastText = newText;
-      // Debounce — countup.js déclenche plusieurs mutations en rafale
       clearTimeout(_goalDebounce);
       _goalDebounce = setTimeout(updateCard, 800);
     });
@@ -320,12 +300,14 @@ function storageKey() {
     init();
   }
 
-  // ✅ Exposer reload pour le boutique-switcher
-window.dailyGoal = window.dailyGoal || {};
-window.dailyGoal.reload = function () {
-  // Recharge l'objectif depuis le nouveau storageKey (nouvelle boutique)
-  confettiFired = false;
-  renderGoalCard();
-};
+  // ══════════════════════════════════════
+  // API PUBLIQUE — pour boutique-switcher
+  // ══════════════════════════════════════
+  window.dailyGoal = {
+    reload() {
+      confettiFired = false;
+      updateCard();          // updateCard() est dans le même scope IIFE ✅
+    }
+  };
 
 })();

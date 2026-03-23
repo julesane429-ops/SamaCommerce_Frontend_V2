@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Connexion – Sama Commerce</title>
+  <title>Inscription – Sama Commerce</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <script src="login.js" defer></script>
-  <link rel="stylesheet" href="login.css">
+  <script src="register.js" defer></script>
+  <link rel="stylesheet" href="register.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    .hidden { display: none !important; }
+
     :root {
       --primary: #4F46E5;
       --primary-dark: #3730A3;
@@ -19,8 +19,8 @@
       --orange: #F59E0B;
       --pink: #EC4899;
       --surface: #FFFFFF;
-      --bg: #F0F4FF;
-      --text: #1E1B4B;
+      --bg: #F0FFF8;
+      --text: #064E3B;
       --muted: #6B7280;
     }
 
@@ -37,108 +37,111 @@
       overflow-x: hidden;
     }
 
-    /* ── Animated background ── */
+    /* ── Blobs ── */
     .bg-blobs {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      pointer-events: none;
-      overflow: hidden;
+      position: fixed; inset: 0; z-index: 0;
+      pointer-events: none; overflow: hidden;
     }
     .blob {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(70px);
-      opacity: .45;
-      animation: blobFloat 8s ease-in-out infinite alternate;
+      position: absolute; border-radius: 50%;
+      filter: blur(70px); opacity: .4;
+      animation: blobFloat 9s ease-in-out infinite alternate;
     }
-    .blob-1 { width: 340px; height: 340px; background: #6366F1; top: -80px; left: -80px; animation-delay: 0s; }
-    .blob-2 { width: 260px; height: 260px; background: #06B6D4; top: 40%; right: -60px; animation-delay: -3s; }
-    .blob-3 { width: 200px; height: 200px; background: #EC4899; bottom: -60px; left: 30%; animation-delay: -6s; }
+    .blob-1 { width: 300px; height: 300px; background: #34D399; top: -60px; left: -80px; animation-delay: 0s; }
+    .blob-2 { width: 220px; height: 220px; background: #6366F1; top: 30%; right: -50px; animation-delay: -4s; }
+    .blob-3 { width: 180px; height: 180px; background: #F59E0B; bottom: -40px; left: 20%; animation-delay: -7s; }
     @keyframes blobFloat {
       from { transform: translate(0,0) scale(1); }
-      to   { transform: translate(20px, 30px) scale(1.08); }
+      to   { transform: translate(18px, 26px) scale(1.1); }
     }
 
     /* ── Card ── */
-    .login-card {
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      max-width: 400px;
-      background: rgba(255,255,255,.92);
+    .register-card {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 400px;
+      background: rgba(255,255,255,.93);
       backdrop-filter: blur(20px);
-      border: 1.5px solid rgba(255,255,255,.7);
+      border: 1.5px solid rgba(255,255,255,.75);
       border-radius: 28px;
       padding: 36px 28px 32px;
-      box-shadow: 0 20px 60px rgba(79,70,229,.15), 0 4px 20px rgba(0,0,0,.06);
+      box-shadow: 0 20px 60px rgba(16,185,129,.12), 0 4px 20px rgba(0,0,0,.07);
     }
 
-    /* ── Logo block ── */
+    /* ── Logo ── */
     .logo-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 28px;
+      display: flex; flex-direction: column; align-items: center;
+      margin-bottom: 26px;
     }
     .logo-img-wrap {
       width: 76px; height: 76px;
-      border-radius: 22px;
-      overflow: hidden;
-      box-shadow: 0 8px 28px rgba(79,70,229,.3);
+      border-radius: 22px; overflow: hidden;
+      box-shadow: 0 8px 28px rgba(16,185,129,.3);
       margin-bottom: 14px;
     }
     .logo-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
-
     .app-name {
-      font-family: 'Sora', sans-serif;
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--text);
-      letter-spacing: -.4px;
+      font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 800;
+      color: var(--text); letter-spacing: -.4px;
     }
-    .app-tagline {
-      font-size: 13px;
-      color: var(--muted);
-      margin-top: 3px;
-      font-weight: 500;
-    }
+    .app-tagline { font-size: 13px; color: var(--muted); margin-top: 3px; font-weight: 500; }
 
-    /* ── Section title ── */
+    /* ── Step indicator ── */
+    .step-bar {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      margin-bottom: 22px;
+    }
+    .step-dot {
+      width: 8px; height: 8px; border-radius: 4px;
+      background: #D1FAE5; transition: all .3s;
+    }
+    .step-dot.active { background: var(--green); width: 24px; }
+
     .section-title {
-      font-family: 'Sora', sans-serif;
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 20px;
-      text-align: center;
+      font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 700;
+      color: var(--text); margin-bottom: 20px; text-align: center;
     }
 
     /* ── Form ── */
-    .form-group {
-      margin-bottom: 14px;
-    }
+    .form-group { margin-bottom: 14px; }
     .form-group label {
-      display: block;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .5px;
-      color: var(--muted);
-      margin-bottom: 6px;
+      display: block; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .5px;
+      color: var(--muted); margin-bottom: 6px;
     }
-    .input-wrap {
-      position: relative;
-    }
+    .input-wrap { position: relative; }
     .input-icon {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 17px;
+      position: absolute; left: 14px; top: 50%;
+      transform: translateY(-50%); font-size: 17px;
       pointer-events: none;
     }
-    
+    .form-group input {
+      width: 100%;
+      padding: 13px 14px 13px 42px;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 14px;
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      background: #F9FAFB;
+      color: #1F2937;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    .form-group input:focus {
+      border-color: var(--green);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(16,185,129,.12);
+    }
+    .form-group input::placeholder { color: #9CA3AF; }
+
+    /* ── Password strength ── */
+    .pwd-strength {
+      margin-top: 6px; display: flex; gap: 4px;
+    }
+    .pwd-bar {
+      flex: 1; height: 4px; border-radius: 2px; background: #E5E7EB;
+      transition: background .3s;
+    }
+    .pwd-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
     .pwd-toggle {
       position: absolute;
       right: 12px;
@@ -154,78 +157,14 @@
       transition: color .2s;
       -webkit-tap-highlight-color: transparent;
     }
-    .pwd-toggle:hover { color: var(--primary); }
-    /* Make room for toggle button on the right */
-    .input-wrap.has-toggle input {
-      padding-right: 44px;
-    }
-    .form-group input {
-      width: 100%;
-      padding: 13px 14px 13px 42px;
-      border: 1.5px solid #E5E7EB;
-      border-radius: 14px;
-      font-size: 15px;
-      font-family: 'DM Sans', sans-serif;
-      background: #F9FAFB;
-      color: var(--text);
-      outline: none;
-      transition: border-color .2s, box-shadow .2s, background .2s;
-    }
-    .form-group input:focus {
-      border-color: var(--primary);
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba(79,70,229,.12);
-    }
-    .form-group input::placeholder { color: #9CA3AF; }
+    .pwd-toggle:hover { color: var(--green); }
+    .input-wrap.has-toggle input { padding-right: 44px; }
 
-    /* ── 2FA section ── */
-    #twofaSection {
-      background: #EEF2FF;
-      border-radius: 16px;
-      padding: 14px;
-      margin-bottom: 14px;
-      border: 1.5px solid #C7D2FE;
-    }
-    #twofaSection label {
-      font-size: 11px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .5px; color: var(--primary-dark); margin-bottom: 6px; display: block;
-    }
-    #twofaSection input {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1.5px solid #C7D2FE;
-      border-radius: 12px;
-      font-size: 18px;
-      font-family: 'Sora', sans-serif;
-      font-weight: 700;
-      letter-spacing: 6px;
-      text-align: center;
-      background: #fff;
-      outline: none;
-    }
-    #twofaSection input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
-    #verify2faBtn {
-      width: 100%;
-      margin-top: 10px;
-      padding: 12px;
-      background: linear-gradient(135deg, var(--green), #059669);
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      font-family: 'Sora', sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 4px 14px rgba(16,185,129,.3);
-      transition: transform .15s;
-    }
-    #verify2faBtn:active { transform: scale(.97); }
-
-    /* ── Buttons ── */
-    #loginBtn {
+    /* ── Register btn ── */
+    #registerBtn {
       width: 100%;
       padding: 15px;
-      background: linear-gradient(135deg, var(--primary), #6366F1);
+      background: linear-gradient(135deg, var(--green), #059669);
       color: #fff;
       border: none;
       border-radius: 16px;
@@ -233,230 +172,131 @@
       font-size: 16px;
       font-weight: 800;
       cursor: pointer;
-      box-shadow: 0 6px 22px rgba(79,70,229,.35);
+      box-shadow: 0 6px 22px rgba(16,185,129,.35);
       transition: transform .15s, box-shadow .15s;
       letter-spacing: .2px;
       margin-top: 4px;
     }
-    #loginBtn:active { transform: scale(.97); box-shadow: 0 3px 12px rgba(79,70,229,.2); }
+    #registerBtn:active { transform: scale(.97); box-shadow: 0 3px 12px rgba(16,185,129,.2); }
 
-    .divider {
-      display: flex; align-items: center; gap: 10px;
-      margin: 18px 0;
-      color: #D1D5DB;
-      font-size: 12px;
+    /* ── Terms ── */
+    .terms-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      margin-bottom: 14px; font-size: 12px; color: var(--muted); line-height: 1.4;
     }
-    .divider::before, .divider::after {
-      content: ''; flex: 1; height: 1px; background: #E5E7EB;
-    }
+    .terms-row input[type="checkbox"] { width: 18px; height: 18px; margin-top: 1px; flex-shrink: 0; accent-color: var(--green); }
+    .terms-row a { color: var(--green); font-weight: 600; text-decoration: none; }
 
     .link-row {
-      text-align: center;
-      font-size: 14px;
-      color: var(--muted);
-      margin-top: 16px;
+      text-align: center; font-size: 14px; color: var(--muted); margin-top: 16px;
     }
-    .link-row a {
-      color: var(--primary);
-      font-weight: 700;
-      text-decoration: none;
-    }
+    .link-row a { color: var(--primary); font-weight: 700; text-decoration: none; }
     .link-row a:hover { text-decoration: underline; }
 
+    /* ── Perks banner ── */
+    .perks {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      margin-bottom: 20px;
+    }
+    .perk {
+      background: linear-gradient(135deg, #ECFDF5, #D1FAE5);
+      border-radius: 14px; padding: 10px 12px;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 600; color: #065F46;
+    }
+    .perk-icon { font-size: 18px; }
 
-    /* ── Invite welcome screen ── */
-    #invite-welcome {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 8px 0 4px;
-    }
-    .invite-badge {
-      background: linear-gradient(135deg, #EDE9FE, #FCE7F3);
-      border: 1.5px solid #C4B5FD;
-      border-radius: 16px;
-      padding: 14px 16px;
-      margin-bottom: 22px;
-      width: 100%;
-    }
-    .invite-badge-icon { font-size: 32px; margin-bottom: 6px; }
-    .invite-badge-title {
-      font-family: 'Sora', sans-serif;
-      font-size: 16px; font-weight: 800; color: var(--primary-dark);
-      margin-bottom: 4px;
-    }
-    .invite-badge-sub { font-size: 12px; color: #6D28D9; line-height: 1.4; }
-
-    .invite-choice-title {
-      font-family: 'Sora', sans-serif;
-      font-size: 14px; font-weight: 700; color: var(--text);
-      margin-bottom: 14px;
-    }
-    .invite-btn-register {
-      width: 100%; padding: 16px;
-      background: linear-gradient(135deg, var(--primary), #6366F1);
-      color: #fff; border: none; border-radius: 16px;
-      font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 800;
-      cursor: pointer; box-shadow: 0 6px 22px rgba(79,70,229,.35);
-      transition: transform .15s; margin-bottom: 12px;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-    }
-    .invite-btn-register:active { transform: scale(.97); }
-
-    .invite-btn-login {
-      width: 100%; padding: 14px;
-      background: #F5F3FF;
-      color: var(--primary); border: 1.5px solid #C4B5FD; border-radius: 16px;
-      font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700;
-      cursor: pointer; transition: background .15s;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-    }
-    .invite-btn-login:active { background: #EDE9FE; }
-
-    .invite-note {
-      font-size: 11px; color: var(--muted); margin-top: 14px; line-height: 1.5;
-    }
-
-    /* ── Guide modal ── */
+    /* ── Guide modal (bottom sheet) ── */
     .guide-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(15,10,60,.55);
+      position: fixed; inset: 0;
+      background: rgba(15,40,30,.55);
       backdrop-filter: blur(6px);
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      z-index: 50;
-      padding: 16px;
+      display: flex; align-items: flex-end; justify-content: center;
+      z-index: 50; padding: 16px;
       padding-bottom: calc(16px + env(safe-area-inset-bottom));
     }
     .guide-sheet {
-      background: var(--surface);
-      border-radius: 28px 28px 20px 20px;
-      padding: 28px 24px;
-      width: 100%;
-      max-width: 480px;
-      box-shadow: 0 -8px 40px rgba(0,0,0,.15);
+      background: var(--surface); border-radius: 28px 28px 20px 20px;
+      padding: 28px 24px; width: 100%; max-width: 480px;
+      box-shadow: 0 -8px 40px rgba(0,0,0,.12);
       animation: sheetUp .3s cubic-bezier(.34,1.3,.64,1) both;
       position: relative;
     }
     @keyframes sheetUp {
       from { transform: translateY(60px); opacity: 0; }
-      to   { transform: translateY(0);    opacity: 1; }
+      to   { transform: translateY(0); opacity: 1; }
     }
     .guide-pill {
-      width: 40px; height: 4px;
-      background: #E5E7EB;
-      border-radius: 2px;
-      margin: 0 auto 20px;
+      width: 40px; height: 4px; background: #E5E7EB; border-radius: 2px; margin: 0 auto 20px;
     }
     .guide-title {
-      font-family: 'Sora', sans-serif;
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--text);
-      margin-bottom: 12px;
-      display: flex; align-items: center; gap: 8px;
+      font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 800;
+      color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
     }
     .guide-body { font-size: 14px; color: var(--muted); line-height: 1.6; }
-    .guide-body strong { color: var(--text); }
-    .guide-steps {
-      margin-top: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .guide-step {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      font-size: 13px;
-      color: #374151;
-    }
+    .guide-body strong { color: #1F2937; }
+    .guide-steps { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .guide-step { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #374151; }
     .guide-step-icon {
-      font-size: 20px;
-      flex-shrink: 0;
-      width: 32px; height: 32px;
-      background: #EEF2FF;
-      border-radius: 10px;
+      font-size: 20px; flex-shrink: 0; width: 32px; height: 32px;
+      background: #ECFDF5; border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
     }
     .guide-close {
-      position: absolute;
-      top: 16px; right: 16px;
-      background: #F3F4F6;
-      border: none;
-      width: 32px; height: 32px;
-      border-radius: 10px;
-      font-size: 16px;
-      cursor: pointer;
+      position: absolute; top: 16px; right: 16px;
+      background: #F3F4F6; border: none; width: 32px; height: 32px;
+      border-radius: 10px; font-size: 16px; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      color: var(--muted);
-      transition: background .15s;
+      color: var(--muted); transition: background .15s;
     }
     .guide-close:hover { background: #E5E7EB; }
     .guide-cta {
-      width: 100%;
-      margin-top: 20px;
-      padding: 14px;
-      background: linear-gradient(135deg, var(--primary), #6366F1);
-      color: #fff;
-      border: none;
-      border-radius: 14px;
-      font-family: 'Sora', sans-serif;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 4px 16px rgba(79,70,229,.3);
+      width: 100%; margin-top: 20px; padding: 14px;
+      background: linear-gradient(135deg, var(--green), #059669);
+      color: #fff; border: none; border-radius: 14px;
+      font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700;
+      cursor: pointer; box-shadow: 0 4px 16px rgba(16,185,129,.3);
     }
   </style>
 </head>
 <body>
 
-  <!-- Animated background -->
+  <!-- Blobs -->
   <div class="bg-blobs">
     <div class="blob blob-1"></div>
     <div class="blob blob-2"></div>
     <div class="blob blob-3"></div>
   </div>
 
-  <!-- Login card -->
-  <div class="login-card">
+  <!-- Register card -->
+  <div class="register-card">
     <!-- Logo -->
     <div class="logo-wrap">
       <div class="logo-img-wrap">
         <img src="/pwa/icons/icon-512.png" alt="Sama Commerce" onerror="this.parentElement.innerHTML='🛍️'">
       </div>
       <div class="app-name">Sama Commerce</div>
-      <div class="app-tagline">Gérez votre boutique simplement</div>
+      <div class="app-tagline">Créez votre boutique en 1 minute</div>
     </div>
 
-
-    <!-- Invite welcome screen (shown only when ?invite= is in URL) -->
-    <div id="invite-welcome">
-      <div class="invite-badge">
-        <div class="invite-badge-icon">🎉</div>
-        <div class="invite-badge-title">Vous avez été invité !</div>
-        <div class="invite-badge-sub">
-          Un propriétaire de boutique vous invite à rejoindre<br>son équipe sur Sama Commerce.
-        </div>
-      </div>
-      <div class="invite-choice-title">Comment souhaitez-vous continuer ?</div>
-      <button class="invite-btn-register" id="invite-go-register">
-        🆕 Créer mon compte
-        <span style="font-size:11px;opacity:.8;font-weight:500;">(je n'ai pas encore de compte)</span>
-      </button>
-      <button class="invite-btn-login" id="invite-go-login">
-        🔑 J'ai déjà un compte → Me connecter
-      </button>
-      <div class="invite-note">
-        ⏳ Ce lien est valide 72 heures.<br>
-        Votre compte sera lié à la boutique automatiquement.
-      </div>
+    <!-- Perks -->
+    <div class="perks">
+      <div class="perk"><span class="perk-icon">📦</span>Gestion stock</div>
+      <div class="perk"><span class="perk-icon">📈</span>Vos chiffres</div>
+      <div class="perk"><span class="perk-icon">💳</span>Ventes rapides</div>
+      <div class="perk"><span class="perk-icon">🆓</span>Gratuit</div>
     </div>
 
-    <div class="section-title" id="login-title">Connexion</div>
+    <div class="section-title">Créer un compte</div>
+
+    <!-- Nom / Entreprise -->
+    <div class="form-group">
+      <label for="companyName">👤 Nom / Entreprise</label>
+      <div class="input-wrap">
+        <span class="input-icon">🏪</span>
+        <input type="text" id="companyName" placeholder="Votre nom ou boutique" autocomplete="organization">
+      </div>
+    </div>
 
     <!-- Email -->
     <div class="form-group">
@@ -472,90 +312,83 @@
       <label for="password">Mot de passe</label>
       <div class="input-wrap has-toggle">
         <span class="input-icon">🔒</span>
-        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+        <input type="password" id="password" placeholder="Minimum 8 caractères" autocomplete="new-password"
+          oninput="checkStrength(this.value)">
         <button type="button" class="pwd-toggle" id="togglePassword" aria-label="Voir le mot de passe" tabindex="-1">
           👁️
         </button>
       </div>
+      <div class="pwd-strength" id="pwdBars">
+        <div class="pwd-bar" id="bar1"></div>
+        <div class="pwd-bar" id="bar2"></div>
+        <div class="pwd-bar" id="bar3"></div>
+        <div class="pwd-bar" id="bar4"></div>
+      </div>
+      <div class="pwd-hint" id="pwdHint">Entrez un mot de passe</div>
     </div>
 
-    <!-- 2FA -->
-    <div id="twofaSection" class="hidden">
-      <label for="twofaCode">🔐 Code de vérification</label>
-      <input type="text" id="twofaCode" maxlength="6" placeholder="• • • • • •" inputmode="numeric">
-      <button id="verify2faBtn">✅ Vérifier le code</button>
-    </div>
+    <!-- Bouton inscription -->
+    <button id="registerBtn">Créer mon compte →</button>
 
-    <!-- Bouton connexion -->
-    <button id="loginBtn">Se connecter →</button>
-
-    <div class="link-row">
-      Pas encore de compte ?
-      <a href="/register/register.html">Créer un compte</a>
+    <div class="link-row" style="margin-top:14px;">
+      Déjà inscrit ?
+      <a href="/login/login.html">Se connecter</a>
     </div>
-    <button type="button" id="demo-btn" onclick="loginDemo()" style="
-  width:100%;padding:13px;margin-top:10px;
-  background:linear-gradient(135deg,#F3F4F6,#E5E7EB);
-  color:#6B7280;border:none;border-radius:14px;
-  font-family:'Sora',sans-serif;font-size:14px;font-weight:700;
-  cursor:pointer;
-">👀 Essayer la démo</button>
   </div>
 
-  <!-- Guide modal (bottom sheet) -->
-  <div id="loginGuideOverlay" class="guide-overlay">
-    <div id="loginGuide" class="guide-sheet">
+  <!-- Guide modal -->
+  <div id="registerGuideOverlay" class="guide-overlay">
+    <div id="registerGuide" class="guide-sheet">
       <div class="guide-pill"></div>
-      <button class="guide-close" onclick="closeLoginGuide()">✕</button>
+      <button class="guide-close" onclick="closeRegisterGuide()">✕</button>
 
-      <div class="guide-title">🔑 Besoin d'aide ?</div>
+      <div class="guide-title">📝 Créez votre compte</div>
       <div class="guide-body">
-        Entrez votre <strong>email</strong> et votre <strong>mot de passe</strong> pour accéder à votre espace.
+        Remplissez les champs et cliquez sur <strong>"Créer mon compte"</strong>.
         <div class="guide-steps">
           <div class="guide-step">
             <div class="guide-step-icon">🤖</div>
-            <div><strong>Android / PC :</strong> Ouvrez dans Chrome, après connexion, cliquez sur <strong>"Installer"</strong> pour ajouter l'appli.</div>
+            <div><strong>Android / PC :</strong> Ouvrez dans Chrome → après connexion, cliquez sur <strong>"Installer"</strong>.</div>
           </div>
           <div class="guide-step">
             <div class="guide-step-icon">🍎</div>
-            <div><strong>iPhone / iPad :</strong> Ouvrez dans Safari → bouton <strong>"Partager"</strong> → <strong>"Ajouter à l'écran d'accueil"</strong>.</div>
+            <div><strong>iPhone / iPad :</strong> Safari → <strong>"Partager"</strong> → <strong>"Ajouter à l'écran d'accueil"</strong>.</div>
           </div>
         </div>
       </div>
-      <button class="guide-cta" onclick="closeLoginGuide()">C'est parti ! 🚀</button>
+      <button class="guide-cta" onclick="closeRegisterGuide()">Commencer l'inscription 🚀</button>
     </div>
   </div>
 
   <script>
-    function closeLoginGuide() {
-      const overlay = document.getElementById('loginGuideOverlay');
-      if (overlay) overlay.style.display = 'none';
+    function closeRegisterGuide() {
+      const el = document.getElementById('registerGuideOverlay');
+      if (el) el.style.display = 'none';
+    }
+
+    // Password strength indicator
+    function checkStrength(val) {
+      const bars = ['bar1','bar2','bar3','bar4'];
+      const hint = document.getElementById('pwdHint');
+      let score = 0;
+      if (val.length >= 8) score++;
+      if (/[A-Z]/.test(val)) score++;
+      if (/[0-9]/.test(val)) score++;
+      if (/[^A-Za-z0-9]/.test(val)) score++;
+
+      const colors = ['#EF4444','#F59E0B','#10B981','#059669'];
+      const labels = ['Trop court','Faible','Bon','Excellent !'];
+
+      bars.forEach((id, i) => {
+        document.getElementById(id).style.background = i < score ? colors[Math.max(0, score-1)] : '#E5E7EB';
+      });
+      hint.textContent = val.length === 0 ? 'Entrez un mot de passe' : labels[Math.max(0, score-1)];
+      hint.style.color = val.length === 0 ? '#9CA3AF' : colors[Math.max(0, score-1)];
     }
   </script>
-  <script>
-async function loginDemo() {
-  const API = document.querySelector('meta[name="api-base"]')?.content || 'https://samacommerce-backend-v2.onrender.com';
-  const btn = document.getElementById('demo-btn');
-  btn.textContent = '⏳ Chargement démo…';
-  btn.disabled = true;
-  try {
-    const res  = await fetch(API + '/demo/login', { method:'POST', headers:{'Content-Type':'application/json'} });
-    const data = await res.json();
-    if (data.token) {
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('userRole',  data.user.role);
-      localStorage.setItem('is_demo',   'true');
-      window.location.replace('../index.html');
-    }
-  } catch {
-    btn.textContent = '👀 Essayer la démo';
-    btn.disabled = false;
-  }
-}
-</script>
 
   <script>
-    // Toggle mot de passe — login
+    // Toggle mot de passe — register
     (function() {
       var btn   = document.getElementById('togglePassword');
       var input = document.getElementById('password');
@@ -563,9 +396,11 @@ async function loginDemo() {
       var visible = false;
       btn.addEventListener('click', function() {
         visible = !visible;
-        input.type  = visible ? 'text' : 'password';
+        input.type = visible ? 'text' : 'password';
         btn.textContent = visible ? '🙈' : '👁️';
         btn.setAttribute('aria-label', visible ? 'Masquer le mot de passe' : 'Voir le mot de passe');
+        // Trigger oninput for strength check to stay accurate
+        input.dispatchEvent(new Event('input'));
         input.focus();
       });
     })();

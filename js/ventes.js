@@ -120,6 +120,7 @@ export async function finaliserVenteCredit() {
   appData.panier = [];
   saveAppDataLocal();
   updateStats();
+  afficherPanier();           // ✅ vider l'affichage du panier
   afficherCategoriesVente();
   afficherProduits();
   hideModalCredit();
@@ -351,6 +352,7 @@ export async function finaliserVente(paymentMethod) {
   // Vider le panier + fermer le modal
   appData.panier = [];
   saveAppDataLocal();
+  afficherPanier();           // ✅ vider l'affichage du panier immédiatement
   hideModal();
 
   // Rafraîchir l'UI immédiatement avec les données optimistic

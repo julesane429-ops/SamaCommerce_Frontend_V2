@@ -45,17 +45,18 @@ export function authfetch(url, options = {}) {
     console.error("Erreur décodage token:", e);
   }
 
+  // ✅ Toujours injecter X-Boutique-Id :
+  //    1. window._activeBoutiqueId (mis par boutique-switcher en temps réel)
+  //    2. localStorage 'sc_active_boutique' (persisté entre sessions)
+  //    → Garantit que MÊME le premier syncFromServer au chargement envoie le bon boutique
+  const boutiqueId = window._activeBoutiqueId
+    || parseInt(localStorage.getItem('sc_active_boutique') || '0') || null;
+
   const headers = {
     ...(options.headers || {}),
-    'Authorization': 'Bearer ' + token
+    'Authorization': 'Bearer ' + token,
+    ...(boutiqueId ? { 'X-Boutique-Id': String(boutiqueId) } : {}),
   };
-
-  // Injecter X-Boutique-Id si une boutique est sélectionnée (plan Enterprise)
-  const _boutiqueId = window._activeBoutiqueId
-    || parseInt(localStorage.getItem('sc_active_boutique') || '0') || null;
-  if (_boutiqueId && !headers['X-Boutique-Id']) {
-    headers['X-Boutique-Id'] = String(_boutiqueId);
-  }
 
   return fetch(url, { ...options, headers }).then(res => {
     if (res.status === 401) {
@@ -124,10 +125,9 @@ if (_origFetchCheck && !_origFetchCheck._coldPatched) {
     document.getElementById('cold-start-banner')?.remove();
   };
 }
+
 export async function postSaleServer(sale) {
   try {
-    // sale peut contenir : product_id, quantity, payment_method
-    // et éventuellement client_name, client_phone, due_date, paid
     const res = await authfetch(API_BASE + '/sales', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -153,7 +153,7 @@ export async function postCategoryServer(category) {
     const res = await authfetch(API_BASE + '/categories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(category) // category = { name: "..." }
+      body: JSON.stringify(category)
     });
 
     if (!res.ok) {
@@ -197,7 +197,6 @@ export async function syncFromServer() {
     console.warn('Mode hors ligne : données locales utilisées.');
     if (syncBanner) syncBanner.style.display = 'none';
     afficherInventaire();
-
     return;
   }
 
@@ -207,7 +206,7 @@ export async function syncFromServer() {
       authfetch(API_BASE + '/categories'),
       authfetch(API_BASE + '/products'),
       authfetch(API_BASE + '/stats/ventes-par-jour'),
-      authfetch(API_BASE + '/sales?limit=200&days=90'), // 90 derniers jours, max 200
+      authfetch(API_BASE + '/sales?limit=200&days=90'),
     ]).then(results => results.map(r => r.status === 'fulfilled' ? r.value : { ok: false }));
 
     // --- Catégories ---
@@ -253,34 +252,30 @@ export async function syncFromServer() {
     if (resSales.ok) {
       ventesAll = await resSales.json();
 
-      // ⚡ Normalisation des ventes/crédits
       appData.ventes = ventesAll.map(v => ({
         ...v,
-        total:    parseFloat(v.total)    || 0,
-        price:    parseFloat(v.price)    || 0,
-        quantity: parseInt(v.quantity)   || 0,
+        total:       parseFloat(v.total)       || 0,
+        price:       parseFloat(v.price)       || 0,
+        quantity:    parseInt(v.quantity)      || 0,
         amount_paid: parseFloat(v.amount_paid) || 0,
-        created_at: v.created_at ? new Date(v.created_at) : null,
-        due_date:   v.due_date   ? new Date(v.due_date)   : null,
+        created_at:  v.created_at ? new Date(v.created_at) : null,
+        due_date:    v.due_date   ? new Date(v.due_date)   : null,
         paid: v.paid === true || v.paid === 'true'
       }));
 
-      // 🔗 Rattacher les ventes à chaque produit
+      // Rattacher les ventes à chaque produit
       appData.produits.forEach(prod => {
         prod.ventes = appData.ventes.filter(v =>
           parseInt(v.product_id) === prod.id
         );
       });
 
-      // Filtrer les crédits — uniquement les references, pas de duplication complète
+      // Filtrer les crédits
       appData.credits = appData.ventes.filter(v => {
         const pm = (v.payment_method || '').toLowerCase().trim();
         return pm === 'credit' || pm === 'crédit';
       });
-
-      // ✅ Debug complet
     }
-
 
     // --- Stats ventes du jour ---
     if (resStats.ok) {
@@ -288,9 +283,9 @@ export async function syncFromServer() {
       const today = new Date().toISOString().split('T')[0];
       const todayStat = statsArray.find(s => s.date.startsWith(today));
 
-      appData.stats.ventesJour = todayStat ? parseInt(todayStat.total_montant, 10) : 0;
+      appData.stats.ventesJour      = todayStat ? parseInt(todayStat.total_montant, 10) : 0;
       appData.stats.chiffreAffaires = appData.stats.ventesJour;
-      appData.stats.historique = statsArray;
+      appData.stats.historique      = statsArray;
     }
 
     // --- Recalcul vendu + articles vendus ---
@@ -300,7 +295,7 @@ export async function syncFromServer() {
 
     ventesAll.forEach(v => {
       const prodId = parseInt(v.product_id);
-      const qte = v.quantity || 0;
+      const qte    = v.quantity || 0;
 
       const prod = appData.produits.find(p => p.id === prodId);
       if (prod) prod.vendu += qte;
@@ -313,7 +308,7 @@ export async function syncFromServer() {
 
     appData.stats.articlesVendus = totalQteToday;
 
-    // --- Sauvegarde ---
+    // --- Sauvegarde locale ---
     saveAppDataLocal();
     console.log('✅ Sync from server done');
 
@@ -327,5 +322,4 @@ export async function syncFromServer() {
   afficherCredits();
 
   await updateHeader();
-
 }

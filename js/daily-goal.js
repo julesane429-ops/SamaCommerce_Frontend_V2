@@ -320,4 +320,12 @@ function storageKey() {
     init();
   }
 
+  // ✅ Exposer reload pour le boutique-switcher
+window.dailyGoal = window.dailyGoal || {};
+window.dailyGoal.reload = function () {
+  // Recharge l'objectif depuis le nouveau storageKey (nouvelle boutique)
+  confettiFired = false;
+  renderGoalCard();
+};
+
 })();

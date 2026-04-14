@@ -1,0 +1,358 @@
+/* ═══════════════════════════════════════════════════
+   ENHANCED VENTE — Flux de vente amélioré
+   - Modal paiement redessiné (rendu monnaie, mixte)
+   - Recherche produit boostée
+═══════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────
+   MODAL PAIEMENT REDESSINÉ
+────────────────────────────────── */
+
+.ev-modal {
+  padding: 20px 18px 24px;
+  max-width: 400px;
+  width: calc(100% - 24px);
+}
+
+/* Résumé panier en haut du modal */
+.ev-summary {
+  background: var(--bg, #F5F3FF);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.ev-summary-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.ev-summary-total {
+  font-family: 'Sora', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1.1;
+}
+.ev-summary-detail {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Grille méthodes de paiement */
+.ev-methods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.ev-method-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  border-radius: 14px;
+  border: 2px solid transparent;
+  background: var(--bg, #F5F3FF);
+  cursor: pointer;
+  transition: all .15s ease;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+.ev-method-btn:active {
+  transform: scale(.96);
+}
+.ev-method-btn.selected {
+  border-color: var(--primary);
+  background: #EDE9FE;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, .1);
+}
+.ev-method-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+.ev-method-name {
+  font-family: 'Sora', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+.ev-method-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 10px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+.ev-method-btn.selected .ev-method-check {
+  display: flex;
+}
+
+/* Section rendu monnaie */
+.ev-cash-section {
+  background: #ECFDF5;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  display: none;
+}
+.ev-cash-section.visible {
+  display: block;
+  animation: evSlideIn .2s ease-out;
+}
+@keyframes evSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ev-cash-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--green, #10B981);
+  margin-bottom: 8px;
+}
+.ev-cash-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ev-cash-input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 2px solid rgba(16, 185, 129, .2);
+  border-radius: 12px;
+  font-family: 'Sora', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+  background: #fff;
+  outline: none;
+  text-align: right;
+  transition: border-color .15s;
+}
+.ev-cash-input:focus {
+  border-color: var(--green, #10B981);
+}
+.ev-cash-suffix {
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* Montants rapides */
+.ev-quick-amounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.ev-quick-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(16, 185, 129, .2);
+  background: #fff;
+  font-family: 'Sora', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--green, #10B981);
+  cursor: pointer;
+  transition: all .12s;
+}
+.ev-quick-btn:active {
+  transform: scale(.95);
+  background: #ECFDF5;
+}
+
+/* Rendu monnaie affiché */
+.ev-change-display {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  text-align: center;
+  font-family: 'Sora', sans-serif;
+  display: none;
+}
+.ev-change-display.visible {
+  display: block;
+  animation: evSlideIn .15s ease-out;
+}
+.ev-change-display.positive {
+  background: #D1FAE5;
+}
+.ev-change-display.negative {
+  background: #FEE2E2;
+}
+.ev-change-label {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.ev-change-display.positive .ev-change-label {
+  color: #065F46;
+}
+.ev-change-display.negative .ev-change-label {
+  color: #991B1B;
+}
+.ev-change-amount {
+  font-size: 22px;
+  font-weight: 800;
+}
+.ev-change-display.positive .ev-change-amount {
+  color: var(--green, #10B981);
+}
+.ev-change-display.negative .ev-change-amount {
+  color: var(--red, #EF4444);
+}
+
+/* Paiement mixte */
+.ev-mixte-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  margin-bottom: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.ev-mixte-switch {
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: #D1D5DB;
+  position: relative;
+  transition: background .2s;
+  flex-shrink: 0;
+}
+.ev-mixte-switch.on {
+  background: var(--primary);
+}
+.ev-mixte-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform .2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.15);
+}
+.ev-mixte-switch.on::after {
+  transform: translateX(16px);
+}
+.ev-mixte-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Ligne de paiement mixte */
+.ev-mixte-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  animation: evSlideIn .15s ease-out;
+}
+.ev-mixte-method-icon {
+  font-size: 20px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--bg, #F5F3FF);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ev-mixte-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1.5px solid rgba(124, 58, 237, .15);
+  border-radius: 10px;
+  font-family: 'Sora', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  background: #fff;
+  outline: none;
+  text-align: right;
+}
+.ev-mixte-input:focus {
+  border-color: var(--primary);
+}
+.ev-mixte-remaining {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  margin: 4px 0 10px;
+}
+.ev-mixte-remaining strong {
+  color: var(--red, #EF4444);
+  font-weight: 800;
+}
+.ev-mixte-remaining.ok strong {
+  color: var(--green, #10B981);
+}
+
+/* Bouton confirmer */
+.ev-confirm-btn {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 14px;
+  font-family: 'Sora', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--green, #10B981), #059669);
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, .35);
+  transition: transform .12s, opacity .12s;
+  margin-top: 6px;
+}
+.ev-confirm-btn:active {
+  transform: scale(.97);
+}
+.ev-confirm-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* Cancel */
+.ev-cancel-btn {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+/* ─────────────────────────────────
+   DARK MODE
+────────────────────────────────── */
+.dark-mode .ev-summary { background: rgba(255,255,255,.06); }
+.dark-mode .ev-method-btn { background: rgba(255,255,255,.06); }
+.dark-mode .ev-method-btn.selected { background: rgba(124,58,237,.15); }
+.dark-mode .ev-cash-section { background: rgba(16,185,129,.1); }
+.dark-mode .ev-cash-input { background: rgba(255,255,255,.08); border-color: rgba(16,185,129,.15); }
+.dark-mode .ev-quick-btn { background: rgba(255,255,255,.06); border-color: rgba(16,185,129,.15); }
+.dark-mode .ev-mixte-input { background: rgba(255,255,255,.08); border-color: rgba(124,58,237,.12); }
+.dark-mode .ev-change-display.positive { background: rgba(16,185,129,.15); }
+.dark-mode .ev-change-display.negative { background: rgba(239,68,68,.12); }

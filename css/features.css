@@ -4056,81 +4056,97 @@ html.dark .module-sheet select { background-color: #2A2740; border-color: #3B376
   .dt-sidebar-fab:active { transform: scale(.97); }
 
   /* Pousser le contenu à droite de la sidebar */
-  .dt-layout .app-container {
+  html.dt-layout .app-container {
     margin-left: 220px;
-    max-width: none;
-    border-radius: 0;
-    box-shadow: none;
+    margin-right: 0;
+    max-width: none !important;
+    width: calc(100vw - 220px) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow-x: hidden;
   }
 
-  /* Header compact sur desktop */
-  .dt-layout .top-header {
+  /* Header compact — contenu centré dans la zone disponible */
+  html.dt-layout .top-header {
     padding: 14px 0 30px;
   }
-  .dt-layout .top-header .header-inner {
+  html.dt-layout .top-header .header-inner,
+  html.dt-layout .top-header .hd-center {
     max-width: 900px;
     margin: 0 auto;
     padding: 0 28px;
   }
 
-  /* Stats float — centré */
-  .dt-layout .today-float {
+  /* Stats float — centré, pleine largeur utile */
+  html.dt-layout .today-float {
     max-width: 900px;
+    width: 100%;
     margin: -22px auto 0;
     padding: 14px 20px;
     grid-template-columns: repeat(3, 1fr);
   }
 
-  /* Contenu principal — centré avec marge confortable */
-  .dt-layout .scroll-content {
+  /* Contenu principal — centré */
+  html.dt-layout .scroll-content {
     max-width: 900px;
+    width: 100%;
     margin: 0 auto;
     padding: 14px 28px 24px;
   }
 
-  /* Cacher bottom nav + bouton déconnexion (dans la sidebar) */
-  .dt-layout .bottom-nav { display: none !important; }
-  .dt-layout .top-actions { display: none; }
+  /* Tous les widgets enfants prennent 100% */
+  html.dt-layout .scroll-content > .section-page > * {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Cacher bottom nav + bouton déconnexion (redondant avec sidebar) */
+  html.dt-layout .bottom-nav { display: none !important; }
+  html.dt-layout .top-actions { display: none; }
 
   /* Action grid : 3 colonnes */
-  .dt-layout .action-grid {
+  html.dt-layout .action-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 
   /* Cartes : pleine largeur du conteneur */
-  .dt-layout .card,
-  .dt-layout .uxd-widget,
-  .dt-layout .uxd-widget-v2 {
+  html.dt-layout .card,
+  html.dt-layout .uxd-widget,
+  html.dt-layout .uxd-widget-v2,
+  html.dt-layout #daily-goal-card,
+  html.dt-layout #sparkline-card,
+  html.dt-layout #alertesStock {
     max-width: 100%;
+    width: 100%;
   }
 
   /* Categories vente : 3 colonnes */
-  .dt-layout #categoriesVente {
+  html.dt-layout #categoriesVente {
     grid-template-columns: repeat(3, 1fr);
   }
 
   /* Produits : grille 2 colonnes */
-  .dt-layout #listeProduits {
+  html.dt-layout #listeProduits {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
-  .dt-layout #listeProduits .produit-card { margin-bottom: 0; }
-  .dt-layout #listeProduits .vl-sentinel,
-  .dt-layout #listeProduits .vl-counter { grid-column: 1 / -1; }
+  html.dt-layout #listeProduits .produit-card { margin-bottom: 0; }
+  html.dt-layout #listeProduits .vl-sentinel,
+  html.dt-layout #listeProduits .vl-counter { grid-column: 1 / -1; }
 
   /* Ventes cartes : 2 colonnes */
-  .dt-layout .sv-cards-container {
+  html.dt-layout .sv-cards-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
-  .dt-layout .sv-cards-container .sv-card { margin-bottom: 0; }
-  .dt-layout .sv-cards-container .vl-sentinel,
-  .dt-layout .sv-cards-container .vl-counter { grid-column: 1 / -1; }
+  html.dt-layout .sv-cards-container .sv-card { margin-bottom: 0; }
+  html.dt-layout .sv-cards-container .vl-sentinel,
+  html.dt-layout .sv-cards-container .vl-counter { grid-column: 1 / -1; }
 
   /* Categories grille : 3 colonnes */
-  .dt-layout .categories-grid {
+  html.dt-layout .categories-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 }
@@ -4139,26 +4155,24 @@ html.dark .module-sheet select { background-color: #2A2740; border-color: #3B376
    4. SPLIT VIEW VENTE ≥ 900px
 ────────────────────────────────── */
 @media (min-width: 900px) {
-  .dt-layout #venteSection {
+  html.dt-layout #venteSection {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
     align-items: start;
   }
-  /* Panier + total + bouton : colonne gauche */
-  .dt-layout #venteSection .card,
-  .dt-layout #venteSection .total-bar,
-  .dt-layout #venteSection .btn-encaisser,
-  .dt-layout #venteSection #btnPrintReceipt {
+  html.dt-layout #venteSection .card,
+  html.dt-layout #venteSection .total-bar,
+  html.dt-layout #venteSection .btn-encaisser,
+  html.dt-layout #venteSection #btnPrintReceipt {
     grid-column: 1;
   }
-  /* Label + catégories + produits : colonne droite */
-  .dt-layout #venteSection .section-label,
-  .dt-layout #venteSection #categoriesVente,
-  .dt-layout #venteSection #uxVenteBoost {
+  html.dt-layout #venteSection .section-label,
+  html.dt-layout #venteSection #categoriesVente,
+  html.dt-layout #venteSection #uxVenteBoost {
     grid-column: 2;
   }
-  .dt-layout #venteSection .page-header {
+  html.dt-layout #venteSection .page-header {
     grid-column: 1 / -1;
   }
 }
@@ -4168,26 +4182,25 @@ html.dark .module-sheet select { background-color: #2A2740; border-color: #3B376
 ────────────────────────────────── */
 @media (min-width: 1024px) {
   .dt-sidebar { width: 260px; }
-  .dt-layout .app-container { margin-left: 260px; }
+  html.dt-layout .app-container { margin-left: 260px; width: calc(100vw - 260px) !important; }
 
-  /* Élargir le contenu */
-  .dt-layout .scroll-content { max-width: 980px; padding: 14px 32px 24px; }
-  .dt-layout .top-header .header-inner { max-width: 980px; }
-  .dt-layout .today-float { max-width: 980px; }
+  html.dt-layout .scroll-content { max-width: 980px; padding: 14px 32px 24px; }
+  html.dt-layout .top-header .header-inner,
+  html.dt-layout .top-header .hd-center { max-width: 980px; }
+  html.dt-layout .today-float { max-width: 980px; }
 
-  .dt-layout .stat-2x2 { grid-template-columns: repeat(4, 1fr); }
-  .dt-layout .metric-2x2 { grid-template-columns: repeat(4, 1fr); }
-  .dt-layout .chart-wrap { max-height: 350px; }
+  html.dt-layout .stat-2x2 { grid-template-columns: repeat(4, 1fr); }
+  html.dt-layout .metric-2x2 { grid-template-columns: repeat(4, 1fr); }
+  html.dt-layout .chart-wrap { max-height: 350px; }
 }
 
-/* ─── ≥ 1400px : grand écran ─── */
 @media (min-width: 1400px) {
-  .dt-layout .scroll-content { max-width: 1100px; padding: 14px 36px 24px; }
-  .dt-layout .top-header .header-inner { max-width: 1100px; }
-  .dt-layout .today-float { max-width: 1100px; grid-template-columns: repeat(4, 1fr); }
-  .dt-layout #listeProduits { grid-template-columns: repeat(3, 1fr); }
-  .dt-layout .sv-cards-container { grid-template-columns: repeat(3, 1fr); }
-  .dt-layout .action-grid { grid-template-columns: repeat(3, 1fr); }
+  html.dt-layout .scroll-content { max-width: 1100px; padding: 14px 36px 24px; }
+  html.dt-layout .top-header .header-inner,
+  html.dt-layout .top-header .hd-center { max-width: 1100px; }
+  html.dt-layout .today-float { max-width: 1100px; grid-template-columns: repeat(4, 1fr); }
+  html.dt-layout #listeProduits { grid-template-columns: repeat(3, 1fr); }
+  html.dt-layout .sv-cards-container { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* ─────────────────────────────────
@@ -4200,7 +4213,10 @@ html.dark .module-sheet select { background-color: #2A2740; border-color: #3B376
 .dark-mode .uxd-widget-v2 { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.06); box-shadow: 0 4px 20px rgba(0,0,0,.2); }
 .dark-mode .uxd-v2-item { background: rgba(255,255,255,.05); }
 @media (min-width: 768px) {
-  .dark-mode .dt-sidebar { background: #13111F; border-right-color: rgba(255,255,255,.06); box-shadow: none; }
-  .dark-mode .dt-sidebar-item:hover { background: rgba(255,255,255,.05); }
-  .dark-mode .dt-sidebar-item.active { background: rgba(124,58,237,.1); }
+  html.dark-mode .dt-sidebar,
+  html.dark .dt-sidebar { background: #13111F; border-right-color: rgba(255,255,255,.06); box-shadow: none; }
+  html.dark-mode .dt-sidebar-item:hover,
+  html.dark .dt-sidebar-item:hover { background: rgba(255,255,255,.05); }
+  html.dark-mode .dt-sidebar-item.active,
+  html.dark .dt-sidebar-item.active { background: rgba(124,58,237,.1); }
 }

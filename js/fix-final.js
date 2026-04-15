@@ -82,82 +82,6 @@
   }
 
   // ══════════════════════════════════════
-  // 2. CONTRÔLE D'ACCÈS PLAN + RÔLE
-  // ══════════════════════════════════════
-  function setupAccessControl() {
-    var origShow = window.showSection;
-    if (!origShow) return;
-    // Ne pas double-wrapper si déjà fait
-    if (origShow._accessCtrl) return;
-
-    // Features requises par section
-    var SECTION_FEATURES = {
-      rapports:       'rapports',
-      caisse:         'caisse',
-      clients:        'clients',
-      fournisseurs:   'fournisseurs',
-      commandes:      'commandes',
-      livraisons:     'livraisons',
-      customerOrders: 'livraisons',
-      deliveries:     'livraisons',
-      deliverymen:    'livraisons',
-      credits:        'credits',
-      inventaire:     'rapports',
-      logs:           'team',
-    };
-
-    // Permissions employé (stockées dans localStorage)
-    function getEmployeePermissions() {
-      try {
-        var perms = localStorage.getItem('employeePermissions');
-        return perms ? JSON.parse(perms) : null;
-      } catch (e) { return null; }
-    }
-
-    window.showSection = function (section) {
-      var plan = localStorage.getItem('userPlan') || 
-                 window._profile?.plan || 'Free';
-      var role = localStorage.getItem('userRole') || 'user';
-      var isEmployee = localStorage.getItem('employeeRole') === 'employe';
-
-      // Vérifier la feature du plan
-      var feature = SECTION_FEATURES[section];
-      if (feature && typeof window.hasFeature === 'function') {
-        if (!window.hasFeature(plan, feature)) {
-          window.haptic?.error();
-          window.showNotification?.(
-            '🔒 Cette section nécessite un plan supérieur', 'warning'
-          );
-          // Ouvrir le modal premium
-          window.showModalById?.('premiumModal');
-          return;
-        }
-      }
-
-      // Vérifier les permissions employé
-      if (isEmployee) {
-        var perms = getEmployeePermissions();
-        if (perms) {
-          var permMap = {
-            stock: 'stock', vente: 'vente', rapports: 'rapports',
-            credits: 'credits', clients: 'clients',
-            inventaire: 'rapports', caisse: 'rapports',
-          };
-          var requiredPerm = permMap[section];
-          if (requiredPerm && perms[requiredPerm] === false) {
-            window.haptic?.error();
-            window.showNotification?.('🔒 Accès non autorisé par votre gérant', 'warning');
-            return;
-          }
-        }
-      }
-
-      origShow(section);
-    };
-    window.showSection._accessCtrl = true;
-  }
-
-  // ══════════════════════════════════════
   // 3. PAIEMENT MIXTE DANS LES CHIFFRES
   // ══════════════════════════════════════
   function patchMixteStats() {
@@ -603,7 +527,6 @@
     if (!window.appData) { setTimeout(init, 300); return; }
 
     fixLogsMobile();
-    setupAccessControl();
     patchMixteStats();
     setupCategorySearch();
     patchGlobalSearch();

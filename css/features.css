@@ -3828,3 +3828,344 @@ html.dark .module-sheet select { background-color: #2A2740; border-color: #3B376
 .dark-mode .uxd-widget{background:rgba(255,255,255,.05);box-shadow:0 2px 12px rgba(0,0,0,.2)}
 .dark-mode .uxv-chip{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.08)}
 .dark-mode .uxp-banner{background:#1E1B2E;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+
+/* ── ux-phase3.css ── */
+/* ═══════════════════════════════════════════════════
+   UX PHASE 3 — Sales redesign + Tablet/Desktop
+   1. Historique ventes en cartes sur mobile
+   2. Dashboard dernière vente amélioré
+   3. Sidebar navigation ≥ 768px
+   4. Split view vente ≥ 900px
+   5. Grilles 3 colonnes rapports ≥ 1024px
+═══════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────
+   1. VENTES — CARTES MOBILE
+────────────────────────────────── */
+.sv-card {
+  background: var(--surface, #fff);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 10px rgba(124,58,237,.06);
+  border-left: 4px solid var(--green, #10B981);
+  transition: transform .12s;
+}
+.sv-card:active { transform: scale(.99); }
+.sv-card.pay-wave    { border-left-color: var(--blue, #3B82F6); }
+.sv-card.pay-orange  { border-left-color: var(--orange, #F59E0B); }
+.sv-card.pay-credit  { border-left-color: var(--accent, #EC4899); }
+.sv-card.pay-especes { border-left-color: var(--green, #10B981); }
+
+.sv-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.sv-icon {
+  width: 38px; height: 38px;
+  border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.sv-icon-especes { background: #ECFDF5; }
+.sv-icon-wave    { background: #EFF6FF; }
+.sv-icon-orange  { background: #FFFBEB; }
+.sv-icon-credit  { background: #FDF2F8; }
+
+.sv-info { flex: 1; min-width: 0; }
+.sv-name {
+  font-family: 'Sora', sans-serif;
+  font-size: 14px; font-weight: 700;
+  color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sv-date { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.sv-amount {
+  font-family: 'Sora', sans-serif;
+  font-size: 16px; font-weight: 800;
+  color: var(--green, #10B981);
+  text-align: right; flex-shrink: 0;
+}
+.sv-card.pay-wave .sv-amount    { color: var(--blue); }
+.sv-card.pay-orange .sv-amount  { color: var(--orange); }
+.sv-card.pay-credit .sv-amount  { color: var(--accent, #EC4899); }
+
+.sv-bottom {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(124,58,237,.08);
+}
+.sv-meta {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11px; color: var(--muted);
+}
+.sv-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 6px;
+  font-size: 10px; font-weight: 700;
+}
+.sv-pill-especes { background: #ECFDF5; color: #065F46; }
+.sv-pill-wave    { background: #EFF6FF; color: #1E40AF; }
+.sv-pill-orange  { background: #FFFBEB; color: #92400E; }
+.sv-pill-credit  { background: #FDF2F8; color: #9D174D; }
+
+.sv-actions { display: flex; gap: 6px; }
+.sv-btn {
+  width: 32px; height: 32px;
+  border-radius: 9px; border: none;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; cursor: pointer;
+  transition: transform .12s;
+}
+.sv-btn:active { transform: scale(.9); }
+.sv-btn-edit { background: #FEF3C7; }
+.sv-btn-del  { background: #FEE2E2; }
+
+/* Cacher la table originale sur mobile */
+.sv-cards-mode .hist-table { display: none; }
+.sv-cards-container { display: block; }
+
+/* ─────────────────────────────────
+   2. DASHBOARD DERNIÈRE VENTE AMÉLIORÉ
+────────────────────────────────── */
+.uxd-widget-v2 {
+  background: var(--surface, #fff);
+  border-radius: 18px;
+  padding: 16px 18px;
+  box-shadow: 0 4px 20px rgba(124,58,237,.1);
+  margin-bottom: 14px;
+  border: 1px solid rgba(124,58,237,.06);
+}
+.uxd-v2-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.uxd-v2-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 13px; font-weight: 800;
+  color: var(--text);
+  display: flex; align-items: center; gap: 6px;
+}
+.uxd-v2-badge {
+  font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 6px;
+  background: #ECFDF5; color: #065F46;
+}
+.uxd-v2-list { display: flex; flex-direction: column; gap: 8px; }
+.uxd-v2-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bg, #F5F3FF);
+  transition: transform .12s;
+}
+.uxd-v2-item:active { transform: scale(.98); }
+.uxd-v2-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.uxd-v2-info { flex: 1; min-width: 0; }
+.uxd-v2-name {
+  font-family: 'Sora', sans-serif;
+  font-size: 13px; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.uxd-v2-time { font-size: 10px; color: var(--muted); margin-top: 1px; }
+.uxd-v2-amount {
+  font-family: 'Sora', sans-serif;
+  font-size: 14px; font-weight: 800;
+  flex-shrink: 0;
+}
+.uxd-v2-see-all {
+  display: block; text-align: center;
+  margin-top: 10px; padding: 8px;
+  font-size: 12px; font-weight: 700;
+  color: var(--primary); cursor: pointer;
+  border: none; background: none; width: 100%;
+}
+
+/* ─────────────────────────────────
+   3. SIDEBAR NAVIGATION ≥ 768px
+────────────────────────────────── */
+@media (min-width: 768px) {
+  /* Sidebar */
+  .dt-sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0;
+    width: 220px;
+    background: var(--surface, #fff);
+    border-right: 1px solid rgba(124,58,237,.08);
+    display: flex; flex-direction: column;
+    padding: 20px 0;
+    z-index: 110;
+    box-shadow: 4px 0 20px rgba(0,0,0,.04);
+    overflow-y: auto;
+  }
+  .dt-sidebar-logo {
+    padding: 0 20px 20px;
+    font-family: 'Sora', sans-serif;
+    font-size: 16px; font-weight: 800;
+    color: var(--primary);
+    border-bottom: 1px solid rgba(124,58,237,.08);
+    margin-bottom: 12px;
+  }
+  .dt-sidebar-section {
+    padding: 8px 14px 4px;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .5px;
+    color: var(--muted);
+  }
+  .dt-sidebar-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 20px;
+    font-size: 13px; font-weight: 600;
+    color: var(--text); cursor: pointer;
+    border: none; background: none; width: 100%;
+    text-align: left; border-radius: 0;
+    transition: background .12s, color .12s;
+    position: relative;
+  }
+  .dt-sidebar-item:hover { background: var(--bg, #F5F3FF); }
+  .dt-sidebar-item.active {
+    background: var(--bg, #F5F3FF);
+    color: var(--primary);
+    font-weight: 700;
+  }
+  .dt-sidebar-item.active::before {
+    content: '';
+    position: absolute; left: 0; top: 8px; bottom: 8px;
+    width: 3px; border-radius: 0 3px 3px 0;
+    background: var(--primary);
+  }
+  .dt-sidebar-item-icon { font-size: 16px; width: 22px; text-align: center; }
+  .dt-sidebar-item-label { flex: 1; }
+  .dt-sidebar-fab {
+    margin: 12px 16px;
+    padding: 12px;
+    background: linear-gradient(135deg, var(--primary), var(--accent, #EC4899));
+    color: #fff; border: none; border-radius: 14px;
+    font-family: 'Sora', sans-serif;
+    font-size: 14px; font-weight: 800;
+    cursor: pointer; text-align: center;
+    box-shadow: 0 4px 16px rgba(124,58,237,.35);
+    transition: transform .12s;
+  }
+  .dt-sidebar-fab:active { transform: scale(.97); }
+
+  /* Pousser le contenu à droite */
+  .dt-layout .app-container {
+    margin-left: 220px;
+    max-width: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* Cacher la bottom nav et le header */
+  .dt-layout .bottom-nav { display: none !important; }
+  .dt-layout .scroll-content {
+    padding-bottom: 24px;
+  }
+
+  /* Action grid : 3 colonnes */
+  .dt-layout .action-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Stats float : 4 colonnes si assez d'espace */
+  .dt-layout .today-float {
+    grid-template-columns: repeat(4, 1fr);
+    margin: -22px 20px 0;
+  }
+
+  /* Cartes de section plus larges */
+  .dt-layout .card {
+    max-width: none;
+  }
+
+  /* Categories vente : 3 colonnes */
+  .dt-layout #categoriesVente {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Produits : grille 2 colonnes */
+  .dt-layout #listeProduits {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .dt-layout #listeProduits .produit-card { margin-bottom: 0; }
+  .dt-layout #listeProduits .vl-sentinel,
+  .dt-layout #listeProduits .vl-counter { grid-column: 1 / -1; }
+
+  /* Ventes cartes : 2 colonnes */
+  .dt-layout .sv-cards-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .dt-layout .sv-cards-container .sv-card { margin-bottom: 0; }
+  .dt-layout .sv-cards-container .vl-sentinel,
+  .dt-layout .sv-cards-container .vl-counter { grid-column: 1 / -1; }
+}
+
+/* ─────────────────────────────────
+   4. SPLIT VIEW VENTE ≥ 900px
+────────────────────────────────── */
+@media (min-width: 900px) {
+  .dt-layout #venteSection {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  /* Panier + total + bouton : colonne gauche */
+  .dt-layout #venteSection .card,
+  .dt-layout #venteSection .total-bar,
+  .dt-layout #venteSection .btn-encaisser,
+  .dt-layout #venteSection #btnPrintReceipt {
+    grid-column: 1;
+  }
+  /* Label + catégories + produits : colonne droite */
+  .dt-layout #venteSection .section-label,
+  .dt-layout #venteSection #categoriesVente,
+  .dt-layout #venteSection #uxVenteBoost {
+    grid-column: 2;
+  }
+  .dt-layout #venteSection .page-header {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ─────────────────────────────────
+   5. RAPPORTS ≥ 1024px
+────────────────────────────────── */
+@media (min-width: 1024px) {
+  .dt-layout .stat-2x2 { grid-template-columns: repeat(4, 1fr); }
+  .dt-layout .metric-2x2 { grid-template-columns: repeat(4, 1fr); }
+  .dt-layout .chart-wrap { max-height: 350px; }
+  .dt-sidebar { width: 260px; }
+  .dt-layout .app-container { margin-left: 260px; }
+
+  /* Grille catégories 3 colonnes */
+  .dt-layout .categories-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ─────────────────────────────────
+   DARK MODE
+────────────────────────────────── */
+.dark-mode .sv-card { background: rgba(255,255,255,.04); box-shadow: 0 2px 10px rgba(0,0,0,.15); }
+.dark-mode .sv-bottom { border-top-color: rgba(255,255,255,.06); }
+.dark-mode .sv-btn-edit { background: rgba(251,191,36,.15); }
+.dark-mode .sv-btn-del  { background: rgba(239,68,68,.15); }
+.dark-mode .uxd-widget-v2 { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.06); box-shadow: 0 4px 20px rgba(0,0,0,.2); }
+.dark-mode .uxd-v2-item { background: rgba(255,255,255,.05); }
+@media (min-width: 768px) {
+  .dark-mode .dt-sidebar { background: #13111F; border-right-color: rgba(255,255,255,.06); box-shadow: none; }
+  .dark-mode .dt-sidebar-item:hover { background: rgba(255,255,255,.05); }
+  .dark-mode .dt-sidebar-item.active { background: rgba(124,58,237,.1); }
+}

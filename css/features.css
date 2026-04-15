@@ -4055,19 +4055,30 @@ html.dark .module-sheet select { background-color: #2A2740; border-color: #3B376
   }
   .dt-sidebar-fab:active { transform: scale(.97); }
 
-  /* Pousser le contenu à droite */
+  /* Pousser le contenu à droite, MAIS contraindre la largeur */
   .dt-layout .app-container {
     margin-left: 220px;
+    margin-right: 0;
     max-width: none;
     border-radius: 0;
     box-shadow: none;
   }
-
-  /* Cacher la bottom nav et le header */
-  .dt-layout .bottom-nav { display: none !important; }
   .dt-layout .scroll-content {
-    padding-bottom: 24px;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 14px 24px 24px;
   }
+  .dt-layout .top-header {
+    padding: 18px 24px 36px;
+  }
+  .dt-layout .today-float {
+    max-width: 860px;
+    margin: -22px auto 0;
+    padding: 14px 20px;
+  }
+
+  /* Cacher la bottom nav */
+  .dt-layout .bottom-nav { display: none !important; }
 
   /* Action grid : 3 colonnes */
   .dt-layout .action-grid {
@@ -4080,9 +4091,9 @@ html.dark .module-sheet select { background-color: #2A2740; border-color: #3B376
     margin: -22px 20px 0;
   }
 
-  /* Cartes de section plus larges */
+  /* Cartes de section : contraindre */
   .dt-layout .card {
-    max-width: none;
+    max-width: 860px;
   }
 
   /* Categories vente : 3 colonnes */
@@ -4148,11 +4159,22 @@ html.dark .module-sheet select { background-color: #2A2740; border-color: #3B376
   .dt-layout .chart-wrap { max-height: 350px; }
   .dt-sidebar { width: 260px; }
   .dt-layout .app-container { margin-left: 260px; }
+  .dt-layout .scroll-content { max-width: 960px; }
+  .dt-layout .today-float { max-width: 960px; }
+  .dt-layout .card { max-width: 960px; }
 
-  /* Grille catégories 3 colonnes */
   .dt-layout .categories-grid {
     grid-template-columns: repeat(3, 1fr);
   }
+}
+
+/* ─── ≥ 1400px : grand écran, encore plus de marge ─── */
+@media (min-width: 1400px) {
+  .dt-layout .scroll-content { max-width: 1060px; padding: 14px 32px 24px; }
+  .dt-layout .today-float { max-width: 1060px; }
+  .dt-layout .card { max-width: 1060px; }
+  .dt-layout #listeProduits { grid-template-columns: repeat(3, 1fr); }
+  .dt-layout .sv-cards-container { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* ─────────────────────────────────

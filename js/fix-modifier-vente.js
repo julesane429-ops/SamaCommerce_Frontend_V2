@@ -1,32 +1,35 @@
 /**
- * fix-modifier-vente.js — Remplace prompt() par le modal existant
+ * fix-modifier-vente.js — Remplace les prompt() natifs
  *
- * Le modal #modalModifierVente et le form handler existent déjà dans
- * app.js — mais modifierVente() les ignore et utilise prompt().
- * 
- * Ce script :
- *   1. Override window.modifierVente pour utiliser ouvrirModal()
- *   2. Améliore le modal existant (meilleur style, infos produit)
- *   3. Remplace aussi le prompt() dans deliveries.js
+ * Le modal #modalModifierVente et son handler dans app.js existent déjà.
+ * Ce script redirige modifierVente(id) vers ce modal
+ * au lieu d'utiliser prompt().
+ *
+ * Ajoute aussi un résumé contextuel (produit, montant, date)
+ * en haut du modal pour que le commerçant sache quelle vente il modifie.
  *
  * INTÉGRATION : <script src="js/fix-modifier-vente.js"></script>
  */
 
 (function () {
 
-  // ══════════════════════════════════════
-  // OVERRIDE modifierVente
-  // ══════════════════════════════════════
-  function hookModifierVente() {
-    // Attendre que appData et ouvrirModal soient dispo
-    if (!window.appData || !window.ouvrirModal) {
-      setTimeout(hookModifierVente, 300);
+  var _ready = false;
+
+  function init() {
+    if (_ready) return;
+    if (!window.modifierVente || !window.appData) {
+      setTimeout(init, 300);
       return;
     }
+    _ready = true;
+    override();
+  }
 
+  function override() {
     window.modifierVente = function (id) {
       var vente = null;
-      var ventes = window.appData.ventes || [];
+      var ventes = window.appData?.ventes || [];
+
       for (var i = 0; i < ventes.length; i++) {
         if (Number(ventes[i].id) === Number(id)) {
           vente = ventes[i];
@@ -35,166 +38,67 @@
       }
 
       if (!vente) {
-        if (window.showNotification) {
-          window.showNotification('❌ Vente introuvable', 'error');
-        }
+        window.showNotification?.('❌ Vente introuvable', 'error');
         return;
       }
 
-      // Enrichir le modal avec les infos du produit
-      enrichModal(vente);
+      window.haptic?.tap();
 
-      // Ouvrir avec la fonction existante
-      window.ouvrirModal(vente);
+      var venteIdInput = document.getElementById('venteId');
+      var qtyInput     = document.getElementById('venteQuantite');
+      var payInput     = document.getElementById('ventePaiement');
+      var modal        = document.getElementById('modalModifierVente');
 
-      // S'assurer que le modal est visible dans l'overlay
-      showEditOverlay();
+      if (!modal || !venteIdInput || !qtyInput || !payInput) {
+        console.warn('Modal #modalModifierVente introuvable');
+        return;
+      }
+
+      // Remplir les champs
+      venteIdInput.value = vente.id;
+      qtyInput.value     = vente.quantity || 1;
+      payInput.value     = (vente.payment_method || 'especes').toLowerCase();
+
+      // Ajouter résumé contextuel
+      enrichModal(modal, vente);
+
+      // Afficher
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+
+      setTimeout(function () { qtyInput.focus(); qtyInput.select(); }, 250);
     };
   }
 
-  // ══════════════════════════════════════
-  // ENRICHIR LE MODAL
-  // ══════════════════════════════════════
-  function enrichModal(vente) {
-    var modal = document.getElementById('modalModifierVente');
-    if (!modal) return;
+  function enrichModal(modal, vente) {
+    var old = modal.querySelector('.fmv-summary');
+    if (old) old.remove();
 
-    // Trouver le produit
-    var produits = window.appData?.produits || [];
-    var produit = null;
-    for (var i = 0; i < produits.length; i++) {
-      if (Number(produits[i].id) === Number(vente.product_id)) {
-        produit = produits[i];
-        break;
-      }
-    }
-
-    // Injecter ou mettre à jour le résumé en haut du modal
-    var summaryId = 'fmv-summary';
-    var summary = document.getElementById(summaryId);
-    if (!summary) {
-      summary = document.createElement('div');
-      summary.id = summaryId;
-      summary.style.cssText = 'background:var(--bg,#F5F3FF);border-radius:12px;padding:12px 14px;margin-bottom:14px;text-align:center;';
-      // Insérer après le titre
-      var title = modal.querySelector('.modal-title');
-      if (title) {
-        title.insertAdjacentElement('afterend', summary);
-      }
-    }
-
-    var prodName = vente.product_name || (produit ? produit.name : 'Produit inconnu');
-    var montant = Number(vente.total) || 0;
-    var date = new Date(vente.date || vente.created_at);
-    var dateStr = isNaN(date.getTime()) ? '' : date.toLocaleString('fr-FR', {
-      day: '2-digit', month: '2-digit', year: '2-digit',
-      hour: '2-digit', minute: '2-digit'
+    var produit = (window.appData?.produits || []).find(function (p) {
+      return Number(p.id) === Number(vente.product_id);
     });
 
-    summary.innerHTML =
-      '<div style="font-family:\'Sora\',sans-serif;font-size:15px;font-weight:800;color:var(--text);">' + escapeHtml(prodName) + '</div>' +
-      '<div style="font-size:12px;color:var(--muted);margin-top:3px;">' +
-        montant.toLocaleString('fr-FR') + ' F · ' + dateStr +
-      '</div>';
+    var name    = vente.product_name || (produit ? produit.name : 'Produit');
+    var total   = Number(vente.total) || 0;
+    var date    = vente.date || vente.created_at;
+    var dateStr = date ? new Date(date).toLocaleDateString('fr-FR', {
+      day: 'numeric', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    }) : '';
 
-    // Ajuster le stock max sur l'input quantité
-    var qtyInput = document.getElementById('venteQuantite');
-    if (qtyInput && produit) {
-      // Max = stock actuel + quantité de cette vente (puisqu'on modifie)
-      var maxQty = (produit.stock || 0) + (vente.quantity || 0);
-      qtyInput.setAttribute('max', maxQty);
-      qtyInput.setAttribute('min', '1');
-      qtyInput.setAttribute('placeholder', 'Max: ' + maxQty);
-    }
+    var el = document.createElement('div');
+    el.className = 'fmv-summary';
+    el.style.cssText = 'background:var(--bg,#F5F3FF);border-radius:12px;padding:12px 14px;margin-bottom:14px;text-align:center;';
+    el.innerHTML =
+      '<div style="font-family:Sora,sans-serif;font-size:14px;font-weight:700;color:var(--text);">' + escHtml(name) + '</div>' +
+      '<div style="font-size:18px;font-weight:800;color:var(--primary);margin-top:4px;">' + Math.round(total).toLocaleString('fr-FR') + ' F</div>' +
+      (dateStr ? '<div style="font-size:11px;color:var(--muted);margin-top:2px;">' + dateStr + '</div>' : '');
+
+    var title = modal.querySelector('.modal-title');
+    if (title) title.insertAdjacentElement('afterend', el);
   }
 
-  // ══════════════════════════════════════
-  // OVERLAY POUR LE MODAL
-  // ══════════════════════════════════════
-  // Le modal existant n'a pas d'overlay — on en ajoute un
-  function showEditOverlay() {
-    var modal = document.getElementById('modalModifierVente');
-    if (!modal) return;
-
-    // Vérifier si un overlay existe déjà
-    var overlayId = 'fmv-overlay';
-    var overlay = document.getElementById(overlayId);
-
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = overlayId;
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,10,40,.5);backdrop-filter:blur(5px);z-index:199;display:flex;align-items:center;justify-content:center;padding:12px;';
-
-      overlay.addEventListener('click', function (e) {
-        if (e.target === overlay) {
-          closeEditOverlay();
-        }
-      });
-
-      document.body.appendChild(overlay);
-    }
-
-    // Déplacer le modal dans l'overlay
-    overlay.style.display = 'flex';
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    modal.style.zIndex = '200';
-    modal.style.position = 'relative';
-
-    if (modal.parentNode !== overlay) {
-      overlay.appendChild(modal);
-    }
-
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeEditOverlay() {
-    var overlay = document.getElementById('fmv-overlay');
-    var modal = document.getElementById('modalModifierVente');
-
-    if (modal) {
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    }
-    if (overlay) {
-      overlay.style.display = 'none';
-    }
-    document.body.style.overflow = '';
-  }
-
-  // Hook fermerModal pour aussi fermer l'overlay
-  function hookFermerModal() {
-    var orig = window.fermerModal;
-    if (!orig) {
-      setTimeout(hookFermerModal, 300);
-      return;
-    }
-    if (orig._fmvHooked) return;
-
-    var hooked = function () {
-      orig();
-      closeEditOverlay();
-    };
-    hooked._fmvHooked = true;
-    window.fermerModal = hooked;
-  }
-
-  // ══════════════════════════════════════
-  // UTILITAIRES
-  // ══════════════════════════════════════
-  function escapeHtml(str) {
-    var div = document.createElement('div');
-    div.textContent = str || '';
-    return div.innerHTML;
-  }
-
-  // ══════════════════════════════════════
-  // INIT
-  // ══════════════════════════════════════
-  function init() {
-    hookModifierVente();
-    hookFermerModal();
-  }
+  function escHtml(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () { setTimeout(init, 500); });
@@ -202,4 +106,55 @@
     setTimeout(init, 500);
   }
 
+})();
+
+// ══════════════════════════════════════
+// REMPLACEMENT GLOBAL de prompt() natif
+// → modal input custom cohérent avec le design
+// ══════════════════════════════════════
+(function () {
+  var _origPrompt = window.prompt;
+
+  window.prompt = function (message, defaultValue) {
+    return new Promise(function (resolve) {
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,10,40,.5);backdrop-filter:blur(5px);z-index:250;display:flex;align-items:center;justify-content:center;padding:16px;';
+
+      var box = document.createElement('div');
+      box.className = 'modal-box';
+      box.style.cssText = 'animation:mIn .24s cubic-bezier(.34,1.4,.64,1) both;';
+      box.innerHTML =
+        '<div class="modal-title" style="font-size:16px;">' + (message || 'Saisir une valeur') + '</div>' +
+        '<input type="text" id="customPromptInput" value="' + (defaultValue || '') + '" ' +
+        'style="width:100%;padding:12px 14px;border:2px solid rgba(124,58,237,.15);border-radius:12px;' +
+        'font-family:Sora,sans-serif;font-size:15px;font-weight:600;color:var(--text);outline:none;' +
+        'margin-bottom:14px;" autofocus>' +
+        '<div class="modal-actions">' +
+        '<button class="btn-cancel" id="customPromptCancel">Annuler</button>' +
+        '<button class="btn-confirm" id="customPromptOk">Confirmer</button>' +
+        '</div>';
+
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+
+      var input = box.querySelector('#customPromptInput');
+      setTimeout(function () { input.focus(); input.select(); }, 200);
+
+      box.querySelector('#customPromptOk').addEventListener('click', function () {
+        var val = input.value;
+        overlay.remove();
+        resolve(val || null);
+      });
+
+      box.querySelector('#customPromptCancel').addEventListener('click', function () {
+        overlay.remove();
+        resolve(null);
+      });
+
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { box.querySelector('#customPromptOk').click(); }
+        if (e.key === 'Escape') { box.querySelector('#customPromptCancel').click(); }
+      });
+    });
+  };
 })();

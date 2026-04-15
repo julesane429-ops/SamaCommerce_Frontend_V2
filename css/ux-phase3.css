@@ -223,45 +223,53 @@
   }
   .dt-sidebar-fab:active { transform: scale(.97); }
 
-  /* Pousser le contenu à droite, MAIS contraindre la largeur */
+  /* Pousser le contenu à droite de la sidebar */
   .dt-layout .app-container {
     margin-left: 220px;
-    margin-right: 0;
     max-width: none;
     border-radius: 0;
     box-shadow: none;
   }
-  .dt-layout .scroll-content {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 14px 24px 24px;
-  }
+
+  /* Header compact sur desktop */
   .dt-layout .top-header {
-    padding: 18px 24px 36px;
+    padding: 14px 0 30px;
   }
-  .dt-layout .today-float {
-    max-width: 860px;
-    margin: -22px auto 0;
-    padding: 14px 20px;
+  .dt-layout .top-header .header-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 28px;
   }
 
-  /* Cacher la bottom nav */
+  /* Stats float — centré */
+  .dt-layout .today-float {
+    max-width: 900px;
+    margin: -22px auto 0;
+    padding: 14px 20px;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Contenu principal — centré avec marge confortable */
+  .dt-layout .scroll-content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 14px 28px 24px;
+  }
+
+  /* Cacher bottom nav + bouton déconnexion (dans la sidebar) */
   .dt-layout .bottom-nav { display: none !important; }
+  .dt-layout .top-actions { display: none; }
 
   /* Action grid : 3 colonnes */
   .dt-layout .action-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 
-  /* Stats float : 4 colonnes si assez d'espace */
-  .dt-layout .today-float {
-    grid-template-columns: repeat(4, 1fr);
-    margin: -22px 20px 0;
-  }
-
-  /* Cartes de section : contraindre */
-  .dt-layout .card {
-    max-width: 860px;
+  /* Cartes : pleine largeur du conteneur */
+  .dt-layout .card,
+  .dt-layout .uxd-widget,
+  .dt-layout .uxd-widget-v2 {
+    max-width: 100%;
   }
 
   /* Categories vente : 3 colonnes */
@@ -288,6 +296,11 @@
   .dt-layout .sv-cards-container .sv-card { margin-bottom: 0; }
   .dt-layout .sv-cards-container .vl-sentinel,
   .dt-layout .sv-cards-container .vl-counter { grid-column: 1 / -1; }
+
+  /* Categories grille : 3 colonnes */
+  .dt-layout .categories-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 /* ─────────────────────────────────
@@ -322,27 +335,27 @@
    5. RAPPORTS ≥ 1024px
 ────────────────────────────────── */
 @media (min-width: 1024px) {
+  .dt-sidebar { width: 260px; }
+  .dt-layout .app-container { margin-left: 260px; }
+
+  /* Élargir le contenu */
+  .dt-layout .scroll-content { max-width: 980px; padding: 14px 32px 24px; }
+  .dt-layout .top-header .header-inner { max-width: 980px; }
+  .dt-layout .today-float { max-width: 980px; }
+
   .dt-layout .stat-2x2 { grid-template-columns: repeat(4, 1fr); }
   .dt-layout .metric-2x2 { grid-template-columns: repeat(4, 1fr); }
   .dt-layout .chart-wrap { max-height: 350px; }
-  .dt-sidebar { width: 260px; }
-  .dt-layout .app-container { margin-left: 260px; }
-  .dt-layout .scroll-content { max-width: 960px; }
-  .dt-layout .today-float { max-width: 960px; }
-  .dt-layout .card { max-width: 960px; }
-
-  .dt-layout .categories-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
-/* ─── ≥ 1400px : grand écran, encore plus de marge ─── */
+/* ─── ≥ 1400px : grand écran ─── */
 @media (min-width: 1400px) {
-  .dt-layout .scroll-content { max-width: 1060px; padding: 14px 32px 24px; }
-  .dt-layout .today-float { max-width: 1060px; }
-  .dt-layout .card { max-width: 1060px; }
+  .dt-layout .scroll-content { max-width: 1100px; padding: 14px 36px 24px; }
+  .dt-layout .top-header .header-inner { max-width: 1100px; }
+  .dt-layout .today-float { max-width: 1100px; grid-template-columns: repeat(4, 1fr); }
   .dt-layout #listeProduits { grid-template-columns: repeat(3, 1fr); }
   .dt-layout .sv-cards-container { grid-template-columns: repeat(3, 1fr); }
+  .dt-layout .action-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* ─────────────────────────────────

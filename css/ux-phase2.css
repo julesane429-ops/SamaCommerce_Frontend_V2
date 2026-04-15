@@ -1,0 +1,74 @@
+/* ═══════════════════════════════════════════════════
+   UX PHASE 2 — CSS
+   #1 Dashboard enrichi
+   #2 Produits récents/favoris
+   #3 Validation formulaires
+   #4 CountUp (pas de CSS nécessaire)
+   #9 Bannière PWA
+   #12 Micro-interactions & ripple
+═══════════════════════════════════════════════════ */
+
+/* ─── #1 DASHBOARD WIDGETS ─── */
+.uxd-widget{background:var(--surface,#fff);border-radius:16px;padding:14px 16px;box-shadow:0 2px 12px rgba(124,58,237,.08);margin-bottom:12px}
+.uxd-widget-title{font-family:'Sora',sans-serif;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px}
+.uxd-last-sale{display:flex;align-items:center;gap:12px}
+.uxd-last-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.uxd-last-info{flex:1;min-width:0}
+.uxd-last-name{font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uxd-last-meta{font-size:12px;color:var(--muted);margin-top:1px}
+.uxd-last-amount{font-family:'Sora',sans-serif;font-size:16px;font-weight:800;color:var(--green,#10B981)}
+.uxd-credits-bar{display:flex;gap:8px;margin-top:8px}
+.uxd-credits-item{flex:1;text-align:center;padding:8px 4px;border-radius:10px}
+.uxd-credits-val{font-family:'Sora',sans-serif;font-size:15px;font-weight:800}
+.uxd-credits-label{font-size:10px;color:var(--muted);margin-top:2px}
+.uxd-empty{text-align:center;padding:12px 0;font-size:13px;color:var(--muted)}
+
+/* ─── #2 PRODUITS RÉCENTS/FAVORIS ─── */
+.uxv-section{margin-bottom:14px}
+.uxv-label{font-family:'Sora',sans-serif;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.uxv-scroll{display:flex;gap:8px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.uxv-scroll::-webkit-scrollbar{display:none}
+.uxv-chip{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 14px;border-radius:14px;background:var(--surface,#fff);border:1.5px solid rgba(124,58,237,.1);cursor:pointer;transition:all .15s;min-width:80px;text-align:center;-webkit-tap-highlight-color:transparent}
+.uxv-chip:active{transform:scale(.95);border-color:var(--primary)}
+.uxv-chip-name{font-family:'Sora',sans-serif;font-size:11px;font-weight:700;color:var(--text);white-space:nowrap;max-width:70px;overflow:hidden;text-overflow:ellipsis}
+.uxv-chip-price{font-size:11px;font-weight:800;color:var(--green,#10B981)}
+.uxv-chip-stock{font-size:9px;color:var(--muted)}
+
+/* ─── #3 VALIDATION FORMULAIRES ─── */
+.uxf-error{border-color:var(--red,#EF4444) !important;box-shadow:0 0 0 3px rgba(239,68,68,.1) !important}
+.uxf-error-msg{font-size:11px;color:var(--red,#EF4444);margin-top:4px;display:none;animation:uxfShake .3s ease}
+.uxf-error-msg.visible{display:block}
+@keyframes uxfShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.uxf-valid{border-color:var(--green,#10B981) !important}
+.btn-confirm:disabled,.btn-confirm[disabled]{opacity:.5;cursor:not-allowed;pointer-events:none}
+
+/* ─── #9 BANNIÈRE PWA ─── */
+.uxp-banner{position:fixed;bottom:calc(var(--nav-h,68px) + var(--safe-b,0px) + 10px);left:12px;right:12px;background:var(--surface,#fff);border-radius:18px;padding:14px 16px;box-shadow:0 8px 30px rgba(124,58,237,.2);z-index:95;display:none;align-items:center;gap:12px;animation:uxpSlide .3s cubic-bezier(.32,.72,0,1)}
+.uxp-banner.show{display:flex}
+@keyframes uxpSlide{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.uxp-banner-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--accent,#EC4899));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;color:#fff;box-shadow:0 4px 12px rgba(124,58,237,.3)}
+.uxp-banner-text{flex:1;min-width:0}
+.uxp-banner-title{font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--text)}
+.uxp-banner-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.uxp-banner-btn{padding:8px 16px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--primary),var(--accent,#EC4899));color:#fff;font-family:'Sora',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.uxp-banner-btn:active{transform:scale(.95)}
+.uxp-banner-close{position:absolute;top:6px;right:10px;background:none;border:none;font-size:16px;color:var(--muted);cursor:pointer;padding:4px}
+
+/* ─── #12 RIPPLE ─── */
+.ux-ripple{position:relative;overflow:hidden}
+.ux-ripple-wave{position:absolute;border-radius:50%;background:rgba(255,255,255,.35);transform:scale(0);animation:uxRipple .5s ease-out forwards;pointer-events:none}
+@keyframes uxRipple{to{transform:scale(4);opacity:0}}
+.ux-ripple-dark .ux-ripple-wave{background:rgba(124,58,237,.12)}
+
+/* Badge bounce quand valeur change */
+@keyframes uxBounce{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+.ux-bounce{animation:uxBounce .3s ease}
+
+/* Ajout panier flash */
+@keyframes uxFlash{0%{background:rgba(16,185,129,.15)}100%{background:transparent}}
+.ux-flash{animation:uxFlash .4s ease}
+
+/* ─── DARK MODE ─── */
+.dark-mode .uxd-widget{background:rgba(255,255,255,.05);box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.dark-mode .uxv-chip{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.08)}
+.dark-mode .uxp-banner{background:#1E1B2E;box-shadow:0 8px 30px rgba(0,0,0,.4)}

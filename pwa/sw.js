@@ -1,183 +1,112 @@
-// ============================================================
-// sw.js — Service Worker Sama Commerce
-// Version 5 — Network First pour JS/HTML/CSS, Cache First pour assets
-// ============================================================
+const SW_VERSION  = 'v7';
+const CACHE_CORE  = 'sc-core-v7';
+const CACHE_APP   = 'sc-app-v7';
+const CACHE_MEDIA = 'sc-media-v7';
+const API_URL     = 'https://samacommerce-backend-v2.onrender.com';
 
-const CACHE_STATIC = 'samacommerce-static-v6';
-const CACHE_PAGES  = 'samacommerce-pages-v6';
-const API_URL      = 'https://samacommerce-backend-v2.onrender.com';
-
-const STATIC_ASSETS = [
+const PRECACHE = [
+  '/',
+  '/index.html',
+  '/css/core.css',
+  '/css/features.css',
   '/pwa/manifest.json',
   '/pwa/icons/icon-192.png',
   '/pwa/icons/icon-512.png',
+  '/js/splash.js',
+  '/js/app.js',
 ];
 
-// ════════════════════════════════════════
-// INSTALL — pré-cache uniquement les assets statiques (images, manifest)
-// ════════════════════════════════════════
 self.addEventListener('install', evt => {
   evt.waitUntil(
-    caches.open(CACHE_STATIC)
-      .then(cache => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_CORE)
+      .then(cache => cache.addAll(PRECACHE))
       .then(() => self.skipWaiting())
   );
-  console.log('📦 SW v5 installé');
 });
 
-// ════════════════════════════════════════
-// ACTIVATE — supprime tous les anciens caches
-// ════════════════════════════════════════
 self.addEventListener('activate', evt => {
+  const keep = new Set([CACHE_CORE, CACHE_APP, CACHE_MEDIA]);
   evt.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(
-        keys
-          .filter(k => k !== CACHE_STATIC && k !== CACHE_PAGES)
-          .map(k => {
-            console.log('🗑️ Suppression ancien cache :', k);
-            return caches.delete(k);
-          })
-      ))
+      .then(keys => Promise.all(keys.filter(k => !keep.has(k)).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
-  console.log('⚡ SW v5 activé');
 });
 
-// ════════════════════════════════════════
-// FETCH
-// ════════════════════════════════════════
 self.addEventListener('fetch', evt => {
   if (evt.request.method !== 'GET') return;
+  const url = new URL(evt.request.url);
 
-  const url = evt.request.url;
+  if (url.href.startsWith(API_URL)) return;
 
-  // ── 1. Appels API → toujours réseau, jamais de cache ──
-  if (url.startsWith(API_URL)) return;
-
-  // ── 2. Images & manifest → Cache First ──
-  const isStaticAsset = /\.(png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf)$/i.test(url)
-    || url.includes('/pwa/');
-
-  if (isStaticAsset) {
-    evt.respondWith(
-      caches.open(CACHE_STATIC).then(cache =>
-        cache.match(evt.request).then(cached => {
-          if (cached) return cached;
-          return fetch(evt.request).then(resp => {
-            if (resp && resp.status === 200) {
-              cache.put(evt.request, resp.clone());
-            }
-            return resp;
-          });
-        })
-      )
-    );
+  if (/\.(png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf)$/i.test(url.pathname) || url.pathname.startsWith('/pwa/icons/')) {
+    evt.respondWith(cacheFirst(evt.request, CACHE_MEDIA));
     return;
   }
 
-  // ── 3. HTML, JS, CSS → Network First (fraîcheur garantie) ──
-  evt.respondWith(
-    fetch(evt.request)
-      .then(resp => {
-        // Mise en cache de la réponse fraîche
-        if (resp && resp.status === 200 && resp.type === 'basic') {
-          const clone = resp.clone();
-          caches.open(CACHE_PAGES).then(cache => cache.put(evt.request, clone));
-        }
-        return resp;
-      })
-      .catch(() => {
-        // Réseau indisponible → fallback sur le cache
-        return caches.match(evt.request).then(cached => {
-          if (cached) return cached;
-          // Fallback offline générique
-          const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
-            <title>Hors ligne – Sama Commerce</title>
-            <style>
-              body { font-family: sans-serif; text-align: center; padding: 50px; background: #f9f9f9; }
-              h2 { color: #7C3AED; } p { color: #444; }
-            </style></head>
-            <body>
-              <h2>⚠️ Vous êtes hors connexion</h2>
-              <p>Reconnectez-vous à Internet pour accéder à Sama Commerce.</p>
-            </body></html>`;
-          return new Response(html, { headers: { 'Content-Type': 'text/html' } });
-        });
-      })
-  );
-});
-
-// ════════════════════════════════════════
-// PUSH — Réception d'une notification push
-// ════════════════════════════════════════
-const NOTIF_ICONS = {
-  credit:    '/pwa/icons/icon-192.png',
-  stock:     '/pwa/icons/icon-192.png',
-  livraison: '/pwa/icons/icon-192.png',
-  default:   '/pwa/icons/icon-192.png',
-};
-
-self.addEventListener('push', evt => {
-  let data = { title: 'Sama Commerce', body: 'Vous avez une notification', type: 'default', url: '/' };
-  try {
-    if (evt.data) data = { ...data, ...evt.data.json() };
-  } catch {
-    if (evt.data) data.body = evt.data.text();
+  if (url.pathname.endsWith('.css')) {
+    evt.respondWith(staleWhileRevalidate(evt.request, CACHE_CORE));
+    return;
   }
 
-  evt.waitUntil(
-    self.registration.showNotification(data.title, {
-      body:    data.body,
-      icon:    NOTIF_ICONS[data.type] || NOTIF_ICONS.default,
-      badge:   '/pwa/icons/icon-192.png',
-      tag:     data.tag || data.type || 'sc-notif',
-      data:    { url: data.url || '/' },
-      vibrate: [100, 50, 100],
-      actions: data.actions || [],
-      requireInteraction: data.important || false,
-    })
-  );
+  if (url.pathname.endsWith('.js')) {
+    evt.respondWith(staleWhileRevalidate(evt.request, CACHE_APP));
+    return;
+  }
+
+  if (evt.request.mode === 'navigate' || url.pathname.endsWith('.html')) {
+    evt.respondWith(networkFirst(evt.request, CACHE_CORE));
+    return;
+  }
+
+  evt.respondWith(staleWhileRevalidate(evt.request, CACHE_APP));
 });
 
-// ════════════════════════════════════════
-// NOTIFICATION CLICK
-// ════════════════════════════════════════
+function cacheFirst(req, name) {
+  return caches.open(name).then(c => c.match(req).then(hit => {
+    if (hit) return hit;
+    return fetch(req).then(r => { if (r && r.status === 200) c.put(req, r.clone()); return r; }).catch(() => offline());
+  }));
+}
+
+function staleWhileRevalidate(req, name) {
+  return caches.open(name).then(c => c.match(req).then(hit => {
+    const net = fetch(req).then(r => { if (r && r.status === 200 && r.type === 'basic') c.put(req, r.clone()); return r; }).catch(() => hit || offline());
+    return hit || net;
+  }));
+}
+
+function networkFirst(req, name) {
+  return fetch(req).then(r => {
+    if (r && r.status === 200 && r.type === 'basic') caches.open(name).then(c => c.put(req, r.clone()));
+    return r;
+  }).catch(() => caches.match(req).then(h => h || offline()));
+}
+
+function offline() {
+  return new Response('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hors ligne</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#F5F3FF;color:#1E1B4B;text-align:center;padding:24px}.c{max-width:320px}h2{font-size:20px;margin:12px 0 8px;color:#7C3AED}p{font-size:14px;color:#6B7280;line-height:1.5}button{margin-top:20px;padding:12px 24px;background:#7C3AED;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer}</style></head><body><div class="c"><div style="font-size:64px">📡</div><h2>Vous êtes hors connexion</h2><p>Vérifiez votre connexion internet et réessayez.</p><button onclick="location.reload()">Réessayer</button></div></body></html>', { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+}
+
+const NI = '/pwa/icons/icon-192.png';
+self.addEventListener('push', evt => {
+  let d = { title: 'Sama Commerce', body: 'Nouvelle notification', url: '/' };
+  try { if (evt.data) d = { ...d, ...evt.data.json() }; } catch { if (evt.data) d.body = evt.data.text(); }
+  evt.waitUntil(self.registration.showNotification(d.title, { body: d.body, icon: NI, badge: NI, tag: d.tag || 'sc-notif', data: { url: d.url || '/' }, vibrate: [100, 50, 100] }));
+});
+
 self.addEventListener('notificationclick', evt => {
   evt.notification.close();
-  const targetUrl = evt.notification.data?.url || '/';
-
-  evt.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then(clients => {
-        for (const client of clients) {
-          if (client.url.includes(self.location.origin) && 'focus' in client) {
-            client.focus();
-            client.postMessage({ type: 'NAVIGATE', url: targetUrl });
-            return;
-          }
-        }
-        if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
-      })
-  );
+  const target = evt.notification.data?.url || '/';
+  evt.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cls => {
+    for (const c of cls) { if (c.url.includes(self.location.origin) && 'focus' in c) { c.focus(); c.postMessage({ type: 'NAVIGATE', url: target }); return; } }
+    if (self.clients.openWindow) return self.clients.openWindow(target);
+  }));
 });
 
-// ════════════════════════════════════════
-// MESSAGE
-// ════════════════════════════════════════
 self.addEventListener('message', evt => {
-  if (evt.data?.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
+  if (evt.data?.type === 'SKIP_WAITING') self.skipWaiting();
   if (evt.data?.type === 'LOCAL_NOTIF') {
-    const { title, body, tag, url, type } = evt.data;
-    self.registration.showNotification(title || 'Sama Commerce', {
-      body:    body || '',
-      icon:    NOTIF_ICONS[type] || NOTIF_ICONS.default,
-      badge:   '/pwa/icons/icon-192.png',
-      tag:     tag || 'local',
-      data:    { url: url || '/' },
-      vibrate: [80, 40, 80],
-    });
+    const { title, body, tag, url } = evt.data;
+    self.registration.showNotification(title || 'Sama Commerce', { body: body || '', icon: NI, badge: NI, tag: tag || 'local', data: { url: url || '/' }, vibrate: [80, 40, 80] });
   }
 });

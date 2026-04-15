@@ -587,11 +587,13 @@ body {
 .page-header {
   display: flex; align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap; gap: 8px;
   margin-bottom: 14px; padding-top: 2px;
 }
 .page-header h2 {
   font-family: 'Sora', sans-serif;
   font-size: 20px; font-weight: 800; color: var(--text);
+  min-width: 0;
 }
 
 /* ═══════════ BUTTONS ═══════════ */
@@ -603,11 +605,13 @@ body {
   font-size: 13px; font-weight: 700;
   cursor: pointer; box-shadow: 0 4px 12px rgba(124,58,237,.3);
   transition: transform .15s;
+  flex-shrink: 0; white-space: nowrap;
 }
 .btn-primary:active { transform: scale(.96); }
 .btn-pdf {
   background: #FEE2E2; color: var(--red);
   border: none; padding: 8px 12px;
+  flex-shrink: 0; white-space: nowrap;
   border-radius: 11px; font-size: 12px; font-weight: 700; cursor: pointer;
 }
 

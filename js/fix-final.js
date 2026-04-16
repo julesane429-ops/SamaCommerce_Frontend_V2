@@ -437,83 +437,9 @@
   }
 
   // ══════════════════════════════════════
-  // 6. AUTOCOMPLETE CLIENT DANS VENTE
+  // 6. AUTOCOMPLETE CLIENT DANS VENTE — désactivé (géré par client-vente.js)
   // ══════════════════════════════════════
-  function setupClientAutocomplete() {
-    // Surveiller l'ouverture de la section vente
-    // Injecter un champ de recherche client au-dessus du panier
-    function inject() {
-      var venteSection = document.getElementById('venteSection');
-      if (!venteSection) return;
-      if (venteSection.querySelector('#ffClientSearch')) return;
-
-      // Créer le champ
-      var wrap = document.createElement('div');
-      wrap.id = 'ffClientSearch';
-      wrap.style.cssText = 'position:relative;margin-bottom:10px;';
-      wrap.innerHTML =
-        '<input type="search" placeholder="🔍 Rechercher un client…" ' +
-        'style="width:100%;padding:10px 14px 10px 38px;border:1.5px solid rgba(124,58,237,.12);border-radius:12px;font-size:13px;outline:none;background:var(--surface,#fff);color:var(--text);" ' +
-        'id="ffClientInput" autocomplete="off">' +
-        '<span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;">👤</span>' +
-        '<div id="ffClientResults" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface,#fff);border-radius:0 0 12px 12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:50;max-height:200px;overflow-y:auto;"></div>';
-
-      // Insérer après le page-header
-      var header = venteSection.querySelector('.page-header');
-      if (header) header.insertAdjacentElement('afterend', wrap);
-
-      var input = document.getElementById('ffClientInput');
-      var results = document.getElementById('ffClientResults');
-
-      input.addEventListener('input', function () {
-        var q = input.value.toLowerCase().trim();
-        if (q.length < 2) { results.style.display = 'none'; return; }
-
-        var clients = window.appData?.clients || [];
-        var matches = clients.filter(function (c) {
-          return (c.name || '').toLowerCase().includes(q) || (c.phone || '').includes(q);
-        }).slice(0, 5);
-
-        if (!matches.length) { results.style.display = 'none'; return; }
-
-        results.style.display = 'block';
-        results.innerHTML = '';
-        matches.forEach(function (c) {
-          var row = document.createElement('div');
-          row.style.cssText = 'padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid rgba(0,0,0,.04);display:flex;justify-content:space-between;align-items:center;';
-          row.innerHTML = '<div><strong>' + esc(c.name) + '</strong><div style="font-size:11px;color:var(--muted);">' + esc(c.phone || '') + '</div></div>' +
-            '<span style="font-size:11px;color:var(--green);">' + ((+c.total_achats || 0)).toLocaleString('fr-FR') + ' F</span>';
-          row.addEventListener('click', function () {
-            input.value = c.name;
-            results.style.display = 'none';
-            // Stocker pour la vente
-            window._selectedClient = c;
-            window.showNotification?.('👤 Client ' + c.name + ' sélectionné', 'info');
-          });
-          row.addEventListener('mouseover', function () { row.style.background = 'var(--bg,#F5F3FF)'; });
-          row.addEventListener('mouseout', function () { row.style.background = 'transparent'; });
-          results.appendChild(row);
-        });
-      });
-
-      input.addEventListener('blur', function () {
-        setTimeout(function () { results.style.display = 'none'; }, 200);
-      });
-    }
-
-    // Injecter quand on navigue vers la section vente
-    var origShow2 = window.showSection;
-    if (origShow2 && !origShow2._ffClient) {
-      var wrapped = function (section) {
-        origShow2(section);
-        if (section === 'vente') setTimeout(inject, 100);
-      };
-      wrapped._ffClient = true;
-      // Copier les flags des autres wrappers
-      Object.keys(origShow2).forEach(function (k) { wrapped[k] = origShow2[k]; });
-      window.showSection = wrapped;
-    }
-  }
+  function setupClientAutocomplete() { /* no-op */ }
 
   // ══════════════════════════════════════
   // UTILITAIRES

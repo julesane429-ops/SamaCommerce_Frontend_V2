@@ -86,7 +86,8 @@
 
     try {
       const _bid = localStorage.getItem("sc_active_boutique");
-      const _isPrimary = localStorage.getItem("sc_active_boutique_is_primary") === "1";
+      const _isPrimary = localStorage.getItem("sc_active_boutique_is_primary") === "1"
+                      || !window._activeBoutiqueId; // non-Enterprise → toujours primary
       const _url = (_bid && !_isPrimary) ? `${API()}/members?boutique_id=${_bid}` : `${API()}/members`;
       const res = await auth(_url);
       // 403 = pas owner de cette boutique → ignorer silencieusement
@@ -258,7 +259,8 @@
       try {
         // ✅ Rattacher l'invitation à la boutique active
         const _invBid = localStorage.getItem('sc_active_boutique');
-        const _invPrimary = localStorage.getItem('sc_active_boutique_is_primary') === '1';
+        const _invPrimary = localStorage.getItem('sc_active_boutique_is_primary') === '1'
+                         || !window._activeBoutiqueId; // non-Enterprise → toujours primary
         const _invBoutiqueId = (_invBid && !_invPrimary) ? parseInt(_invBid) : null;
 
         const data = await auth(`${API()}/members/invite`, {

@@ -60,25 +60,23 @@
   // On le remplace par un wrapper qui lit window._employeePerms.
   // ══════════════════════════════════════════════════════════
   function fixNavTo() {
-    // Récupérer le navTo le plus profond (l'original avant les wrappers)
-    // On ne peut pas — on doit wrapper par-dessus tout le monde
     var current = window.navTo;
     if (!current || current._esFixed) return;
 
     window.navTo = function (section) {
-      if (isEmployee() && !allowed(section)) {
-        window.haptic?.error();
-        window.showNotification?.('🔒 Accès non autorisé', 'warning');
+      // EMPLOYÉ : bypass la chaîne de wrappers (team.js a un closure stale)
+      // → vérifier avec window._employeePerms (frais) puis showSection direct
+      if (isEmployee()) {
+        if (!allowed(section)) {
+          window.haptic?.error();
+          window.showNotification?.('🔒 Accès non autorisé', 'warning');
+          return;
+        }
+        try { window.showSection?.(section); } catch (e) {}
         return;
       }
-      // Appeler la chaîne de wrappers existante
-      // MAIS team.js va AUSSI vérifier avec ses perms stale et bloquer.
-      // On doit bypasser team.js en appelant directement showSection.
-      try {
-        window.showSection?.(section);
-      } catch (e) {
-        console.warn('navTo error:', e);
-      }
+      // PROPRIÉTAIRE : laisser la chaîne normale (subscription-guard etc.)
+      current.apply(this, arguments);
     };
     window.navTo._esFixed = true;
   }

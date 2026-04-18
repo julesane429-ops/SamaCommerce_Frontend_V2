@@ -1,20 +1,17 @@
 /**
- * fix-employee-sync.js — Autorité finale des accès employé
+ * fix-employee-sync.js v3 — Autorité finale des accès employé
  *
- * PROBLÈME : team.js et access-control.js se battent sur display:none.
- *   - team.js utilise les permissions individuelles et ne RE-MONTRE jamais
- *   - access-control.js a changé #nav-rapports → #nav-categories
- *   - Résultat : des incohérences après chaque changement de permissions
+ * BUG 1 : team.js wraps navTo avec une closure sur `perms` capturée au login.
+ *   Quand les permissions changent, la closure est STALE → clics bloqués.
+ *   FIX : re-wraps navTo pour utiliser window._employeePerms (frais).
  *
- * FIX : ce script est le DERNIER MOT. Il :
- *   1. Attend que team.js ait fini (window._employeePerms existe)
- *   2. Applique le filtrage EXHAUSTIF sur TOUS les éléments de nav
- *   3. Explicitement MONTRE les éléments autorisés ET CACHE les interdits
- *   4. Poll toutes les 45s pour détecter les changements du propriétaire
- *   5. Se re-exécute après chaque changement détecté par MutationObserver
+ * BUG 2 : activity-logs-section.js crée #logsSection sans .hidden,
+ *   et showLogsSection() cache toutes les .section-page sans restaurer.
+ *   FIX : s'assure que logsSection a .hidden par défaut et est exclu du flow normal.
  *
- * INTÉGRATION : <script src="js/fix-employee-sync.js"></script>
- *   CHARGER EN TOUT DERNIER (après access-control.js et team.js)
+ * + Polling 45s, DOM observer, filtrage exhaustif de toute la nav.
+ *
+ * CHARGER EN TOUT DERNIER.
  */
 
 (function () {
@@ -22,7 +19,6 @@
   var POLL_MS = 45000;
   var _timer = null;
   var _lastHash = '';
-  var _applied = false;
 
   function API() {
     return document.querySelector('meta[name="api-base"]')?.content ||
@@ -40,158 +36,113 @@
   // MAPPING SECTION → PERMISSION (lots groupés)
   // ══════════════════════════════════════════════════════════
   var S2P = {
-    menu:           null,
-    vente:          'vente',
-    stock:          'stock',
-    categories:     'stock',
-    rapports:       'rapports',
-    inventaire:     'rapports',
-    caisse:         'rapports',
-    calendrier:     'rapports',
-    credits:        'credits',
-    clients:        'clients',
-    fournisseurs:   'fournisseurs',
-    commandes:      'fournisseurs',
-    customerOrders: 'livraisons',
-    deliveries:     'livraisons',
-    deliverymen:    'livraisons',
-    team:           '_never',
-    logs:           '_never',
-    boutiques:      '_never',
-    profil:         null,
+    menu: null, vente: 'vente', stock: 'stock', categories: 'stock',
+    rapports: 'rapports', inventaire: 'rapports', caisse: 'rapports',
+    calendrier: 'rapports', credits: 'credits', clients: 'clients',
+    fournisseurs: 'fournisseurs', commandes: 'fournisseurs',
+    customerOrders: 'livraisons', deliveries: 'livraisons',
+    deliverymen: 'livraisons', team: '_never', logs: '_never',
+    boutiques: '_never', profil: null,
   };
 
-  function allowed(section, perms) {
+  function allowed(section) {
     if (section === 'menu' || section === 'profil') return true;
     var key = S2P[section];
-    if (!key) return false;          // inconnu → bloquer
-    if (key === '_never') return false; // jamais pour un employé
+    if (!key) return true; // inconnu → laisser passer (pas employee-related)
+    if (key === '_never') return false;
+    var perms = window._employeePerms || {};
     return !!perms[key];
   }
 
   // ══════════════════════════════════════════════════════════
-  // APPLIQUER LE FILTRAGE COMPLET
-  // Explicitement MONTRE les autorisés et CACHE les interdits
+  // FIX 1 — RE-WRAPPER navTo AVEC PERMS FRAÎCHES
+  // Le wrapper de team.js utilise une closure stale.
+  // On le remplace par un wrapper qui lit window._employeePerms.
   // ══════════════════════════════════════════════════════════
-  function applyAll(perms, notify) {
-    perms = perms || {};
-    _applied = true;
+  function fixNavTo() {
+    // Récupérer le navTo le plus profond (l'original avant les wrappers)
+    // On ne peut pas — on doit wrapper par-dessus tout le monde
+    var current = window.navTo;
+    if (!current || current._esFixed) return;
 
-    // ── 1. BOTTOM NAV ──
-    var nav = document.getElementById('bottomNav');
-    if (nav) {
-      nav.querySelectorAll('.nav-btn, .nav-fab').forEach(function (btn) {
-        var section = detectSection(btn);
-        if (section === null) { show(btn); return; } // Plus → toujours visible
-        show(btn, allowed(section, perms));
-      });
-    }
+    window.navTo = function (section) {
+      if (isEmployee() && !allowed(section)) {
+        window.haptic?.error();
+        window.showNotification?.('🔒 Accès non autorisé', 'warning');
+        return;
+      }
+      // Appeler la chaîne de wrappers existante
+      // MAIS team.js va AUSSI vérifier avec ses perms stale et bloquer.
+      // On doit bypasser team.js en appelant directement showSection.
+      try {
+        window.showSection?.(section);
+      } catch (e) {
+        console.warn('navTo error:', e);
+      }
+    };
+    window.navTo._esFixed = true;
+  }
 
-    // ── 2. SIDEBAR DESKTOP ──
-    var sidebar = document.querySelector('.dt-sidebar');
-    if (sidebar) {
-      sidebar.querySelectorAll('[data-nav]').forEach(function (btn) {
-        show(btn, allowed(btn.dataset.nav, perms));
-      });
-      // FAB Vendre dans sidebar
-      sidebar.querySelectorAll('.dt-sidebar-fab[data-nav]').forEach(function (btn) {
-        show(btn, allowed(btn.dataset.nav, perms));
-      });
-      // Cacher les groupes vides
-      sidebar.querySelectorAll('.dt-sidebar-section').forEach(function (header) {
-        var next = header.nextElementSibling;
-        var hasVis = false;
-        while (next && !next.classList.contains('dt-sidebar-section')) {
-          if (next.dataset?.nav && next.style.display !== 'none') hasVis = true;
-          next = next.nextElementSibling;
-        }
-        show(header, hasVis);
-      });
-    }
-
-    // ── 3. ACTION GRID (accueil) ──
-    var grid = document.querySelector('.action-grid');
-    if (grid) {
-      grid.querySelectorAll('.action-btn[data-section]').forEach(function (btn) {
-        show(btn, allowed(btn.dataset.section, perms));
-      });
-    }
-
-    // ── 4. MENU PLUS (enhanced-plus-menu) ──
-    var epSheet = document.getElementById('epSheet');
-    if (epSheet) {
-      filterPlusSheet(epSheet, perms);
-      // Re-filtrer à chaque ouverture
-      if (!epSheet._esSynced) {
-        epSheet._esSynced = true;
-        new MutationObserver(function () {
-          if (epSheet.classList.contains('open')) filterPlusSheet(epSheet, perms);
-        }).observe(epSheet, { attributes: true, attributeFilter: ['class'] });
+  // ══════════════════════════════════════════════════════════
+  // FIX 2 — CACHER LOGS SECTION PAR DÉFAUT
+  // ══════════════════════════════════════════════════════════
+  function fixLogsSection() {
+    var logs = document.getElementById('logsSection');
+    if (logs && !logs.classList.contains('hidden')) {
+      // Ne cacher que si on n'est pas actuellement dessus
+      if (window.currentSection !== 'logs') {
+        logs.classList.add('hidden');
       }
     }
+  }
 
-    // ── 5. ÉLÉMENTS DIVERS ciblés par team.js ──
-    // team.js cache aussi des éléments avec data-section et des sélecteurs spécifiques
-    // On les re-montre/re-cache pour être sûr
-    var allSelectors = {
-      stock:        ['[data-section="stock"]'],
-      categories:   ['[data-section="categories"]'],
-      rapports:     ['[data-section="rapports"]'],
-      caisse:       ['[data-section="caisse"]'],
-      credits:      ['[data-section="credits"]'],
-      clients:      ['[data-section="clients"]'],
-      fournisseurs: ['[data-section="fournisseurs"]'],
-      commandes:    ['[data-section="commandes"]'],
-      livraisons:   ['[data-section="livraisons"]'],
-      inventaire:   ['[data-section="inventaire"]'],
-      customerOrders: ['[data-section="customerOrders"]'],
-      deliveries:   ['[data-section="deliveries"]'],
-      deliverymen:  ['[data-section="deliverymen"]'],
-    };
-
-    Object.keys(allSelectors).forEach(function (section) {
-      var isAllowed = allowed(section, perms);
-      allSelectors[section].forEach(function (sel) {
-        document.querySelectorAll(sel).forEach(function (el) {
-          // Ne pas toucher aux éléments dans la bottom nav ou sidebar (déjà gérés)
-          if (el.closest('.bottom-nav') || el.closest('.dt-sidebar')) return;
-          show(el, isAllowed);
+  // Observer la création du logsSection (créé dynamiquement)
+  function watchLogsCreation() {
+    new MutationObserver(function (muts) {
+      muts.forEach(function (m) {
+        m.addedNodes.forEach(function (node) {
+          if (node.id === 'logsSection' || (node.querySelector && node.querySelector('#logsSection'))) {
+            var el = node.id === 'logsSection' ? node : node.querySelector('#logsSection');
+            if (el && window.currentSection !== 'logs') {
+              el.classList.add('hidden');
+            }
+          }
         });
       });
-    });
-
-    // ── 6. REDIRECTION si sur une section non autorisée ──
-    var cur = window.currentSection;
-    if (cur && cur !== 'menu' && cur !== 'profil' && !allowed(cur, perms)) {
-      window.showSection?.('menu');
-      if (notify) window.showNotification?.('🔒 Vous n\'avez plus accès à cette section', 'warning');
-    }
-
-    // ── 7. NOTIFICATION ──
-    if (notify) {
-      window.showNotification?.('🔔 Vos accès ont été mis à jour', 'info');
-      window.haptic?.tap();
-    }
+    }).observe(document.querySelector('.scroll-content') || document.body, { childList: true, subtree: true });
   }
 
-  function filterPlusSheet(sheet, perms) {
-    sheet.querySelectorAll('.ep-item[data-nav]').forEach(function (item) {
-      var section = item.dataset.nav;
-      show(item, allowed(section, perms));
-    });
-    // Cacher les groupes vides
-    sheet.querySelectorAll('.ep-group').forEach(function (group) {
-      var vis = group.querySelectorAll('.ep-item[data-nav]:not([style*="display: none"])');
-      show(group, vis.length > 0);
+  // Aussi : quand showSection est appelé pour une AUTRE section, s'assurer que logs est caché
+  function patchShowSectionForLogs() {
+    var orig = window.showSection;
+    if (!orig || orig._esLogs) return;
+
+    window.showSection = function (section) {
+      // Si on navigue AILLEURS que logs, cacher logsSection
+      if (section !== 'logs') {
+        var logs = document.getElementById('logsSection');
+        if (logs) logs.classList.add('hidden');
+      }
+
+      // Vérifier l'accès employé
+      if (isEmployee() && !allowed(section)) {
+        return; // silencieux — le guard navTo a déjà notifié
+      }
+
+      orig.apply(this, arguments);
+    };
+    window.showSection._esLogs = true;
+    // Préserver les flags
+    Object.keys(orig).forEach(function (k) {
+      if (k !== '_esLogs') window.showSection[k] = orig[k];
     });
   }
 
   // ══════════════════════════════════════════════════════════
-  // HELPERS
+  // FILTRAGE EXHAUSTIF DE LA NAV
   // ══════════════════════════════════════════════════════════
   function show(el, visible) {
-    if (visible === undefined) visible = true;
-    el.style.display = visible ? '' : 'none';
+    el.style.display = (visible === false) ? 'none' : '';
   }
 
   function detectSection(btn) {
@@ -199,21 +150,95 @@
     if (btn.id === 'nav-stock') return 'stock';
     if (btn.id === 'nav-categories') return 'categories';
     if (btn.id === 'nav-rapports') return 'rapports';
-    if (btn.id === 'nav-plus') return null; // toujours visible
+    if (btn.id === 'nav-plus') return null;
     if (btn.classList.contains('nav-fab')) return 'vente';
-    // Fallback : onclick attribute
-    var onclick = btn.getAttribute('onclick') || '';
-    var m = onclick.match(/navTo\(['"](\w+)['"]\)/);
-    if (m) return m[1];
-    return 'menu';
+    var oc = btn.getAttribute('onclick') || '';
+    var m = oc.match(/navTo\(['"](\w+)['"]\)/);
+    return m ? m[1] : null;
+  }
+
+  function applyAll(notify) {
+    var perms = window._employeePerms || {};
+
+    // Bottom nav
+    var nav = document.getElementById('bottomNav');
+    if (nav) {
+      nav.querySelectorAll('.nav-btn, .nav-fab').forEach(function (btn) {
+        var s = detectSection(btn);
+        if (s === null) { show(btn); return; }
+        show(btn, allowed(s));
+      });
+    }
+
+    // Sidebar
+    var sidebar = document.querySelector('.dt-sidebar');
+    if (sidebar) {
+      sidebar.querySelectorAll('[data-nav]').forEach(function (btn) {
+        show(btn, allowed(btn.dataset.nav));
+      });
+      sidebar.querySelectorAll('.dt-sidebar-fab[data-nav]').forEach(function (btn) {
+        show(btn, allowed(btn.dataset.nav));
+      });
+      sidebar.querySelectorAll('.dt-sidebar-section').forEach(function (h) {
+        var next = h.nextElementSibling;
+        var has = false;
+        while (next && !next.classList.contains('dt-sidebar-section')) {
+          if (next.dataset?.nav && next.style.display !== 'none') has = true;
+          next = next.nextElementSibling;
+        }
+        show(h, has);
+      });
+    }
+
+    // Action grid
+    var grid = document.querySelector('.action-grid');
+    if (grid) {
+      grid.querySelectorAll('.action-btn[data-section]').forEach(function (btn) {
+        show(btn, allowed(btn.dataset.section));
+      });
+    }
+
+    // Plus menu
+    var ep = document.getElementById('epSheet');
+    if (ep) {
+      ep.querySelectorAll('.ep-item[data-nav]').forEach(function (i) {
+        show(i, allowed(i.dataset.nav));
+      });
+      ep.querySelectorAll('.ep-group').forEach(function (g) {
+        show(g, g.querySelectorAll('.ep-item[data-nav]:not([style*="display: none"])').length > 0);
+      });
+    }
+
+    // Sections data-section elsewhere
+    ['stock','categories','rapports','caisse','credits','clients','fournisseurs',
+     'commandes','livraisons','inventaire','customerOrders','deliveries','deliverymen'].forEach(function (s) {
+      document.querySelectorAll('[data-section="' + s + '"]').forEach(function (el) {
+        if (el.closest('.bottom-nav,.dt-sidebar,.action-grid')) return;
+        show(el, allowed(s));
+      });
+    });
+
+    // Logs
+    fixLogsSection();
+
+    // Redirect si sur section non autorisée
+    var cur = window.currentSection;
+    if (cur && cur !== 'menu' && cur !== 'profil' && !allowed(cur)) {
+      window.showSection?.('menu');
+      if (notify) window.showNotification?.('🔒 Accès retiré', 'warning');
+    }
+
+    if (notify) {
+      window.showNotification?.('🔔 Vos accès ont été mis à jour', 'info');
+      window.haptic?.tap();
+    }
   }
 
   // ══════════════════════════════════════════════════════════
-  // POLLING — vérifie les changements de permissions
+  // POLLING
   // ══════════════════════════════════════════════════════════
   async function poll() {
-    if (!isEmployee()) return;
-    if (!localStorage.getItem('authToken')) return;
+    if (!isEmployee() || !localStorage.getItem('authToken')) return;
 
     try {
       var res = await window.authfetch?.(API() + '/members/my-boutique');
@@ -227,94 +252,80 @@
       }
 
       var hash = JSON.stringify(perms);
-
-      // Stocker partout
       window._employeePerms = perms;
       window._employeeMode = true;
       localStorage.setItem('employeePermissions', JSON.stringify(perms));
 
-      // Premier run ou changement ?
       var changed = _lastHash && hash !== _lastHash;
       _lastHash = hash;
-
-      applyAll(perms, changed);
-    } catch (e) { /* silencieux */ }
+      applyAll(changed);
+    } catch (e) { /* silent */ }
   }
 
-  function startPolling() {
-    poll(); // immédiat
-    if (_timer) clearInterval(_timer);
-    _timer = setInterval(poll, POLL_MS);
+  // ══════════════════════════════════════════════════════════
+  // DOM OBSERVER — re-filtrer quand d'autres scripts touchent la nav
+  // ══════════════════════════════════════════════════════════
+  function watchDom() {
+    var _debounce = null;
+    function refilter() {
+      clearTimeout(_debounce);
+      _debounce = setTimeout(function () { if (window._employeePerms) applyAll(false); }, 100);
+    }
 
-    // Aussi quand l'app revient au premier plan
-    document.addEventListener('visibilitychange', function () {
-      if (!document.hidden) poll();
+    [document.getElementById('bottomNav'),
+     document.querySelector('.dt-sidebar'),
+     document.querySelector('.action-grid')
+    ].filter(Boolean).forEach(function (el) {
+      new MutationObserver(refilter).observe(el, {
+        childList: true, subtree: true, attributes: true, attributeFilter: ['style']
+      });
     });
-  }
 
-  // ══════════════════════════════════════════════════════════
-  // OBSERVATEUR DOM — re-filtrer quand la nav est modifiée
-  // (par team.js, access-control.js, ux-responsive.js, etc.)
-  // ══════════════════════════════════════════════════════════
-  function watchDomChanges() {
-    var targets = [
-      document.getElementById('bottomNav'),
-      document.querySelector('.dt-sidebar'),
-      document.querySelector('.action-grid'),
-    ].filter(Boolean);
-
-    targets.forEach(function (target) {
+    // Aussi surveiller le menu Plus
+    var ep = document.getElementById('epSheet');
+    if (ep) {
       new MutationObserver(function () {
-        if (!_applied) return;
-        var perms = window._employeePerms;
-        if (perms) setTimeout(function () { applyAll(perms, false); }, 50);
-      }).observe(target, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
-    });
+        if (ep.classList.contains('open')) refilter();
+      }).observe(ep, { attributes: true, attributeFilter: ['class'] });
+    }
   }
 
   // ══════════════════════════════════════════════════════════
-  // INIT — attendre que team.js ait posé ses flags
+  // INIT
   // ══════════════════════════════════════════════════════════
   function init() {
     if (!isEmployee()) return;
 
-    // Si team.js a déjà chargé les perms, on y va
-    if (window._employeePerms) {
-      _lastHash = JSON.stringify(window._employeePerms);
-      applyAll(window._employeePerms, false);
-      startPolling();
-      watchDomChanges();
-      return;
-    }
+    fixNavTo();
+    patchShowSectionForLogs();
+    watchLogsCreation();
 
-    // Sinon attendre que team.js finisse son fetch
-    var waitCount = 0;
-    var waiter = setInterval(function () {
-      waitCount++;
+    // Attendre que team.js ait posé _employeePerms
+    function waitPerms() {
       if (window._employeePerms) {
-        clearInterval(waiter);
         _lastHash = JSON.stringify(window._employeePerms);
-        applyAll(window._employeePerms, false);
-        startPolling();
-        watchDomChanges();
-      } else if (waitCount > 20) { // 10 secondes max
-        clearInterval(waiter);
-        // Forcer un poll
-        startPolling();
-        watchDomChanges();
+        applyAll(false);
+        watchDom();
+        // Démarrer le polling
+        poll();
+        if (_timer) clearInterval(_timer);
+        _timer = setInterval(poll, POLL_MS);
+        document.addEventListener('visibilitychange', function () {
+          if (!document.hidden) poll();
+        });
+      } else {
+        setTimeout(waitPerms, 500);
       }
-    }, 500);
+    }
+    waitPerms();
   }
 
-  // Démarrer après un délai pour laisser team.js et access-control.js finir
   function boot() {
     if (!localStorage.getItem('authToken')) return;
+    // Laisser team.js finir son init
     setTimeout(function () {
       if (isEmployee()) init();
-      else {
-        // Réessayer plus tard (team.js peut mettre du temps à identifier l'employé)
-        setTimeout(function () { if (isEmployee()) init(); }, 4000);
-      }
+      else setTimeout(function () { if (isEmployee()) init(); }, 4000);
     }, 3000);
   }
 

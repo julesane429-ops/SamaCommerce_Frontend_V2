@@ -107,18 +107,9 @@
     // Toujours accessible
     if (section === 'menu' || section === 'profil') return true;
 
-    var plan = getOwnerPlan();
-
-    // 1. Vérifier le plan
-    var planFeature = SECTION_TO_PLAN_FEATURE[section];
-    if (planFeature) {
-      var hasFeat = typeof window.hasFeature === 'function'
-        ? window.hasFeature(plan, planFeature)
-        : true; // si planConfig pas chargé, on laisse passer
-      if (!hasFeat) return false;
-    }
-
-    // 2. Si employé, vérifier les permissions
+    // EMPLOYÉ : vérifier UNIQUEMENT les permissions données par le propriétaire
+    // Le plan du propriétaire a déjà été vérifié quand il a assigné les permissions.
+    // L'employé a son propre compte (souvent Free) — on ne doit PAS vérifier SON plan.
     if (isEmployee()) {
       var empPerm = SECTION_TO_EMPLOYEE_PERM[section];
 
@@ -129,6 +120,18 @@
         var perms = getEmployeePermissions();
         if (!perms[empPerm]) return false;
       }
+
+      return true;
+    }
+
+    // PROPRIÉTAIRE : vérifier le plan
+    var plan = getOwnerPlan();
+    var planFeature = SECTION_TO_PLAN_FEATURE[section];
+    if (planFeature) {
+      var hasFeat = typeof window.hasFeature === 'function'
+        ? window.hasFeature(plan, planFeature)
+        : true;
+      if (!hasFeat) return false;
     }
 
     return true;

@@ -476,52 +476,103 @@
   // ════════════════════════════════════════
   // RESTRICTIONS EMPLOYÉ
   // ════════════════════════════════════════
+
+  // Permissions courantes — variable de module, mise à jour à chaque refresh
+  // Utilisation par référence dans navTo (évite les closures figées)
+  let _currentPerms = {};
+  let _navToPatched = false;
+  let _refreshTimer = null;
+
+  const SECTION_MAP = {
+    stock:        ['[data-section="stock"]', '#nav-stock'],
+    categories:   ['[data-section="categories"]'],
+    rapports:     ['[data-section="rapports"]', '#nav-rapports'],
+    caisse:       ['[data-section="caisse"]', '[onclick*="caisse"]'],
+    credits:      ['[data-section="credits"]'],
+    clients:      ['[data-section="clients"]'],
+    fournisseurs: ['[data-section="fournisseurs"]'],
+    commandes:    ['[data-section="commandes"]'],
+    livraisons:   ['[data-section="livraisons"]'],
+    inventaire:   ['[data-section="inventaire"]'],
+  };
+
+  const ALL_SECTION_SELECTORS = Object.values(SECTION_MAP).flat();
+
+  // ── Reset + appliquer visibilité DOM ──
+  function applyDomVisibility(perms) {
+    // 1. Réafficher TOUT (reset propre, supprime les anciens masquages)
+    ALL_SECTION_SELECTORS.forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => { el.style.display = ''; });
+    });
+    // 2. Masquer ce qui n'est pas autorisé
+    Object.entries(SECTION_MAP).forEach(([key, selectors]) => {
+      const pk = SECTION_PERM_MAP[key] || key;
+      if (!perms[pk] && !perms[key]) {
+        selectors.forEach(sel => {
+          document.querySelectorAll(sel).forEach(el => { el.style.display = 'none'; });
+        });
+      }
+    });
+  }
+
+  // ── Patcher navTo UNE SEULE FOIS — lit _currentPerms par référence ──
+  function patchNavTo() {
+    if (_navToPatched) return;
+    if (typeof window.navTo !== 'function') { setTimeout(patchNavTo, 300); return; }
+    const _orig = window.navTo;
+    window.navTo = function (section) {
+      const rp = SECTION_PERM_MAP[section];
+      if (rp && !_currentPerms[rp]) {
+        window.showNotification?.(`🔒 Accès refusé — permission "${rp}" requise`, 'warning');
+        return;
+      }
+      _orig(section);
+    };
+    window.navTo._employeePatched = true;
+    _navToPatched = true;
+  }
+
+  // ── Rafraîchir les permissions depuis le serveur ──
+  async function refreshEmployeePermissions() {
+    try {
+      const data = await auth(`${API()}/members/my-boutique`).then(ok_);
+      if (!data) return;
+      const newPerms = data.permissions || {};
+      const changed  = JSON.stringify(newPerms) !== JSON.stringify(_currentPerms);
+      _currentPerms = newPerms;
+      window._employeePerms = newPerms;
+      if (changed) {
+        applyDomVisibility(newPerms);
+        const cur = window.currentSection;
+        if (cur && cur !== 'menu' && cur !== 'vente' && cur !== 'profil') {
+          const rp = SECTION_PERM_MAP[cur];
+          if (rp && !newPerms[rp]) {
+            window.showNotification?.('🔒 Vos permissions ont été modifiées', 'warning');
+            window.showSection?.('menu');
+          }
+        }
+      }
+    } catch (err) { console.debug('refreshEmployeePermissions:', err.message); }
+  }
+
+  function _onVisibilityChange() {
+    if (!document.hidden && window._employeeMode) refreshEmployeePermissions();
+  }
+
   async function applyEmployeeRestrictions() {
     try {
       const data = await auth(`${API()}/members/my-boutique`).then(ok_);
       if (!data) return;
 
       const perms = data.permissions || {};
+      _currentPerms            = perms;
       window._employeeMode     = true;
       window._employeePerms    = perms;
       window._employeeBoutique = data;
 
-      // Intercepter navTo() pour bloquer les sections non autorisées
-      const originalNavTo = window.navTo;
-      if (typeof originalNavTo === 'function') {
-        window.navTo = function (section) {
-          const requiredPerm = SECTION_PERM_MAP[section];
-          if (requiredPerm && !perms[requiredPerm]) {
-            window.showNotification?.(`🔒 Accès refusé — permission "${requiredPerm}" requise`, 'warning');
-            return;
-          }
-          originalNavTo(section);
-        };
-      }
+      patchNavTo();
+      applyDomVisibility(perms);
 
-      // Masquer les éléments de nav non autorisés
-      const sectionMap = {
-        stock:        ['[data-section="stock"]', '#nav-stock'],
-        categories:   ['[data-section="categories"]'],
-        rapports:     ['[data-section="rapports"]', '#nav-rapports'],
-        caisse:       ['[data-section="caisse"]', '[onclick*="caisse"]'],
-        credits:      ['[data-section="credits"]'],
-        clients:      ['[data-section="clients"]'],
-        fournisseurs: ['[data-section="fournisseurs"]'],
-        commandes:    ['[data-section="commandes"]'],
-        livraisons:   ['[data-section="livraisons"]'],
-        inventaire:   ['[data-section="inventaire"]'],
-      };
-
-      Object.entries(sectionMap).forEach(([key, selectors]) => {
-        if (!perms[key]) {
-          selectors.forEach(sel => {
-            document.querySelectorAll(sel).forEach(el => el.style.display = 'none');
-          });
-        }
-      });
-
-      // Bannière mode employé
       if (!document.getElementById('employee-banner')) {
         const banner = document.createElement('div');
         banner.id = 'employee-banner';
@@ -533,9 +584,14 @@
       const header = document.getElementById('appHeader');
       if (header && data.company_name) header.textContent = `🏪 ${data.company_name}`;
 
-    } catch (err) {
-      console.debug('employeeRestrictions:', err.message);
-    }
+      // Polling 30s — détecte les changements sans rechargement
+      if (!_refreshTimer) _refreshTimer = setInterval(refreshEmployeePermissions, 30000);
+
+      // Rafraîchir quand l'onglet redevient visible
+      document.removeEventListener('visibilitychange', _onVisibilityChange);
+      document.addEventListener('visibilitychange', _onVisibilityChange);
+
+    } catch (err) { console.debug('employeeRestrictions:', err.message); }
   }
 
   // ════════════════════════════════════════
